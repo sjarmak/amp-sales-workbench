@@ -1,0 +1,7 @@
+node_modules/
+.env
+data/accounts/**/raw/**
+data/accounts/**/transcripts/**
+*.log
+.DS_Store
+dist/

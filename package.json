@@ -1,0 +1,35 @@
+{
+  "name": "amp-sales-workbench",
+  "version": "0.1.0",
+  "description": "Multi-agent sales workflow system connecting Gong, Notion, and Salesforce via Amp SDK",
+  "type": "module",
+  "engines": {
+    "node": ">=18.19.0"
+  },
+  "scripts": {
+    "start": "tsx src/execute-agent.ts",
+    "dev": "DEBUG=1 tsx src/execute-agent.ts",
+    "manage": "tsx src/execute-agent.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "keywords": [
+    "amp-sdk",
+    "sales",
+    "crm",
+    "gong",
+    "notion",
+    "salesforce",
+    "workflow"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "@sourcegraph/amp-sdk": "^0.1.0-20251014160341-g7c5de51",
+    "dotenv": "^16.4.5"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.30",
+    "tsx": "^4.16.0",
+    "typescript": "^5.6.3"
+  }
+}
