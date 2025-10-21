@@ -40,13 +40,16 @@
     "@sourcegraph/amp-sdk": "^0.1.0-20251014160341-g7c5de51",
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.3",
+    "cheerio": "^1.1.2",
     "concurrently": "^9.2.1",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
-    "express": "^5.1.0"
+    "express": "^5.1.0",
+    "turndown": "^7.2.1"
   },
   "devDependencies": {
     "@types/node": "^20.11.30",
+    "@types/turndown": "^5.0.5",
     "tsx": "^4.16.0",
     "typescript": "^5.6.3"
   }

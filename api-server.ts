@@ -25,10 +25,11 @@ const DATA_DIR = path.join(process.cwd(), 'data/accounts');
 
 // Get MCP availability - for now, assume all configured MCPs are available
 // In the future, could add actual health checks
-function getMcpCapabilities(): { salesforce: boolean; gong: boolean; notion: boolean } {
+function getMcpCapabilities(): { salesforce: boolean; gong: boolean; notion: boolean; amp: boolean } {
 	// Assume all MCPs are available
 	// User will see errors on refresh if not properly configured
-	return { salesforce: true, gong: true, notion: true };
+	// Amp is always available (no MCP required)
+	return { salesforce: true, gong: true, notion: true, amp: true };
 }
 
 /**
@@ -493,6 +494,57 @@ app.get('/api/accounts/:slug/sources/:source', async (req, res) => {
           };
         })
       };
+    } else if (source === 'amp') {
+      // Load amp data (global, not account-specific)
+      const meta = await readMeta(path.join(DATA_DIR, slug));
+      const ampMeta = meta.sources.amp;
+      
+      if (!ampMeta || !ampMeta.pages) {
+        data = {
+          pagesCount: 0,
+          featuresCount: 0,
+          pages: [],
+          features: [],
+          content: { news: '', manual: '' },
+          summary: null,
+        };
+      } else {
+        const globalAmpDir = path.join(process.cwd(), 'data', 'global', 'amp');
+        const featuresPath = path.join(globalAmpDir, 'features.json');
+        const summaryPath = path.join(globalAmpDir, 'summary.json');
+        const newsPath = path.join(globalAmpDir, 'news.md');
+        const manualPath = path.join(globalAmpDir, 'manual.md');
+        
+        let features = [];
+        try {
+          const featuresData = JSON.parse(await fs.readFile(featuresPath, 'utf-8'));
+          features = featuresData.features || [];
+        } catch {}
+        
+        let summary = null;
+        try {
+          summary = JSON.parse(await fs.readFile(summaryPath, 'utf-8'));
+        } catch {}
+        
+        let newsContent = '';
+        let manualContent = '';
+        try { newsContent = await fs.readFile(newsPath, 'utf-8'); } catch {}
+        try { manualContent = await fs.readFile(manualPath, 'utf-8'); } catch {}
+        
+        data = {
+          pagesCount: Object.keys(ampMeta.pages).length,
+          featuresCount: ampMeta.featuresCount || 0,
+          featuresLastGeneratedAt: ampMeta.featuresLastGeneratedAt,
+          pages: Object.entries(ampMeta.pages).map(([key, page]: [string, any]) => ({
+            key,
+            url: page.url,
+            lastFetchedAt: page.lastFetchedAt,
+          })),
+          features: features.slice(0, 10),
+          content: { news: newsContent, manual: manualContent },
+          summary,
+        };
+      }
     }
 
     res.json(data);
@@ -584,6 +636,15 @@ app.get('/api/accounts/:slug/sources', async (req, res) => {
         ranAt: formatTimestamp(context?.prospector?.ranAt),
         filesCount: context?.prospector?.files?.length || 0,
       },
+      amp: {
+        status: meta.sources.amp?.status || 'missing',
+        lastFetchedAt: formatTimestamp(
+          meta.sources.amp?.lastIncrementalSyncAt || meta.sources.amp?.lastFullSyncAt
+        ),
+        nextRecommended: getSuggestion(staleness.amp.any),
+        staleReasons: staleness.amp.reasons,
+        featuresCount: meta.sources.amp?.featuresCount || 0,
+      },
     });
   } catch (error) {
     res.status(500).json({ error: 'Failed to get freshness status' });
@@ -597,7 +658,7 @@ app.get('/api/accounts/:slug/sources/:source/meta', async (req, res) => {
 
   try {
     const meta = await readMeta(accountDir);
-    const sourceData = meta.sources[source as 'salesforce' | 'gong' | 'notion'];
+    const sourceData = meta.sources[source as 'salesforce' | 'gong' | 'notion' | 'amp'];
 
     if (!sourceData) {
       return res.status(404).json({ error: 'Source metadata not found' });
@@ -606,6 +667,84 @@ app.get('/api/accounts/:slug/sources/:source/meta', async (req, res) => {
     res.json(sourceData);
   } catch (error) {
     res.status(500).json({ error: 'Failed to get source metadata' });
+  }
+});
+
+// Get Amp data details
+app.get('/api/accounts/:slug/sources/amp', async (req, res) => {
+  const { slug } = req.params;
+  const accountDir = path.join(DATA_DIR, slug);
+
+  try {
+    console.log(`[api-server] Loading amp data for account: ${slug}`);
+    const meta = await readMeta(accountDir);
+    console.log(`[api-server] Meta loaded, amp sources:`, meta.sources.amp ? 'present' : 'missing');
+    const ampMeta = meta.sources.amp;
+
+    if (!ampMeta || !ampMeta.pages) {
+      console.log(`[api-server] No amp metadata, returning empty response`);
+      return res.json({
+        pagesCount: 0,
+        featuresCount: 0,
+        pages: [],
+        features: [],
+        content: { news: '', manual: '' },
+        summary: null,
+      });
+    }
+
+    // Load from global cache (Amp data is global, not account-specific)
+    const globalAmpDir = path.join(process.cwd(), 'data', 'global', 'amp');
+
+    // Load features if available
+    const featuresPath = path.join(globalAmpDir, 'features.json');
+    let features = [];
+    try {
+      const featuresData = JSON.parse(await fs.readFile(featuresPath, 'utf-8'));
+      features = featuresData.features || [];
+    } catch {}
+
+    // Load summary table if available
+    const summaryPath = path.join(globalAmpDir, 'summary.json');
+    let summary = null;
+    try {
+      summary = JSON.parse(await fs.readFile(summaryPath, 'utf-8'));
+    } catch {}
+
+    // Load full markdown content from global cache
+    const newsPath = path.join(globalAmpDir, 'news.md');
+    const manualPath = path.join(globalAmpDir, 'manual.md');
+    
+    let newsContent = '';
+    let manualContent = '';
+    
+    try {
+      newsContent = await fs.readFile(newsPath, 'utf-8');
+    } catch {}
+    
+    try {
+      manualContent = await fs.readFile(manualPath, 'utf-8');
+    } catch {}
+
+    res.json({
+      pagesCount: Object.keys(ampMeta.pages).length,
+      featuresCount: ampMeta.featuresCount || 0,
+      featuresLastGeneratedAt: ampMeta.featuresLastGeneratedAt,
+      pages: Object.entries(ampMeta.pages).map(([key, page]) => ({
+        key,
+        url: page.url,
+        lastFetchedAt: page.lastFetchedAt,
+      })),
+      features: features.slice(0, 10), // Return top 10 features for preview
+      content: {
+        news: newsContent,
+        manual: manualContent,
+      },
+      summary,
+    });
+  } catch (error) {
+    console.error('[api-server] Error loading amp data:', error);
+    res.status(500).json({ error: 'Failed to get Amp data', details: String(error) });
   }
 });
 
@@ -634,7 +773,7 @@ app.post('/api/accounts/:slug/sources/:source/refresh', async (req, res) => {
     sendProgress(res, `Starting ${mode} refresh for ${source}...`);
     
     // Validate source
-    if (!['salesforce', 'gong', 'notion'].includes(source)) {
+    if (!['salesforce', 'gong', 'notion', 'amp'].includes(source)) {
       res.write(`data: ${JSON.stringify({ type: 'error', error: 'Invalid source' })}\n\n`);
       return res.end();
     }
@@ -669,6 +808,57 @@ app.post('/api/accounts/:slug/sources/:source/refresh', async (req, res) => {
             transcriptsCount: Object.keys(meta.sources.gong?.transcripts || {}).length
           },
           meta: meta.sources.gong
+        })}\n\n`);
+        return res.end();
+      }
+      if (source === 'amp' && !staleness.amp.any) {
+        sendProgress(res, 'Amp data is already fresh, using cached data');
+        res.write(`data: ${JSON.stringify({ 
+          type: 'complete', 
+          success: true, 
+          updated: false,
+          modeUsed: 'cache',
+          stats: {
+            pagesCount: meta.sources.amp?.pages ? Object.keys(meta.sources.amp.pages).length : 0,
+            featuresCount: meta.sources.amp?.featuresCount || 0
+          },
+          meta: meta.sources.amp
+        })}\n\n`);
+        return res.end();
+      }
+    }
+    
+    // Fast path: Amp News refresh (no MCP required)
+    if (source === 'amp') {
+      try {
+        const { ingestAmpNews } = await import('./src/phases/ingest/ampNews.js');
+        
+        const result = await ingestAmpNews(slug, accountDir, {
+          mode: mode as 'auto' | 'incremental' | 'full',
+          onProgress: (msg) => sendProgress(res, msg)
+        });
+        
+        // Rebuild context
+        sendProgress(res, 'Rebuilding context...');
+        await refreshAccountContext(accountDir);
+        
+        res.write(`data: ${JSON.stringify({ 
+          type: 'complete', 
+          success: true, 
+          updated: result.updated,
+          modeUsed: mode,
+          stats: result.stats,
+          meta: {
+            dataPath: path.join(accountDir, 'raw', 'amp')
+          }
+        })}\n\n`);
+        return res.end();
+      } catch (ampError: any) {
+        console.error('[api-server] Amp refresh failed:', ampError);
+        res.write(`data: ${JSON.stringify({ 
+          type: 'error', 
+          error: 'Amp refresh failed', 
+          details: ampError.message || String(ampError)
         })}\n\n`);
         return res.end();
       }

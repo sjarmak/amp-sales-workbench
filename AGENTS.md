@@ -19,7 +19,7 @@ USE BEADS (bd command) FOR ANY TASK UPDATES, DO NOT WRITE TO MARKDOWN FILES
   - Tabs for Prep, After Call, CRM, Insights workflows
   - Real-time agent execution
   
-**Note:** Data source refresh buttons (Salesforce/Gong/Notion badges) require MCP servers configured in Amp. If MCPs aren't set up, use the "Full Refresh" button in the CRM section instead.
+**Note:** Data source refresh buttons (Salesforce/Gong/Notion badges) require MCP servers configured in Amp. You can refresh individual sources or use the "All Sources" button for bulk operations.
 
 ### Main Workbench (CLI)
 - **Run for account**: `npm run manage "Acme Corp"` or `npx tsx src/execute-agent.ts "Acme Corp"`

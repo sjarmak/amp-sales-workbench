@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs'
 import { Badge } from './ui/badge'
 import { Button } from './ui/button'
-import { Database, PhoneCall, FileText, Loader2, ChevronDown, ChevronUp, ExternalLink } from 'lucide-react'
+import { Database, PhoneCall, FileText, Loader2, ChevronDown, ChevronUp, ExternalLink, Newspaper } from 'lucide-react'
 
 const API_URL = 'http://localhost:3001/api'
 
@@ -17,6 +17,7 @@ export function DataSourcesTab({ accountSlug }: DataSourcesTabProps) {
   const [salesforceData, setSalesforceData] = useState<any>(null)
   const [gongData, setGongData] = useState<any>(null)
   const [notionData, setNotionData] = useState<any>(null)
+  const [ampData, setAmpData] = useState<any>(null)
   const [loading, setLoading] = useState<Record<string, boolean>>({})
   const [expandedTranscripts, setExpandedTranscripts] = useState<Set<string>>(new Set())
   const [expandedNotionPages, setExpandedNotionPages] = useState<Set<string>>(new Set())
@@ -31,6 +32,7 @@ export function DataSourcesTab({ accountSlug }: DataSourcesTabProps) {
     loadSource('salesforce', setSalesforceData)
     loadSource('gong', setGongData)
     loadSource('notion', setNotionData)
+    loadSource('amp', setAmpData)
   }
 
   const loadSource = async (source: string, setter: (data: any) => void) => {
@@ -43,17 +45,15 @@ export function DataSourcesTab({ accountSlug }: DataSourcesTabProps) {
       console.log(`[DataSourcesTab] ${source} response status:`, res.status)
       if (res.ok) {
         const data = await res.json()
-        console.log(`[DataSourcesTab] ${source} data:`, { 
-          callsCount: data.callsCount, 
-          summariesCount: data.summaries?.length,
-          firstCall: data.calls?.[0],
-          firstSummary: data.summaries?.[0] ? {
-            callId: data.summaries[0].callId,
-            hasTranscript: !!data.summaries[0].transcript,
-            hasTopics: !!data.summaries[0].topics,
-            topics: data.summaries[0].topics
-          } : null
-        })
+        if (source === 'gong') {
+          console.log(`[DataSourcesTab] ${source} data:`, { 
+            callsCount: data?.callsCount, 
+            summariesCount: data?.summaries?.length,
+            firstCall: data?.calls?.[0]
+          })
+        } else {
+          console.log(`[DataSourcesTab] ${source} data loaded:`, data ? Object.keys(data) : 'null/undefined')
+        }
         setter(data)
       } else {
         console.error(`[DataSourcesTab] ${source} failed:`, res.status)
@@ -377,6 +377,111 @@ export function DataSourcesTab({ accountSlug }: DataSourcesTabProps) {
     )
   }
 
+  const renderAmpData = () => {
+    if (loading.amp) return <div className="flex items-center gap-2"><Loader2 className="h-4 w-4 animate-spin" /> Loading...</div>
+    if (!ampData) return <div className="text-muted-foreground">No data available</div>
+    if (ampData.error) return <div className="text-destructive">{ampData.error}</div>
+
+    return (
+      <div className="space-y-4">
+        <div className="grid grid-cols-3 gap-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Pages</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold">{ampData.pagesCount || 0}</div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Sections</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold">
+                {(ampData.summary?.stats?.newsHeadings || 0) + (ampData.summary?.stats?.manualHeadings || 0)}
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Features</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold">{ampData.featuresCount || 0}</div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {ampData.summary && ampData.summary.sections && (
+          <>
+            {ampData.summary.sections.news.length > 0 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-base">Amp News ({ampData.summary.sections.news.length} sections)</CardTitle>
+                  <CardDescription>Latest product updates and features</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="border rounded-lg overflow-hidden">
+                    <table className="w-full text-sm">
+                      <thead className="bg-muted">
+                        <tr>
+                          <th className="px-4 py-2 text-left font-medium">Section</th>
+                          <th className="px-4 py-2 text-left font-medium">Preview</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y">
+                        {ampData.summary.sections.news.map((section: any, i: number) => (
+                          <tr key={i} className="hover:bg-muted/50">
+                            <td className="px-4 py-3 font-medium whitespace-nowrap">{section.heading}</td>
+                            <td className="px-4 py-3 text-muted-foreground">
+                              {section.content.substring(0, 150)}...
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {ampData.summary.sections.manual.length > 0 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-base">Amp Manual ({ampData.summary.sections.manual.length} sections)</CardTitle>
+                  <CardDescription>Documentation and guides</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="border rounded-lg overflow-hidden">
+                    <table className="w-full text-sm">
+                      <thead className="bg-muted">
+                        <tr>
+                          <th className="px-4 py-2 text-left font-medium">Section</th>
+                          <th className="px-4 py-2 text-left font-medium">Preview</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y">
+                        {ampData.summary.sections.manual.map((section: any, i: number) => (
+                          <tr key={i} className="hover:bg-muted/50">
+                            <td className="px-4 py-3 font-medium whitespace-nowrap">{section.heading}</td>
+                            <td className="px-4 py-3 text-muted-foreground">
+                              {section.content.substring(0, 150)}...
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+          </>
+        )}
+      </div>
+    )
+  }
+
   if (!accountSlug) {
     return (
       <Card>
@@ -402,6 +507,10 @@ export function DataSourcesTab({ accountSlug }: DataSourcesTabProps) {
           <FileText className="h-4 w-4" />
           Notion
         </TabsTrigger>
+        <TabsTrigger value="amp" className="flex items-center gap-2">
+          <Newspaper className="h-4 w-4" />
+          Amp News
+        </TabsTrigger>
       </TabsList>
 
       <TabsContent value="salesforce" className="mt-4">
@@ -414,6 +523,10 @@ export function DataSourcesTab({ accountSlug }: DataSourcesTabProps) {
 
       <TabsContent value="notion" className="mt-4">
         {renderNotionData()}
+      </TabsContent>
+
+      <TabsContent value="amp" className="mt-4">
+        {renderAmpData()}
       </TabsContent>
     </Tabs>
   )

@@ -17,6 +17,10 @@ const TTL = {
 		knowledge: 7 * 24 * 60 * 60 * 1000, // 7 days
 		accountPages: 14 * 24 * 60 * 60 * 1000, // 14 days
 	},
+	amp: {
+		news: 6 * 60 * 60 * 1000, // 6 hours
+		manual: 7 * 24 * 60 * 60 * 1000, // 7 days
+	},
 }
 
 export type SourceStatus = 'fresh' | 'stale' | 'missing' | 'error'
@@ -55,12 +59,30 @@ export interface NotionMetadata extends SourceMetadata {
 	pageCount?: number
 }
 
+export interface AmpPage {
+	url: string
+	etag?: string
+	lastModified?: string
+	hash?: string
+	lastFetchedAt?: string
+}
+
+export interface AmpMetadata extends SourceMetadata {
+	pages?: {
+		news?: AmpPage
+		manual?: AmpPage
+	}
+	featuresCount?: number
+	featuresLastGeneratedAt?: string
+}
+
 export interface SourcesMeta {
 	version: number
 	sources: {
 		salesforce?: SalesforceMetadata
 		gong?: GongMetadata
 		notion?: NotionMetadata
+		amp?: AmpMetadata
 	}
 }
 
@@ -103,6 +125,7 @@ export function computeStaleness(
 	salesforce: StalenessResult
 	gong: StalenessResult
 	notion: StalenessResult
+	amp: StalenessResult
 } {
 	const nowMs = now.getTime()
 
@@ -217,10 +240,49 @@ export function computeStaleness(
 		}
 	}
 
+	// Amp staleness
+	const ampMeta = meta.sources.amp
+	const ampResult: StalenessResult = {
+		any: false,
+		reasons: [],
+	}
+
+	if (!ampMeta || !ampMeta.pages) {
+		ampResult.any = true
+		ampResult.reasons.push('No Amp data found')
+	} else {
+		const { news, manual } = ampMeta.pages
+
+		// Check news page
+		if (!news?.lastFetchedAt) {
+			ampResult.any = true
+			ampResult.reasons.push('Amp news page missing')
+		} else {
+			const age = nowMs - new Date(news.lastFetchedAt).getTime()
+			if (age > TTL.amp.news) {
+				ampResult.any = true
+				ampResult.reasons.push(`Amp news stale (${Math.floor(age / (60 * 60 * 1000))}h old)`)
+			}
+		}
+
+		// Check manual page
+		if (!manual?.lastFetchedAt) {
+			ampResult.any = true
+			ampResult.reasons.push('Amp manual page missing')
+		} else {
+			const age = nowMs - new Date(manual.lastFetchedAt).getTime()
+			if (age > TTL.amp.manual) {
+				ampResult.any = true
+				ampResult.reasons.push(`Amp manual stale (${Math.floor(age / (24 * 60 * 60 * 1000))}d old)`)
+			}
+		}
+	}
+
 	return {
 		salesforce: sfResult,
 		gong: gongResult,
 		notion: notionResult,
+		amp: ampResult,
 	}
 }
 
@@ -260,4 +322,15 @@ export function updateNotionCheckpoint(
 	}
 	Object.assign(meta.sources.notion, update)
 	meta.sources.notion.status = 'fresh'
+}
+
+export function updateAmpCheckpoint(
+	meta: SourcesMeta,
+	update: Partial<AmpMetadata>
+): void {
+	if (!meta.sources.amp) {
+		meta.sources.amp = {}
+	}
+	Object.assign(meta.sources.amp, update)
+	meta.sources.amp.status = 'fresh'
 }

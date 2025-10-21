@@ -213,21 +213,12 @@ export default function Home() {
                   <CardTitle className="text-lg">Pre-Call</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-2">
-                  <AgentButton
-                    name="precall-brief"
-                    label="Pre-Call Brief"
-                    description="Generate a comprehensive pre-call brief with account context, recent activity, and talking points"
-                    loading={loadingAgent === 'precall-brief'}
-                    disabled={loading}
-                    onClick={() => runAgent('precall-brief')}
-                    requires={{ salesforce: true, gong: true, notion: true }}
-                    capabilities={selectedAccount?.capabilities}
-                  />
                   <Button 
                     className="w-full" 
                     variant="outline"
                     onClick={runProspector}
                     disabled={prospectorRunning}
+                    title="Run Amp prospector agent to gather publicly available intel about the account and generate documents in the Research tab"
                   >
                     {prospectorRunning ? (
                       <span className="flex items-center gap-2">
@@ -236,6 +227,17 @@ export default function Home() {
                       </span>
                     ) : 'Run Prospector'}
                   </Button>
+                  <AgentButton
+                    name="precall-brief"
+                    label="Pre-Call Brief"
+                    description="Generate a comprehensive pre-call brief with account context, recent activity, and talking points"
+                    loading={loadingAgent === 'precall-brief'}
+                    disabled={loading}
+                    onClick={() => runAgent('precall-brief')}
+                    variant="outline"
+                    requires={{ salesforce: true, gong: true, notion: true }}
+                    capabilities={selectedAccount?.capabilities}
+                  />
                   <AgentButton
                     name="demo-ideas"
                     label="Demo Ideas"
@@ -267,15 +269,16 @@ export default function Home() {
                 </CardHeader>
                 <CardContent className="space-y-2">
                   <AgentButton
-                    name="postcall"
-                    label="Post-Call Update"
-                    description="Analyze the most recent call and update CRM with action items and next steps"
-                    loading={loadingAgent === 'postcall'}
-                    disabled={loading}
-                    onClick={() => runAgent('postcall')}
-                    requires={{ gong: true }}
+                  name="postcall"
+                  label="Post-Call Update"
+                  description="Analyze the most recent call and update CRM with action items and next steps"
+                  loading={loadingAgent === 'postcall'}
+                  disabled={loading}
+                  onClick={() => runAgent('postcall')}
+                  variant="outline"
+                  requires={{ gong: true }}
                     capabilities={selectedAccount?.capabilities}
-                  />
+                   />
                   <AgentButton
                     name="email"
                     label="Follow-Up Email"
@@ -367,16 +370,6 @@ export default function Home() {
                     onClick={() => runAgent('handoff')}
                     variant="outline"
                     requires={{ salesforce: true }}
-                    capabilities={selectedAccount?.capabilities}
-                  />
-                  <AgentButton
-                    name="full-refresh"
-                    label="Full Refresh"
-                    description="Pull fresh data from all sources (Salesforce, Gong, Notion) for this account"
-                    loading={loadingAgent === 'full-refresh'}
-                    disabled={loading}
-                    onClick={() => runAgent('full-refresh')}
-                    requires={{ salesforce: true, gong: true, notion: true }}
                     capabilities={selectedAccount?.capabilities}
                   />
                 </CardContent>

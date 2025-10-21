@@ -16,7 +16,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from './ui/dropdown-menu'
-import { Database, PhoneCall, FileText, RefreshCw } from 'lucide-react'
+import { Database, PhoneCall, FileText, RefreshCw, Newspaper } from 'lucide-react'
 
 const API_URL = 'http://localhost:3001/api'
 
@@ -33,6 +33,7 @@ interface DataSourceBadgesProps {
     salesforce: boolean
     gong: boolean
     notion: boolean
+    amp: boolean
   }
   refreshTrigger?: number
 }
@@ -126,7 +127,7 @@ export function DataSourceBadges({ accountSlug, capabilities, refreshTrigger = 0
                 
                 // Show alert for MCP configuration issues
                 if (data.details?.includes('MCP not available')) {
-                  alert(`${source.charAt(0).toUpperCase() + source.slice(1)} MCP is not configured.\n\nTo use data source refresh, configure your MCP servers in Amp settings.\n\nAlternatively, use the "Full Refresh" button in the CRM section.`)
+                  alert(`${source.charAt(0).toUpperCase() + source.slice(1)} MCP is not configured.\n\nTo use data source refresh, configure your MCP servers in Amp settings.`)
                 }
               }
             } catch (e) {
@@ -176,6 +177,24 @@ export function DataSourceBadges({ accountSlug, capabilities, refreshTrigger = 0
     return date.toLocaleDateString()
   }
 
+  const formatFullDate = (ts: string | null) => {
+    if (!ts) return 'Never'
+    const date = new Date(ts)
+    const month = String(date.getMonth() + 1).padStart(2, '0')
+    const day = String(date.getDate()).padStart(2, '0')
+    const year = date.getFullYear()
+    return `${month}/${day}/${year}`
+  }
+
+  const capitalizeSource = (source: string) => {
+    if (source === 'salesforce') return 'Salesforce'
+    if (source === 'gong') return 'Gong'
+    if (source === 'notion') return 'Notion'
+    if (source === 'amp') return 'Amp'
+    if (source === 'all-sources') return 'All Sources'
+    return source
+  }
+
   const openSourceDetails = async (source: string) => {
     if (!capabilities[source as keyof typeof capabilities]) return
     
@@ -191,6 +210,25 @@ export function DataSourceBadges({ accountSlug, capabilities, refreshTrigger = 0
     } finally {
       setLoading(false)
     }
+  }
+
+  const openAllSourcesDetails = () => {
+    setSelectedSource('all-sources')
+    setLoading(true)
+    
+    // Fetch all available source data
+    Promise.all([
+      capabilities.salesforce ? fetch(`${API_URL}/accounts/${accountSlug}/sources/salesforce`).then(r => r.json()) : null,
+      capabilities.gong ? fetch(`${API_URL}/accounts/${accountSlug}/sources/gong`).then(r => r.json()) : null,
+      capabilities.notion ? fetch(`${API_URL}/accounts/${accountSlug}/sources/notion`).then(r => r.json()) : null,
+      capabilities.amp ? fetch(`${API_URL}/accounts/${accountSlug}/sources/amp`).then(r => r.json()) : null,
+    ]).then(([sf, gong, notion, amp]) => {
+      setSourceData({ salesforce: sf, gong, notion, amp })
+      setLoading(false)
+    }).catch(() => {
+      setSourceData({ error: 'Failed to load data' })
+      setLoading(false)
+    })
   }
 
   const renderSourceBadge = (
@@ -229,7 +267,7 @@ export function DataSourceBadges({ accountSlug, capabilities, refreshTrigger = 0
                   size="sm" 
                   className="h-6 w-6 p-0"
                   disabled={isRefreshing}
-                  title="Refresh data source (requires MCP configuration)"
+                  title={source === 'amp' ? 'Refresh Amp data' : 'Refresh data source (requires MCP configuration)'}
                 >
                   <RefreshCw className={`h-3 w-3 ${isRefreshing ? 'animate-spin' : ''}`} />
                 </Button>
@@ -244,9 +282,11 @@ export function DataSourceBadges({ accountSlug, capabilities, refreshTrigger = 0
                 <DropdownMenuItem onClick={() => refreshSource(source, 'full')}>
                   Full Refresh
                 </DropdownMenuItem>
-                <DropdownMenuItem disabled className="text-xs text-muted-foreground">
-                  Requires MCP setup
-                </DropdownMenuItem>
+                {source !== 'amp' && (
+                  <DropdownMenuItem disabled className="text-xs text-muted-foreground">
+                    Requires MCP setup
+                  </DropdownMenuItem>
+                )}
               </DropdownMenuContent>
             </DropdownMenu>
             
@@ -264,6 +304,18 @@ export function DataSourceBadges({ accountSlug, capabilities, refreshTrigger = 0
       </div>
     )
   }
+
+  const refreshAllSources = async (mode: 'incremental' | 'full') => {
+    const sources = ['salesforce', 'gong', 'notion'].filter(
+      s => capabilities[s as keyof typeof capabilities]
+    )
+    
+    for (const source of sources) {
+      await refreshSource(source, mode)
+    }
+  }
+
+  const isRefreshingAny = Object.values(refreshing).some(Boolean)
 
   return (
     <>
@@ -286,14 +338,61 @@ export function DataSourceBadges({ accountSlug, capabilities, refreshTrigger = 0
           'Notion',
           capabilities.notion
         )}
+        {renderSourceBadge(
+          'amp',
+          <Newspaper className="h-3 w-3 mr-1" />,
+          'Amp News',
+          capabilities.amp
+        )}
+        
+        {/* All Sources badge with refresh */}
+        <div className="flex items-center gap-1">
+          <Badge
+            variant="default"
+            className="cursor-pointer hover:opacity-80"
+            onClick={openAllSourcesDetails}
+          >
+            All Sources
+          </Badge>
+          
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="h-6 w-6 p-0"
+                disabled={isRefreshingAny}
+                title="Refresh all data sources (requires MCP configuration)"
+              >
+                <RefreshCw className={`h-3 w-3 ${isRefreshingAny ? 'animate-spin' : ''}`} />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start">
+              <DropdownMenuItem onClick={() => refreshAllSources('incremental')}>
+                Incremental Refresh
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => refreshAllSources('full')}>
+                Full Refresh
+              </DropdownMenuItem>
+              <DropdownMenuItem disabled className="text-xs text-muted-foreground">
+                Requires MCP setup
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
       </div>
 
       <Dialog open={!!selectedSource} onOpenChange={() => setSelectedSource(null)}>
         <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="capitalize">{selectedSource} Data</DialogTitle>
+            <DialogTitle>{capitalizeSource(selectedSource || '')} Data</DialogTitle>
             <DialogDescription>
-              Data pulled from {selectedSource} for this account
+              {selectedSource === 'all-sources' 
+                ? 'Consolidated data from all sources for this account'
+                : (sourceStatuses && selectedSource && sourceStatuses[selectedSource])
+                  ? `Data pulled on ${formatFullDate(sourceStatuses[selectedSource]?.lastFetchedAt)} for this account`
+                  : 'Data pulled for this account'
+              }
             </DialogDescription>
           </DialogHeader>
 
@@ -303,6 +402,84 @@ export function DataSourceBadges({ accountSlug, capabilities, refreshTrigger = 0
             <div className="py-8 text-center text-destructive">{sourceData.error}</div>
           ) : (
             <div className="space-y-4">
+              {selectedSource === 'all-sources' && sourceData && (
+                <>
+                  {sourceData.salesforce && (
+                    <div className="border rounded p-4 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <h3 className="font-semibold">Salesforce</h3>
+                        <span className="text-xs text-muted-foreground">
+                          {formatFullDate(sourceStatuses.salesforce?.lastFetchedAt)}
+                        </span>
+                      </div>
+                      <div className="grid grid-cols-2 gap-4 text-sm">
+                        <div>
+                          <div className="text-muted-foreground">Contacts</div>
+                          <div className="text-xl font-bold">{sourceData.salesforce.contactsCount}</div>
+                        </div>
+                        <div>
+                          <div className="text-muted-foreground">Opportunities</div>
+                          <div className="text-xl font-bold">{sourceData.salesforce.opportunitiesCount}</div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {sourceData.gong && (
+                    <div className="border rounded p-4 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <h3 className="font-semibold">Gong</h3>
+                        <span className="text-xs text-muted-foreground">
+                          {formatFullDate(sourceStatuses.gong?.lastFetchedAt)}
+                        </span>
+                      </div>
+                      <div className="text-sm">
+                        <div className="text-muted-foreground">Total Calls</div>
+                        <div className="text-xl font-bold">{sourceData.gong.callsCount}</div>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {sourceData.notion && (
+                    <div className="border rounded p-4 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <h3 className="font-semibold">Notion</h3>
+                        <span className="text-xs text-muted-foreground">
+                          {formatFullDate(sourceStatuses.notion?.lastFetchedAt)}
+                        </span>
+                      </div>
+                      <div className="text-sm">
+                        <div className="text-muted-foreground">Total Pages</div>
+                        <div className="text-xl font-bold">{sourceData.notion.pagesCount}</div>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {sourceData.amp && (
+                    <div className="border rounded p-4 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <h3 className="font-semibold">Amp News</h3>
+                        <span className="text-xs text-muted-foreground">
+                          {formatFullDate(sourceStatuses.amp?.lastFetchedAt)}
+                        </span>
+                      </div>
+                      <div className="grid grid-cols-2 gap-4 text-sm">
+                        <div>
+                          <div className="text-muted-foreground">Features</div>
+                          <div className="text-xl font-bold">{sourceData.amp.featuresCount}</div>
+                        </div>
+                        <div>
+                          <div className="text-muted-foreground">Sections</div>
+                          <div className="text-xl font-bold">
+                            {(sourceData.amp.summary?.stats?.newsHeadings || 0) + (sourceData.amp.summary?.stats?.manualHeadings || 0)}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </>
+              )}
+
               {selectedSource === 'salesforce' && sourceData && (
                 <>
                   {sourceData.account && (
@@ -406,6 +583,141 @@ export function DataSourceBadges({ accountSlug, capabilities, refreshTrigger = 0
                         ))}
                       </div>
                     </div>
+                  )}
+                </>
+              )}
+
+              {selectedSource === 'amp' && sourceData && (
+                <>
+                  <div className="grid grid-cols-3 gap-4">
+                    <div className="space-y-1">
+                      <div className="text-sm font-medium">Pages</div>
+                      <div className="text-2xl font-bold">{sourceData.pagesCount}</div>
+                    </div>
+                    <div className="space-y-1">
+                      <div className="text-sm font-medium">Sections</div>
+                      <div className="text-2xl font-bold">
+                        {(sourceData.summary?.stats?.newsHeadings || 0) + (sourceData.summary?.stats?.manualHeadings || 0)}
+                      </div>
+                    </div>
+                    <div className="space-y-1">
+                      <div className="text-sm font-medium">Features</div>
+                      <div className="text-2xl font-bold">{sourceData.featuresCount}</div>
+                    </div>
+                  </div>
+
+                  {sourceData.summary && (
+                    <div className="space-y-3">
+                      <h3 className="font-semibold">Content Summary</h3>
+                      
+                      {sourceData.summary.sections.news.length > 0 && (
+                        <div className="space-y-2">
+                          <h4 className="text-sm font-medium text-blue-600">Amp News ({sourceData.summary.sections.news.length} sections)</h4>
+                          <div className="border rounded overflow-hidden">
+                            <table className="w-full text-xs">
+                              <thead className="bg-gray-50">
+                                <tr>
+                                  <th className="px-3 py-2 text-left font-medium">Section</th>
+                                  <th className="px-3 py-2 text-left font-medium">Preview</th>
+                                </tr>
+                              </thead>
+                              <tbody className="divide-y">
+                                {sourceData.summary.sections.news.slice(0, 10).map((section: any, i: number) => (
+                                  <tr key={i} className="hover:bg-gray-50">
+                                    <td className="px-3 py-2 font-medium whitespace-nowrap">{section.heading}</td>
+                                    <td className="px-3 py-2 text-muted-foreground">
+                                      {section.content.substring(0, 100)}...
+                                    </td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        </div>
+                      )}
+
+                      {sourceData.summary.sections.manual.length > 0 && (
+                        <div className="space-y-2">
+                          <h4 className="text-sm font-medium text-green-600">Amp Manual ({sourceData.summary.sections.manual.length} sections)</h4>
+                          <div className="border rounded overflow-hidden">
+                            <table className="w-full text-xs">
+                              <thead className="bg-gray-50">
+                                <tr>
+                                  <th className="px-3 py-2 text-left font-medium">Section</th>
+                                  <th className="px-3 py-2 text-left font-medium">Preview</th>
+                                </tr>
+                              </thead>
+                              <tbody className="divide-y">
+                                {sourceData.summary.sections.manual.slice(0, 10).map((section: any, i: number) => (
+                                  <tr key={i} className="hover:bg-gray-50">
+                                    <td className="px-3 py-2 font-medium whitespace-nowrap">{section.heading}</td>
+                                    <td className="px-3 py-2 text-muted-foreground">
+                                      {section.content.substring(0, 100)}...
+                                    </td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {(sourceData.content?.news || sourceData.content?.manual) && (
+                    <div className="space-y-3">
+                      <h3 className="font-semibold">Full Content (for Amp Context)</h3>
+                      <div className="text-xs text-muted-foreground">
+                        This content is stored and available for Amp to use in analysis and document creation.
+                      </div>
+
+                      {sourceData.content.news && (
+                        <div className="space-y-2">
+                          <h4 className="text-sm font-medium text-blue-600">Amp News</h4>
+                          <div className="border rounded p-3 bg-gray-50 max-h-60 overflow-y-auto">
+                            <pre className="text-xs whitespace-pre-wrap font-mono">
+                              {sourceData.content.news}
+                            </pre>
+                          </div>
+                        </div>
+                      )}
+
+                      {sourceData.content.manual && (
+                        <div className="space-y-2">
+                          <h4 className="text-sm font-medium text-green-600">Amp Manual</h4>
+                          <div className="border rounded p-3 bg-gray-50 max-h-60 overflow-y-auto">
+                            <pre className="text-xs whitespace-pre-wrap font-mono">
+                              {sourceData.content.manual}
+                            </pre>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {sourceData.pages && sourceData.pages.length > 0 && (
+                  <div className="space-y-2 pt-3 border-t">
+                  <h3 className="font-semibold text-sm">Source Pages</h3>
+                  <div className="space-y-1">
+                  {sourceData.pages.map((page: any) => (
+                  <div key={page.key} className="flex items-center justify-between text-xs">
+                  <a
+                    href={page.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-blue-500 hover:underline"
+                  >
+                    {page.key === 'news' ? 'Amp News' : 'Amp Manual'} →
+                  </a>
+                  {page.lastFetchedAt && (
+                    <span className="text-muted-foreground">
+                    {new Date(page.lastFetchedAt).toLocaleDateString()}
+                  </span>
+                  )}
+                  </div>
+                  ))}
+                  </div>
+                  </div>
                   )}
                 </>
               )}
