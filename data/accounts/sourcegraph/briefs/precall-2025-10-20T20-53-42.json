@@ -1,0 +1,78 @@
+{
+  "accountKey": {
+    "name": "Sourcegraph"
+  },
+  "generatedAt": "2025-10-20T20:53:42.768Z",
+  "sections": {
+    "whosWho": [],
+    "recentActivity": {
+      "lastCallsSummary": null,
+      "emailTopics": [],
+      "tasksCompleted": [],
+      "lastInteractionDate": null
+    },
+    "predictedAgenda": [
+      "Clarify relationship type (prospect, partner, or competitor intelligence)",
+      "Discovery of use case if prospect opportunity"
+    ],
+    "keyQuestions": {
+      "meddic": {
+        "metrics": [
+          "What metrics are you trying to improve with code intelligence tooling?",
+          "How do you currently measure developer productivity?",
+          "What's the business impact of slow code search or review processes?"
+        ],
+        "economicBuyer": [
+          "Who owns budget for developer tooling in your organization?",
+          "What's your typical procurement process for dev tools?"
+        ],
+        "decisionCriteria": [
+          "What criteria matter most when evaluating code intelligence platforms?",
+          "How do you score vendors in this category?"
+        ],
+        "decisionProcess": [
+          "What's your timeline for making a decision?",
+          "Who needs to be involved in the evaluation?",
+          "What are the key milestones in your buying process?"
+        ],
+        "identifyPain": [
+          "What challenges are you facing with your current code search/intelligence setup?",
+          "How does Cody fit into your AI tooling strategy?",
+          "What prompted you to look at alternatives now?"
+        ],
+        "champion": [
+          "Who internally is driving this evaluation?",
+          "Do they have influence over the final decision?"
+        ]
+      },
+      "blockers": [
+        "Are there budget constraints or competing priorities this quarter?",
+        "Any security/compliance concerns with AI code tools?",
+        "Is there an incumbent solution we'd be replacing?"
+      ],
+      "successCriteria": [
+        "What would a successful pilot or trial look like?",
+        "How will you measure ROI in the first 90 days?"
+      ]
+    },
+    "demoFocusAreas": [],
+    "competitiveLandscape": [],
+    "customIdeas": [
+      {
+        "idea": "Clarify context before meeting",
+        "reasoning": "No CRM record exists - unclear if this is sales opportunity, partnership discussion, or competitive research",
+        "evidence": [
+          "No Salesforce account",
+          "No prior interactions logged",
+          "Sourcegraph is a code intelligence vendor (potential competitor/partner)"
+        ]
+      }
+    ]
+  },
+  "dataAvailability": {
+    "hasSnapshot": true,
+    "hasGongCalls": false,
+    "hasNotionPages": false,
+    "snapshotAge": "0 days old"
+  }
+}

@@ -1,0 +1,11 @@
+accountKey:
+  name: General Mills
+  domain: null
+  salesforceId: null
+
+generatedAt: 2025-10-20T00:00:00Z
+approved: false
+
+# No changes proposed - no baseline CRM data available
+# Account must be researched and enriched before generating patch proposals
+# Recommended: Run prospect research, verify Salesforce account exists, enrich from Gong/Notion

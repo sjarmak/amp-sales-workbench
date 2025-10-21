@@ -1,0 +1,8 @@
+{
+  "knowledgePages": {
+    "customerWins": "page-id-here",
+    "competitiveAnalysis": "page-id-here",
+    "productInfo": "page-id-here"
+  },
+  "accountsDatabase": "database-id-here"
+}

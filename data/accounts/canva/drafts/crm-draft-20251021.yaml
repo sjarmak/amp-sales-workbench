@@ -1,0 +1,30 @@
+accountKey:
+  name: Canva
+  domain: canva.com
+  salesforceId: 0013t00001xdnmlAAA
+
+generatedAt: 2025-10-21T01:51:27.507Z
+approved: false
+
+opportunities:
+  - name: Canva - SCM Team - 2025 Renewal - Enterprise - 900 Seats
+    id: 006UV000006gY3RYAU
+    changes:
+      Next_Step__c:
+        before: ""
+        after: "Schedule renewal discussion with procurement and SCM stakeholders by end of October"
+        confidence: high
+        source:
+          - analysis
+        reasoning: "Large renewal approaching in April 2025, quote sent but no documented follow-up"
+  
+  - name: Canva - 100 CIP MAU expansion
+    id: 006UV00000IPtQLYA1
+    changes:
+      Next_Step__c:
+        before: ""
+        after: "Complete technical validation and engage with engineering stakeholders"
+        confidence: medium
+        source:
+          - analysis
+        reasoning: "Opportunity in validation stage but lacks recent engagement data"

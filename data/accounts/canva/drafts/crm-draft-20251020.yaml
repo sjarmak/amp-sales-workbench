@@ -1,0 +1,19 @@
+accountKey:
+  name: Canva
+  domain: canva.com
+  salesforceId: 0013t00001xdnmlAAA
+
+generatedAt: 2025-10-20T20:15:00Z
+approved: false
+
+opportunities:
+  - name: Canva - SCM Team - 2025 Renewal - Enterprise - 900 Seats
+    id: 006UV000006gY3RYAU
+    changes:
+      Next_Step__c:
+        before: ""
+        after: "Schedule procurement renewal sync with Sam Forscutt and ROI validation with Deep Ramsokul ahead of April 28 close date"
+        confidence: high
+        source:
+          - salesforce
+        reasoning: "Major $482K renewal closing April 28, 2025. No recent engagement since October 2024. Deep Ramsokul meeting scheduled March 20. Critical to align procurement (Sam Forscutt) and validate ROI to support expansion from 700 to 900 seats."

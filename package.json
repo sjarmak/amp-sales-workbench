@@ -10,6 +10,19 @@
     "start": "tsx src/execute-agent.ts",
     "dev": "DEBUG=1 tsx src/execute-agent.ts",
     "manage": "tsx src/execute-agent.ts",
+    "precall": "tsx scripts/test-precall-brief.ts",
+    "postcall": "tsx scripts/test-postcall.ts",
+    "followup": "tsx scripts/test-followup-email.ts",
+    "demo": "tsx scripts/test-demo-idea.ts",
+    "coaching": "tsx scripts/test-coaching.ts",
+    "handoff": "tsx scripts/test-handoff.ts",
+    "closed-lost": "tsx scripts/test-closed-lost.ts",
+    "backfill": "tsx scripts/test-backfill.ts",
+    "test:agents": "tsx scripts/test-all-agents.ts",
+    "ui": "streamlit run streamlit_app.py",
+    "api": "tsx api-server.ts",
+    "web": "cd web && npm run dev",
+    "start:web": "concurrently \"npm run api\" \"npm run web\"",
     "typecheck": "tsc --noEmit"
   },
   "keywords": [
@@ -25,7 +38,12 @@
   "license": "MIT",
   "dependencies": {
     "@sourcegraph/amp-sdk": "^0.1.0-20251014160341-g7c5de51",
-    "dotenv": "^16.4.5"
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.3",
+    "concurrently": "^9.2.1",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^5.1.0"
   },
   "devDependencies": {
     "@types/node": "^20.11.30",

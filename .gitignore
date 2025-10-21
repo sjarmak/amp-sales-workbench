@@ -5,3 +5,15 @@ data/accounts/**/transcripts/**
 *.log
 .DS_Store
 dist/
+
+# Python
+venv/
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+.pytest_cache/
+
+# Sensitive files
+.sf-tokens.json

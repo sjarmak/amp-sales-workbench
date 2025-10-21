@@ -1,0 +1,202 @@
+{
+  "accountKey": {
+    "name": "Canva"
+  },
+  "generatedAt": "2025-10-20T22:27:42.692Z",
+  "sections": {
+    "whosWho": [
+      {
+        "name": "Deep Ramsokul",
+        "role": "Technical Decision Maker",
+        "title": "Source Control Engineering Manager",
+        "decisionPower": "high",
+        "orgChartHints": "Reports to Alex Sadleir (Head of Source Control Team). Manages day-to-day SCM operations for ~3500 employee org. Direct influence over platform adoption.",
+        "recentInteractions": "ROI review call scheduled for 2025-03-20. Last documented interaction was March 2025. Key stakeholder for 900-seat renewal decision."
+      },
+      {
+        "name": "Sam Forscutt",
+        "role": "Procurement - Primary Contact",
+        "title": "Strategic Sourcing Manager, Technology",
+        "decisionPower": "high",
+        "orgChartHints": "Reports to Michael Denari (Head of Procurement). Primary procurement contact for technology purchases. Processes contracts and manages vendor relationships.",
+        "recentInteractions": "Last interaction 2025-01-19. Quote sent for $482K renewal. Needs follow-up on procurement timeline and approvals."
+      },
+      {
+        "name": "Alex Sadleir",
+        "role": "Champion - Technical Sponsor",
+        "title": "Technical Team Lead, Head of Source Control Team / Sponsor",
+        "decisionPower": "high",
+        "orgChartHints": "Leads entire Source Control team. Reports to Fawaz Ahmed (Sr Director of Engineering). Executive sponsor for Sourcegraph deployment. Manages Deep Ramsokul.",
+        "recentInteractions": "Last interaction October 2024 (Cody for Code Reviews discussion). 6-month gap - needs re-engagement to maintain championship."
+      },
+      {
+        "name": "Michael Denari",
+        "role": "Economic Buyer",
+        "title": "Head of Procurement",
+        "decisionPower": "high",
+        "orgChartHints": "Executive buyer authority. Signs off on technology contracts. Manages Sam Forscutt and Patrick Dent.",
+        "recentInteractions": "No recent direct interaction documented. May need escalation for $482K renewal approval."
+      },
+      {
+        "name": "Fawaz Ahmed",
+        "role": "Technical Executive",
+        "title": "Senior Director of Engineering",
+        "decisionPower": "high",
+        "orgChartHints": "Executives sponsor at engineering leadership level. Alex Sadleir likely reports to him. Influence over engineering tool strategy and budget.",
+        "recentInteractions": "No recent interaction documented. Consider executive business review for renewal."
+      }
+    ],
+    "recentActivity": {
+      "lastCallsSummary": "_No call data available since October 2024. Last topic was Cody for Code Reviews. 6-month engagement gap represents significant risk for $482K renewal closing April 28._",
+      "emailTopics": [],
+      "tasksCompleted": [
+        "Quote sent for 900-seat renewal ($482K)",
+        "ROI review meeting scheduled with Deep Ramsokul for March 20"
+      ],
+      "lastInteractionDate": "2025-01-19 (Sam Forscutt, procurement)"
+    },
+    "predictedAgenda": [
+      "ROI validation for 2024 deployment (700 seats) - metrics, usage, value delivered",
+      "Justification for expansion from 700 to 900 seats - which teams/use cases driving growth",
+      "Budget and procurement timeline for April 28 close date",
+      "Cody for Code Reviews update - status since October 2024 conversation",
+      "Success criteria and metrics for 2025 contract"
+    ],
+    "keyQuestions": {
+      "meddic": {
+        "metrics": [
+          "What ROI have you seen from the 700-seat deployment in 2024? (Time saved, code quality, onboarding speed)",
+          "Can you quantify developer time saved per week using code search and navigation?",
+          "What metrics would justify expanding from 700 to 900 seats to procurement?",
+          "How do you currently measure Source Control team productivity and code intelligence value?"
+        ],
+        "economicBuyer": [
+          "Who besides Michael Denari needs to approve the $482K renewal?",
+          "What's the approval process and timeline for technology contracts of this size?",
+          "Is budget already allocated for the renewal or does it need to be secured?",
+          "Are there any budget cuts or freezes we should be aware of for Q2 2025?"
+        ],
+        "decisionCriteria": [
+          "What criteria is Canva using to evaluate code intelligence platforms in 2025?",
+          "How do you prioritize: developer productivity vs code quality vs onboarding speed?",
+          "Are you evaluating alternatives or is this a straightforward renewal decision?",
+          "What would need to be true to expand beyond 900 seats in the future?"
+        ],
+        "decisionProcess": [
+          "What are the steps between now and April 28 to get this closed?",
+          "Who needs to sign off: Alex, Fawaz, Michael? Anyone else?",
+          "When does the contract need to be with legal for review?",
+          "Is there an executive business review or QBR planned before renewal?"
+        ],
+        "identifyPain": [
+          "What would happen if the Source Control team didn't have Sourcegraph for 30 days?",
+          "What code intelligence challenges remain unsolved with the current deployment?",
+          "How are the additional 200 users currently managing without Sourcegraph access?",
+          "What pain points drove the original 700-seat purchase in 2024?"
+        ],
+        "champion": [
+          "Alex - How can we help you build the internal business case for the 900-seat expansion?",
+          "Deep - What data or case studies would help you justify this to Fawaz and procurement?",
+          "Who else should we be engaging to strengthen support for the renewal?",
+          "What concerns or questions is the executive team asking about this renewal?"
+        ]
+      },
+      "blockers": [
+        "Is the 6-month engagement gap creating any doubts about value or usage?",
+        "Are there competing budget priorities that could delay or reduce the renewal?",
+        "Has there been any negative feedback from the 700 users that could impact renewal?",
+        "Is security (Ronald Tan, Geoff Chiang) satisfied with our security posture?",
+        "Are there any concerns about the price increase from $375K (2024) to $482K (2025)?"
+      ],
+      "successCriteria": [
+        "What does success look like for the Source Control team in 2025?",
+        "How will you measure whether the 900-seat deployment was worth it?",
+        "What would make you expand beyond 900 seats in H2 2025?",
+        "What metrics should we track together to demonstrate ongoing value?"
+      ]
+    },
+    "demoFocusAreas": [
+      {
+        "feature": "Code Search & Navigation at Scale",
+        "reason": "Core use case for 3500-employee engineering org with complex monorepo/polyrepo setup",
+        "painPoints": [
+          "Finding code across large codebase",
+          "Onboarding new engineers",
+          "Understanding code dependencies"
+        ]
+      },
+      {
+        "feature": "Cody for Code Reviews",
+        "reason": "Last discussed in October 2024 - follow-up opportunity. Addresses code quality and review efficiency.",
+        "painPoints": [
+          "Manual PR review time",
+          "Inconsistent code review quality",
+          "Reviewer availability bottlenecks"
+        ]
+      },
+      {
+        "feature": "Usage Analytics & ROI Dashboard",
+        "reason": "Critical for justifying 700→900 seat expansion to procurement. Show adoption metrics and value delivered.",
+        "painPoints": [
+          "Proving ROI to finance",
+          "Understanding which teams get most value",
+          "Optimizing license allocation"
+        ]
+      },
+      {
+        "feature": "Batch Changes for Large-Scale Refactoring",
+        "reason": "Developer productivity at scale - relevant for 3500-person engineering org doing platform migrations",
+        "painPoints": [
+          "Cross-repo refactoring complexity",
+          "Technical debt cleanup at scale",
+          "Keeping dependencies updated"
+        ]
+      }
+    ],
+    "competitiveLandscape": [],
+    "customIdeas": [
+      {
+        "idea": "Executive Business Review (EBR) with Fawaz Ahmed",
+        "reasoning": "6-month engagement gap + $482K renewal + no recent executive touchpoint = risk. EBR builds relationship and validates strategic value.",
+        "evidence": [
+          "No documented interaction with Sr Director of Engineering",
+          "Previous successful renewal in 2024 ($375K)",
+          "Expansion indicates growth but needs executive validation"
+        ]
+      },
+      {
+        "idea": "ROI Case Study from 2024 Deployment",
+        "reasoning": "Turn Deep's March 20 call into a joint case study. Use their success story to justify expansion and support future expansions.",
+        "evidence": [
+          "Successfully deployed 700 seats in 2024",
+          "Expanding to 900 seats indicates value",
+          "Procurement needs quantifiable ROI for approval"
+        ]
+      },
+      {
+        "idea": "Pilot Cody for Code Reviews with 2-3 Teams",
+        "reasoning": "Resurrect October 2024 conversation. Small pilot proves value and creates expansion opportunity beyond 900 seats.",
+        "evidence": [
+          "Topic discussed in October 2024",
+          "Code review efficiency is universal pain point",
+          "Low-risk way to demonstrate additional value"
+        ]
+      },
+      {
+        "idea": "Usage & Adoption Analysis Workshop",
+        "reasoning": "Help Deep optimize the 700 seats currently deployed. Show which teams are power users, identify underutilized licenses, plan 200-seat expansion strategically.",
+        "evidence": [
+          "Expanding from 700 to 900 suggests some teams don't have access yet",
+          "Usage analytics help maximize ROI",
+          "Positions us as strategic partner not just vendor"
+        ]
+      }
+    ]
+  },
+  "dataAvailability": {
+    "hasSnapshot": true,
+    "hasGongCalls": false,
+    "hasNotionPages": false,
+    "snapshotAge": "0 days old"
+  }
+}

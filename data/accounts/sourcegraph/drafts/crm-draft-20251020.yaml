@@ -1,0 +1,11 @@
+accountKey:
+  name: Sourcegraph
+  domain: null
+  salesforceId: null
+
+generatedAt: 2025-10-20T18:05:00Z
+approved: false
+
+# No changes proposed - account does not exist in Salesforce
+# This appears to be competitor/partner research rather than an active sales opportunity
+# Next step: Create Salesforce account record if pursuing as prospect

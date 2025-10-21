@@ -1,0 +1,37 @@
+{
+  "accountKey": {
+    "name": "General Mills",
+    "domain": null,
+    "salesforceId": null
+  },
+  "accountProfile": {
+    "name": "General Mills",
+    "domain": null,
+    "industry": null,
+    "size": null,
+    "summary": "No data available from connected sources. Run prospect research and enrich from Salesforce/Gong/Notion to build account profile."
+  },
+  "contacts": [],
+  "opportunities": [],
+  "signals": {
+    "recentCallInsights": [],
+    "competitiveMentions": [],
+    "objections": [],
+    "champions": [],
+    "risks": [
+      "No account data available - cannot assess relationship health"
+    ],
+    "nextActions": [
+      "Run prospect research via amp-prospector",
+      "Verify Salesforce account exists and fetch data",
+      "Check for recent Gong calls",
+      "Search Notion for relevant account pages"
+    ]
+  },
+  "deltas": {
+    "accountChanges": [],
+    "contactChanges": [],
+    "opportunityChanges": []
+  },
+  "generatedAt": "2025-10-20T00:00:00Z"
+}

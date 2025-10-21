@@ -1,0 +1,88 @@
+{
+  "accountKey": {
+    "name": "General Mills"
+  },
+  "generatedAt": "2025-10-21T02:04:38.263Z",
+  "sections": {
+    "whosWho": [],
+    "recentActivity": {
+      "lastCallsSummary": null,
+      "emailTopics": [],
+      "tasksCompleted": [],
+      "lastInteractionDate": null
+    },
+    "predictedAgenda": [],
+    "keyQuestions": {
+      "meddic": {
+        "metrics": [
+          "What quantifiable business outcomes are you targeting this year?",
+          "What does success look like in measurable terms?"
+        ],
+        "economicBuyer": [
+          "Who typically approves budgets for tools like this?",
+          "Who will be signing the contract?"
+        ],
+        "decisionCriteria": [
+          "What criteria will you use to evaluate solutions?",
+          "How are vendors typically scored in your process?"
+        ],
+        "decisionProcess": [
+          "What's your typical evaluation timeline?",
+          "Who needs to be involved at each stage of the decision?"
+        ],
+        "identifyPain": [
+          "What challenges are driving this evaluation?",
+          "What's the impact of not solving this problem?"
+        ],
+        "champion": [
+          "Who internally is most excited about this solution?",
+          "Who will advocate for this with stakeholders?"
+        ]
+      },
+      "blockers": [
+        "Are there budget constraints we should be aware of?",
+        "What other priorities might compete for resources?",
+        "Any technical or security concerns we should address upfront?"
+      ],
+      "successCriteria": [
+        "What would make this a winning partnership for General Mills?",
+        "How will you measure ROI in the first 6-12 months?"
+      ]
+    },
+    "demoFocusAreas": [],
+    "competitiveLandscape": [],
+    "customIdeas": [
+      {
+        "idea": "Discovery-focused approach - no previous interaction data available",
+        "reasoning": "With no CRM or call history, treat this as a net-new discovery meeting to establish context",
+        "evidence": [
+          "No Salesforce account found",
+          "No recent calls or activities recorded",
+          "No existing contacts in system"
+        ]
+      }
+    ],
+    "dataGaps": {
+      "critical": [
+        "No Salesforce account ID - verify account exists or create new record",
+        "No contact information - identify meeting attendees and roles",
+        "No opportunity data - understand deal context and stage",
+        "No call history - no context on previous discussions or pain points"
+      ],
+      "questionsToAsk": [
+        "Who from General Mills will be joining this call?",
+        "What prompted this meeting - referral, inbound interest, or outbound outreach?",
+        "Is there an active evaluation or is this exploratory?",
+        "What's the business context driving this conversation?"
+      ]
+    }
+  },
+  "dataAvailability": {
+    "hasSnapshot": true,
+    "hasGongCalls": false,
+    "hasNotionPages": false,
+    "gongCallCount": 0,
+    "notionPageCount": 0,
+    "snapshotAge": "0 days old"
+  }
+}

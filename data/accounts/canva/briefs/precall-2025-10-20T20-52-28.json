@@ -1,0 +1,201 @@
+{
+  "accountKey": {
+    "name": "Canva"
+  },
+  "meetingDate": "2025-10-22",
+  "generatedAt": "2025-10-20T20:52:28.789Z",
+  "sections": {
+    "whosWho": [
+      {
+        "name": "Sam Forscutt",
+        "role": "Procurement - Primary Contact",
+        "title": "Strategic Sourcing Manager, Technology",
+        "decisionPower": "medium",
+        "orgChartHints": "Reports to Michael Denari (Head of Procurement). Primary commercial contact for renewal.",
+        "recentInteractions": "Last interaction January 19, 2025 - most recent contact point. Likely owns contract negotiation and vendor management."
+      },
+      {
+        "name": "Deep Ramsokul",
+        "role": "Technical Decision Maker",
+        "title": "Source Control Engineering Manager",
+        "decisionPower": "high",
+        "orgChartHints": "Manages Source Control engineering team (~900 potential users). Reports to Alex Sadleir. Key stakeholder for technical ROI validation.",
+        "recentInteractions": "Event scheduled March 20, 2025 for ROI review call. Critical for technical validation of 900-seat expansion."
+      },
+      {
+        "name": "Alex Sadleir",
+        "role": "Champion - Technical Sponsor",
+        "title": "Technical Team Lead, Head of Source Control Team / Sponsor",
+        "decisionPower": "high",
+        "orgChartHints": "Heads entire Source Control team. Executive sponsor. Last interaction October 29, 2024 discussing Cody for Code Reviews.",
+        "recentInteractions": "6-month gap since last engagement. Previously championed 700-seat deployment in 2024 renewal ($375K)."
+      },
+      {
+        "name": "Michael Denari",
+        "role": "Economic Buyer",
+        "title": "Head of Procurement",
+        "decisionPower": "high",
+        "orgChartHints": "Ultimate budget authority for procurement. Sam Forscutt reports to him.",
+        "recentInteractions": "No recent interactions recorded. Likely final approver for $482K renewal."
+      },
+      {
+        "name": "Fawaz Ahmed",
+        "role": "Technical Executive",
+        "title": "Senior Director of Engineering",
+        "decisionPower": "high",
+        "orgChartHints": "Senior engineering leadership. Likely Alex Sadleir's manager or peer. No recent interactions.",
+        "recentInteractions": "No recorded interactions. May need to engage for executive-level ROI validation."
+      }
+    ],
+    "recentActivity": {
+      "lastCallsSummary": "No call data available since October 2024. Last engagement focused on Cody for Code Reviews use case. 6-month engagement gap represents significant risk for $482K renewal.",
+      "emailTopics": [],
+      "tasksCompleted": [
+        "Quote sent for 2025 renewal (900 seats, $482K)",
+        "Event scheduled with Deep Ramsokul for March 20, 2025 (ROI review)"
+      ],
+      "lastInteractionDate": "2025-01-19"
+    },
+    "predictedAgenda": [
+      "2025 renewal discussion - timing, budget approval, expansion justification (700→900 seats)",
+      "ROI validation from 2024 deployment - usage metrics, developer productivity gains, code quality improvements",
+      "Procurement process and timeline to close by April 28, 2025",
+      "Technical validation needs - security review status, compliance requirements",
+      "Cody for Code Reviews adoption update (last discussed October 2024)"
+    ],
+    "keyQuestions": {
+      "meddic": {
+        "metrics": [
+          "What measurable outcomes have you seen from the 700-seat deployment? (time saved, code quality, developer velocity)",
+          "How many developers are actively using Sourcegraph today vs. licensed?",
+          "What's the business impact of expanding from 700 to 900 seats? Which teams/use cases?",
+          "What would failure look like if you didn't renew or expand?"
+        ],
+        "economicBuyer": [
+          "Is Michael Denari the final approver for this $482K renewal?",
+          "What's the budget approval process and timeline for renewals of this size?",
+          "Are there competing budget priorities that could impact this renewal?",
+          "Who else needs to sign off on the expansion from 700 to 900 seats?"
+        ],
+        "decisionCriteria": [
+          "What criteria will you use to evaluate whether to renew at 900 seats vs. 700 or another number?",
+          "How are you measuring ROI for developer tooling investments?",
+          "What would make this a no-brainer renewal vs. a tough decision?",
+          "Are you evaluating any alternatives or is this a straightforward renewal?"
+        ],
+        "decisionProcess": [
+          "What are the steps between now and April 28 to get this closed?",
+          "Who needs to be involved at each stage? (Legal, Security, Finance, Technical review)",
+          "What's driving the April 28 close date? Is there flexibility?",
+          "When do you need final pricing/terms to get internal approvals?"
+        ],
+        "identifyPain": [
+          "What problems were you solving when you initially deployed Sourcegraph to 700 seats?",
+          "What pain points remain that expansion to 900 seats would address?",
+          "What would happen if you downsized or didn't renew?",
+          "Where is the Source Control team still struggling that Sourcegraph could help?"
+        ],
+        "champion": [
+          "Is Alex Sadleir still championing this internally? How's his influence?",
+          "Is Deep Ramsokul aligned on the value and expansion to 900 seats?",
+          "Who internally might push back on this renewal or expansion?",
+          "What do you need from us to build the internal business case?"
+        ]
+      },
+      "blockers": [
+        "What concerns does procurement have about the 29% increase ($375K→$482K)?",
+        "Are there any security or compliance issues that need resolution?",
+        "Is budget confirmed for $482K given current economic climate?",
+        "What happened in the 6-month gap since our last engagement? Any concerns we should address?"
+      ],
+      "successCriteria": [
+        "What does success look like for you with this renewal?",
+        "How will you measure whether the 900-seat investment was worth it?",
+        "What outcomes would make you want to expand further in 2026?",
+        "What would make this a reference-able success story internally?"
+      ]
+    },
+    "demoFocusAreas": [
+      {
+        "feature": "Code Intelligence for Source Control workflows",
+        "reason": "Core use case for Source Control Management team - their primary workflow",
+        "painPoints": [
+          "Understanding large codebases",
+          "Code navigation and search at scale",
+          "Onboarding new developers to complex repos"
+        ]
+      },
+      {
+        "feature": "Cody for Code Reviews",
+        "reason": "Last discussed in October 2024 - re-engage on adoption and value",
+        "painPoints": [
+          "Manual code review time",
+          "Code review quality and consistency",
+          "Reviewer availability bottlenecks"
+        ]
+      },
+      {
+        "feature": "Usage analytics and ROI dashboard",
+        "reason": "Critical for justifying 900-seat expansion to procurement and finance",
+        "painPoints": [
+          "Proving ROI for developer tooling spend",
+          "Understanding adoption across teams",
+          "Identifying power users vs. inactive licenses"
+        ]
+      },
+      {
+        "feature": "Batch Changes for large-scale refactoring",
+        "reason": "Relevant for Source Control team managing code at scale across 3,500 employee org",
+        "painPoints": [
+          "Large-scale code migrations",
+          "Dependency updates across repos",
+          "Technical debt remediation"
+        ]
+      }
+    ],
+    "competitiveLandscape": [],
+    "customIdeas": [
+      {
+        "idea": "Pre-renewal ROI report with usage data from 2024 deployment",
+        "reasoning": "Procurement will need quantifiable justification for 29% increase and 200-seat expansion",
+        "evidence": [
+          "Quote already sent but no recent engagement",
+          "Sam Forscutt (procurement) is primary contact",
+          "Previous successful renewal ($375K) suggests good relationship but need to re-prove value"
+        ]
+      },
+      {
+        "idea": "Executive Business Review with Alex Sadleir and Fawaz Ahmed",
+        "reasoning": "Re-engage champion and get executive sponsorship after 6-month gap",
+        "evidence": [
+          "Alex Sadleir last engaged October 2024",
+          "Fawaz Ahmed (Senior Director) never engaged but likely influences budget decisions",
+          "Need executive alignment for $482K commitment"
+        ]
+      },
+      {
+        "idea": "Pilot expansion to 50 additional users before full 900-seat commit",
+        "reasoning": "Lower risk way to validate expansion value if there's hesitation about jump from 700 to 900",
+        "evidence": [
+          "6-month engagement gap may indicate uncertainty",
+          "29% price increase may require incremental proof"
+        ]
+      },
+      {
+        "idea": "Success story: How Canva's Source Control team uses Sourcegraph",
+        "reasoning": "Turn them into a reference and build internal champion momentum",
+        "evidence": [
+          "700-seat deployment in 2024 was successful (renewed)",
+          "Source Control team is clear, defined user base",
+          "Graphic design platform at scale is compelling use case"
+        ]
+      }
+    ]
+  },
+  "dataAvailability": {
+    "hasSnapshot": true,
+    "hasGongCalls": false,
+    "hasNotionPages": false,
+    "snapshotAge": "0 days old"
+  }
+}

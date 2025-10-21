@@ -1,0 +1,56 @@
+{
+  "accountKey": {
+    "name": "Sourcegraph",
+    "domain": null,
+    "salesforceId": null
+  },
+  "accountProfile": {
+    "name": "Sourcegraph",
+    "domain": null,
+    "industry": "Technology/Developer Tools",
+    "size": "Unknown",
+    "summary": "Code intelligence platform with AI-powered code search and assistant (Cody). Referenced customers include Coinbase, Priceline, Palo Alto Networks, CERN, and Criteo."
+  },
+  "contacts": [],
+  "opportunities": [],
+  "signals": {
+    "recentCallInsights": [],
+    "competitiveMentions": [],
+    "objections": [],
+    "champions": [],
+    "risks": [
+      "No Salesforce record exists - may not be active prospect"
+    ],
+    "nextActions": [
+      "Create Salesforce account record if pursuing as prospect",
+      "Clarify if this is competitor research or potential partnership opportunity",
+      "Review 100+ Notion pages to extract relevant competitive/partnership intelligence"
+    ]
+  },
+  "deltas": {
+    "accountChanges": [],
+    "contactChanges": [],
+    "opportunityChanges": []
+  },
+  "generatedAt": "2025-10-20T18:05:00.000Z",
+  "metadata": {
+    "notionPages": {
+      "primary": "Sourcegraph MCP Server (Draft)",
+      "related": [
+        "Sourcegraph Admin App",
+        "Sourcegraph analytics"
+      ],
+      "totalPagesFound": 100,
+      "keyTopics": [
+        "MCP Server",
+        "Admin App",
+        "Analytics",
+        "Cody AI",
+        "Code Search",
+        "Case Studies"
+      ]
+    },
+    "dataQuality": "minimal",
+    "note": "No CRM data available. This appears to be competitor/partner research rather than active sales opportunity."
+  }
+}

@@ -1,0 +1,358 @@
+{
+  "accountKey": {
+    "accountKey": {
+      "name": "Canva",
+      "domain": "canva.com",
+      "salesforceId": "0013t00001xdnmlAAA"
+    },
+    "accountProfile": {
+      "name": "Canva",
+      "domain": "canva.com",
+      "industry": "Graphic Design",
+      "size": "3500 employees",
+      "summary": "Canva is a graphic design platform used to create social media graphics, presentations, posters, documents and other visual content. Based in Surry Hills, Australia with $50M annual revenue and 3500 employees."
+    },
+    "contacts": [
+      {
+        "id": "0035b00002kjYUqAAM",
+        "name": "Michael Denari",
+        "email": "mdenari@canva.com",
+        "title": "Head of Procurement",
+        "role": "Procurement Decision Maker",
+        "phone": "+1 805-705-6978",
+        "source": [
+          "salesforce"
+        ]
+      },
+      {
+        "id": "0035b00003lICxJAAW",
+        "name": "Sam Forscutt",
+        "email": "sforscutt@canva.com",
+        "title": "Strategic Sourcing Manager, Technology",
+        "role": "Procurement",
+        "phone": "+61 401 355 781",
+        "source": [
+          "salesforce"
+        ]
+      },
+      {
+        "id": "0035b00002kjYV0AAM",
+        "name": "Patrick Dent",
+        "email": "pdent@canva.com",
+        "title": "Sourcing Lead, Procurement",
+        "role": "Procurement",
+        "phone": "+1 512-813-3273",
+        "source": [
+          "salesforce"
+        ]
+      },
+      {
+        "id": "0035b00002kjVceAAE",
+        "name": "Fawaz Ahmed",
+        "email": "fawaz@canva.com",
+        "title": "Senior Director of Engineering",
+        "role": "Engineering Leadership",
+        "phone": "+1-206-470-9443",
+        "source": [
+          "salesforce"
+        ]
+      },
+      {
+        "id": "0035b00002j5uSiAAI",
+        "name": "Alex Sadleir",
+        "email": "alexs@canva.com",
+        "title": "Technical Team Lead, Head of Source Control Team / Sponsor",
+        "role": "Technical Champion",
+        "phone": "+61 401 355 781",
+        "source": [
+          "salesforce"
+        ]
+      },
+      {
+        "id": "003UV00000DZhU3YAL",
+        "name": "Deep Ramsokul",
+        "email": "pemadeep@canva.com",
+        "title": "Source Control Engineering Manager",
+        "role": "Technical Lead",
+        "phone": "+61 401 355 781",
+        "source": [
+          "salesforce"
+        ]
+      },
+      {
+        "id": "0033t00003SlCfEAAV",
+        "name": "Maria Belen Garcia Fava",
+        "email": "belen.g@canva.com",
+        "title": "Developer Platform Lead",
+        "role": "Technical Lead",
+        "phone": "+61 401 355 781",
+        "department": "Engineering",
+        "source": [
+          "salesforce"
+        ]
+      },
+      {
+        "id": "0035b00003iooGGAAY",
+        "name": "Denis Silva",
+        "email": "dsilva@canva.com",
+        "title": "Platform Engineering Lead",
+        "role": "Technical Lead",
+        "phone": "+61 401 355 781",
+        "source": [
+          "salesforce"
+        ]
+      },
+      {
+        "id": "0035b00003nKJBxAAO",
+        "name": "Toby Rahilly",
+        "email": "toby@canva.com",
+        "title": "Frontend Speciality Lead",
+        "role": "Technical Lead",
+        "phone": "+61 401 355 781",
+        "source": [
+          "salesforce"
+        ]
+      },
+      {
+        "id": "0033t00003dVZ0tAAG",
+        "name": "Christian Scott",
+        "email": "christian.s@canva.com",
+        "title": "Frontend Infrastructure Team Lead",
+        "role": "Technical Lead",
+        "phone": "+61 401 355 781",
+        "source": [
+          "salesforce"
+        ]
+      },
+      {
+        "id": "0035b00003qkwQdAAI",
+        "name": "Josh Vawdrey",
+        "email": "jvawdrey@canva.com",
+        "title": "Engineering Lead",
+        "role": "Technical Lead",
+        "phone": "+61 401 355 781",
+        "source": [
+          "salesforce"
+        ]
+      },
+      {
+        "id": "003UV00000KmHXiYAN",
+        "name": "Marco Lacava",
+        "email": "marco@canva.com",
+        "title": "Pages Platform - Group Lead",
+        "role": "Technical Lead",
+        "source": [
+          "salesforce"
+        ]
+      },
+      {
+        "id": "0035b00003nKmtnAAC",
+        "name": "Nuno Alves",
+        "email": "nuno@canva.com",
+        "title": "Product Lead",
+        "role": "Product",
+        "phone": "+61 401 355 781",
+        "source": [
+          "salesforce"
+        ]
+      },
+      {
+        "id": "0035b00002kjYSuAAM",
+        "name": "Ronald Tan",
+        "email": "rtan@canva.com",
+        "title": "Security & Compliance",
+        "role": "Security",
+        "phone": "+61 401 355 781",
+        "department": "Security",
+        "source": [
+          "salesforce"
+        ]
+      },
+      {
+        "id": "0035b00003pIOksAAG",
+        "name": "Geoff Chiang",
+        "email": "geoff@canva.com",
+        "title": "Security Governance, Risk, Compliance Manager",
+        "role": "Security",
+        "phone": "+61 2 8907 1774",
+        "source": [
+          "salesforce"
+        ]
+      },
+      {
+        "id": "0033t00003h6yETAAY",
+        "name": "Liji Yu",
+        "email": "liji@canva.com",
+        "title": "Infrastructure Engineer",
+        "role": "Engineering",
+        "phone": "+61 401 355 781",
+        "source": [
+          "salesforce"
+        ]
+      },
+      {
+        "id": "0035b00002mlCfiAAE",
+        "name": "Uri Baghin",
+        "email": "uri@canva.com",
+        "title": "Canva",
+        "role": "Engineering",
+        "phone": "+61 401 355 781",
+        "source": [
+          "salesforce"
+        ]
+      },
+      {
+        "id": "003UV000000e9nmYAA",
+        "name": "Pk Ϟ",
+        "email": "pk@canva.com",
+        "title": "Designer Grfico",
+        "role": "Designer",
+        "source": [
+          "salesforce"
+        ]
+      },
+      {
+        "id": "0035b00002nyJGKAA2",
+        "name": "Accounts Payable (Canva)",
+        "email": "canva@supplierinvoices.com",
+        "title": "Accounts Payable",
+        "role": "Finance",
+        "source": [
+          "salesforce"
+        ]
+      }
+    ],
+    "opportunities": [
+      {
+        "id": "006UV000006gY3RYAU",
+        "name": "Canva - SCM Team - 2025 Renewal - Enterprise - 900 Seats",
+        "stage": "Quote Sent",
+        "amount": 482139.08,
+        "closeDate": "2025-04-28",
+        "probability": 50,
+        "type": "Renewal",
+        "feedbackTrends": "No recent call data available",
+        "successCriteria": "Unknown - no recent engagement data",
+        "featureRequests": [],
+        "likelihood": "Medium - quote sent but no recent engagement signals",
+        "pathToClose": "Follow up on sent quote, schedule renewal discussion with procurement and SCM team stakeholders",
+        "source": [
+          "salesforce"
+        ]
+      },
+      {
+        "id": "006UV00000IPtQLYA1",
+        "name": "Canva - 100 CIP MAU expansion",
+        "stage": "4 - Technical & Business Validation",
+        "amount": 4109.54,
+        "closeDate": "2025-04-04",
+        "probability": 50,
+        "type": "Expansion",
+        "feedbackTrends": "No recent call data available",
+        "successCriteria": "Unknown - no recent engagement data",
+        "featureRequests": [],
+        "likelihood": "Medium - in validation stage but no recent signals",
+        "pathToClose": "Complete technical and business validation, engage with stakeholders",
+        "source": [
+          "salesforce"
+        ]
+      },
+      {
+        "id": "006UV00000AtW6LYAV",
+        "name": "Canva - User Expansion - CIP +100 MAU",
+        "stage": "7 - Closed Won",
+        "amount": 37573.33,
+        "closeDate": "2024-08-21",
+        "probability": 100,
+        "type": "Expansion",
+        "source": [
+          "salesforce"
+        ]
+      },
+      {
+        "id": "0065b000011kNfWAAU",
+        "name": "Canva - SCM Team - Flat Renewal - (Code Intelligence) 700 Seats-Renewal 2024-04-30",
+        "stage": "Renewed",
+        "amount": 374997,
+        "closeDate": "2024-04-23",
+        "probability": 100,
+        "type": "Renewal",
+        "source": [
+          "salesforce"
+        ]
+      }
+    ],
+    "signals": {
+      "recentCallInsights": [],
+      "competitiveMentions": [],
+      "objections": [],
+      "champions": [
+        "Alex Sadleir (Head of Source Control Team / Sponsor)",
+        "Deep Ramsokul (Source Control Engineering Manager)"
+      ],
+      "risks": [
+        "No recent engagement data - last activity unknown",
+        "Major renewal ($482K) approaching with no documented recent touchpoints",
+        "Gap in relationship visibility - no Gong calls or activities recorded"
+      ],
+      "nextActions": [
+        "Schedule renewal discussion for 2025 Enterprise renewal (900 seats, $482K)",
+        "Re-engage with SCM team (Alex Sadleir, Deep Ramsokul) on current usage and needs",
+        "Connect with procurement (Michael Denari, Sam Forscutt, Patrick Dent) on renewal timeline",
+        "Conduct business review to uncover expansion opportunities and validate CIP MAU expansion",
+        "Document all interactions in Salesforce and Gong to improve visibility"
+      ]
+    },
+    "deltas": {
+      "accountChanges": [],
+      "contactChanges": [],
+      "opportunityChanges": [
+        {
+          "opportunityId": "006UV000006gY3RYAU",
+          "field": "Next_Step__c",
+          "currentValue": "",
+          "proposedValue": "Schedule renewal discussion with procurement and SCM stakeholders by end of October",
+          "source": [
+            "analysis"
+          ],
+          "confidence": "high",
+          "reasoning": "Large renewal approaching in April 2025, quote sent but no documented follow-up"
+        },
+        {
+          "opportunityId": "006UV00000IPtQLYA1",
+          "field": "Next_Step__c",
+          "currentValue": "",
+          "proposedValue": "Complete technical validation and engage with engineering stakeholders",
+          "source": [
+            "analysis"
+          ],
+          "confidence": "medium",
+          "reasoning": "Opportunity in validation stage but lacks recent engagement data"
+        }
+      ]
+    },
+    "generatedAt": "2025-10-21T01:51:27.507Z",
+    "dataGaps": [
+      "No recent Gong call data - unable to assess current sentiment, objections, or feature requests",
+      "No recorded activities in Salesforce - relationship health unclear",
+      "No Notion knowledge base pages - missing competitive intelligence and internal context"
+    ]
+  },
+  "problemStatement": "Canva's 3,500-person engineering organization needs to maintain code quality and security at scale while enabling rapid feature development. With a distributed SCM team managing source control for a high-growth design platform, they require intelligent tooling to catch vulnerabilities early, streamline code review, and maintain development velocity.",
+  "solutionFit": "Sourcegraph Code Intelligence platform provides Canva's SCM team (900 seats) with comprehensive code search, security scanning, and automated code review capabilities across their entire codebase. This directly supports their source control operations led by Alex Sadleir and Deep Ramsokul, enabling faster incident response, proactive vulnerability management, and improved developer productivity.",
+  "successMetrics": [
+    "70% reduction in time to locate and fix security vulnerabilities across the codebase",
+    "40% faster code review cycles for 900-seat engineering team",
+    "90% of critical code patterns identified before production deployment"
+  ],
+  "socialProof": [
+    "Similar large-scale design and creative technology companies use Sourcegraph to manage complex codebases with distributed engineering teams",
+    "Successfully renewed in 2024 with 700 seats ($375K), expanded by $37K in August 2024 - demonstrating proven value and adoption"
+  ],
+  "nextSteps": [
+    "Schedule renewal discussion with procurement (Michael Denari, Sam Forscutt) and SCM leadership (Alex Sadleir, Deep Ramsokul) by end of October - $482K renewal closes April 28, 2025",
+    "Conduct business review to quantify ROI, uncover expansion needs, and validate CIP MAU expansion opportunity ($4K)",
+    "Document current usage patterns and feature gaps to derisk renewal and identify upsell opportunities"
+  ],
+  "generatedAt": "2025-10-21T01:56:09.827Z"
+}
