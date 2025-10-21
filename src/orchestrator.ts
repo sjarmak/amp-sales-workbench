@@ -7,7 +7,7 @@ import { consolidateData } from './phases/consolidate.js'
 import { generateDrafts } from './phases/draft.js'
 import { applySalesforceChanges } from './phases/sync/syncSalesforce.js'
 import { mirrorToNotion } from './phases/mirror/notionMirror.js'
-import { detectCapabilities } from './capabilities.js'
+import { detectCapabilities } from './capabilities/detect.js'
 import {
 	readMeta,
 	writeMeta,

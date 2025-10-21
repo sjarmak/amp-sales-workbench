@@ -98,14 +98,24 @@ export async function buildAccountContext(accountDir: string): Promise<AccountCo
 
 	// Load Notion data
 	try {
-		const notion = JSON.parse(await readFile(join(rawDir, 'notion_pages.json'), 'utf-8'))
+		const notion = JSON.parse(await readFile(join(rawDir, 'notion.json'), 'utf-8'))
 		context.notion = {
 			accountPage: notion.accountPage,
 			relatedPages: notion.pages || notion.relatedPages,
 			lastSyncedAt: notion.lastSyncedAt,
 		}
 	} catch (error) {
-		// Notion data not available
+		// Try legacy filename
+		try {
+			const notion = JSON.parse(await readFile(join(rawDir, 'notion_pages.json'), 'utf-8'))
+			context.notion = {
+				accountPage: notion.accountPage,
+				relatedPages: notion.pages || notion.relatedPages,
+				lastSyncedAt: notion.lastSyncedAt,
+			}
+		} catch {
+			// Notion data not available
+		}
 	}
 
 	return context

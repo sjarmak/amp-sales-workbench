@@ -21,6 +21,7 @@ interface MCPConfig {
 
 let salesforceClient: Client | null = null;
 let gongClient: Client | null = null;
+let notionClient: Client | null = null;
 
 /**
  * Load MCP server configuration from Amp's config
@@ -159,8 +160,76 @@ export async function callGongTool(toolName: string, args: any): Promise<any> {
       arguments: args
     });
 
-    console.log(`[mcp-client] Result type:`, result.content[0]?.type, 'length:', result.content.length);
-    return result.content;
+    const content = result.content as any[];
+    console.log(`[mcp-client] Result type:`, content[0]?.type, 'length:', content.length);
+    return content;
+  } catch (error: any) {
+    console.error(`[mcp-client] Tool call failed:`, error.message || error);
+    throw error;
+  }
+}
+
+/**
+ * Initialize MCP client for Notion
+ */
+export async function getNotionClient(): Promise<Client | null> {
+  if (notionClient) return notionClient;
+
+  try {
+    const config = await loadMCPConfig();
+    const notionConfig = config['amp.mcpServers']?.['notion'];
+    
+    if (!notionConfig) {
+      console.warn('[mcp-client] Notion MCP not configured in Amp settings');
+      return null;
+    }
+
+    console.log('[mcp-client] Initializing Notion MCP client...');
+    
+    const transport = new StdioClientTransport({
+      command: notionConfig.command,
+      args: notionConfig.args || [],
+      env: { ...process.env as Record<string, string>, ...notionConfig.env }
+    });
+
+    notionClient = new Client({
+      name: 'amp-sales-workbench-api',
+      version: '1.0.0'
+    }, {
+      capabilities: {}
+    });
+
+    await notionClient.connect(transport);
+    console.log('[mcp-client] Notion MCP client connected');
+    
+    return notionClient;
+  } catch (error) {
+    console.error('[mcp-client] Failed to initialize Notion client:', error);
+    return null;
+  }
+}
+
+/**
+ * Call a Notion MCP tool directly
+ */
+export async function callNotionTool(toolName: string, args: any): Promise<any> {
+  const client = await getNotionClient();
+  
+  if (!client) {
+    throw new Error('Notion MCP client not available');
+  }
+
+  console.log(`[mcp-client] Calling ${toolName} with args:`, JSON.stringify(args).substring(0, 100));
+  
+  try {
+    const result = await client.callTool({
+      name: toolName,
+      arguments: args
+    });
+
+    const content = result.content as any[];
+    console.log(`[mcp-client] Result type:`, content[0]?.type, 'length:', content.length);
+    return content;
   } catch (error: any) {
     console.error(`[mcp-client] Tool call failed:`, error.message || error);
     throw error;
@@ -178,5 +247,9 @@ export async function closeMCPClients() {
   if (gongClient) {
     await gongClient.close();
     gongClient = null;
+  }
+  if (notionClient) {
+    await notionClient.close();
+    notionClient = null;
   }
 }

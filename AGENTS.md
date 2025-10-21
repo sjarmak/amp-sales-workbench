@@ -1,7 +1,7 @@
 # Agent Instructions for Amp Sales Workbench
 NEVER RUN SERVERS, LET THE USER RUN ANY LONG RUNNING PROCESSES 
 NEVER USE EMOJIS, PREFER ICONS FROM https://lucide.dev/icons/ IF IT MAKES SENSE TO ADD ICONOGRAPHY
-
+USE BEADS (bd command) FOR ANY TASK UPDATES, DO NOT WRITE TO MARKDOWN FILES
 ## Overview
 
 **Amp Sales Workbench** is a multi-agent sales workflow system that automates prospect research, account enrichment, data consolidation from multiple sources (Gong, Notion, Salesforce), draft generation, and CRM synchronization. It mimics Scratchpad-like workflows while leveraging your existing MCP servers.
@@ -110,6 +110,26 @@ bd automatically syncs with git:
 - Imports from JSONL when newer (e.g., after `git pull`)
 - No manual export/import needed!
 
+### MCP Server (Recommended)
+
+If using Claude or MCP-compatible clients, install the beads MCP server:
+
+```bash
+pip install beads-mcp
+```
+
+Add to MCP config (e.g., `~/.config/claude/config.json`):
+```json
+{
+  "beads": {
+    "command": "beads-mcp",
+    "args": []
+  }
+}
+```
+
+Then use `mcp__beads__*` functions instead of CLI commands.
+
 ### Important Rules
 
 - ✅ Use bd for ALL task tracking
@@ -119,6 +139,8 @@ bd automatically syncs with git:
 - ❌ Do NOT create markdown TODO lists
 - ❌ Do NOT use external issue trackers
 - ❌ Do NOT duplicate tracking systems
+
+For more details, see README.md and QUICKSTART.md.
 
 ## Architecture
 

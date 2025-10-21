@@ -13,7 +13,7 @@ import { mergeAndWriteRaw } from '../phases/raw-io.js'
 import { ingestFromSalesforce } from '../phases/ingest/salesforce.js'
 import { ingestFromGong } from '../phases/ingest/gong.js'
 import { ingestFromNotion } from '../phases/ingest/notion.js'
-import { detectCapabilities } from '../capabilities.js'
+import { detectCapabilities } from '../capabilities/detect.js'
 
 type RefreshMode = 'auto' | 'incremental' | 'full'
 type SourceType = 'salesforce' | 'gong' | 'notion' | 'all'

@@ -279,24 +279,71 @@ export function DataSourcesTab({ accountSlug }: DataSourcesTabProps) {
           </CardHeader>
           {notionData.pages && notionData.pages.length > 0 && (
             <CardContent>
-              <div className="space-y-3">
+              <div className="space-y-6">
                 {notionData.pages.map((page: any, idx: number) => (
-                  <div key={idx} className="border-l-2 border-primary pl-3 space-y-1">
-                    <div className="font-medium">{page.title}</div>
-                    {page.lastEdited && (
-                      <div className="text-sm text-muted-foreground">
-                        Last edited: {new Date(page.lastEdited).toLocaleDateString()}
+                  <div key={idx} className="border-l-2 border-primary pl-4 space-y-3">
+                    <div>
+                      <div className="font-semibold text-lg">{page.title}</div>
+                      <div className="flex items-center gap-3 mt-1">
+                        {page.lastEdited && (
+                          <div className="text-sm text-muted-foreground">
+                            Last edited: {new Date(page.lastEdited).toLocaleDateString()}
+                          </div>
+                        )}
+                        {page.url && (
+                          <a 
+                            href={page.url} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="text-sm text-primary hover:underline inline-flex items-center gap-1"
+                          >
+                            Open in Notion <ExternalLink className="h-3 w-3" />
+                          </a>
+                        )}
                       </div>
-                    )}
-                    {page.url && (
-                      <a 
-                        href={page.url} 
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                        className="text-sm text-primary hover:underline"
-                      >
-                        Open in Notion
-                      </a>
+                    </div>
+                    
+                    {page.contentBlocks && page.contentBlocks.length > 0 && (
+                      <div className="space-y-2 text-sm max-h-[600px] overflow-y-auto pr-2">
+                        <div className="text-xs text-muted-foreground mb-2">
+                          {page.contentBlocks.length} blocks of content
+                        </div>
+                        {page.contentBlocks.map((block: any, blockIdx: number) => {
+                          const indent = block.depth || 0;
+                          const marginLeft = `${indent * 1.5}rem`;
+                          
+                          if (block.type === 'heading_1') {
+                            return <h2 key={blockIdx} className="text-lg font-bold mt-6 mb-2 border-b pb-1" style={{ marginLeft }}>{block.text}</h2>
+                          }
+                          if (block.type === 'heading_2') {
+                            return <h3 key={blockIdx} className="text-base font-semibold mt-4 mb-1" style={{ marginLeft }}>{block.text}</h3>
+                          }
+                          if (block.type === 'heading_3') {
+                            return <h4 key={blockIdx} className="text-sm font-semibold mt-3 mb-1" style={{ marginLeft }}>{block.text}</h4>
+                          }
+                          if (block.type === 'bulleted_list_item') {
+                            return (
+                              <li key={blockIdx} className="list-disc text-muted-foreground leading-relaxed" style={{ marginLeft: `${indent * 1.5 + 1}rem` }}>
+                                {block.text}
+                              </li>
+                            )
+                          }
+                          if (block.type === 'numbered_list_item') {
+                            return (
+                              <li key={blockIdx} className="list-decimal text-muted-foreground leading-relaxed" style={{ marginLeft: `${indent * 1.5 + 1}rem` }}>
+                                {block.text}
+                              </li>
+                            )
+                          }
+                          if (block.type === 'quote') {
+                            return <blockquote key={blockIdx} className="border-l-4 border-primary pl-4 italic text-muted-foreground my-2" style={{ marginLeft }}>{block.text}</blockquote>
+                          }
+                          if (block.type === 'callout') {
+                            return <div key={blockIdx} className="bg-muted p-3 rounded-md text-sm my-2" style={{ marginLeft }}>{block.text}</div>
+                          }
+                          return <p key={blockIdx} className="text-muted-foreground leading-relaxed" style={{ marginLeft }}>{block.text}</p>
+                        })}
+                      </div>
                     )}
                   </div>
                 ))}

@@ -8,7 +8,7 @@ import { readMeta, computeStaleness, type SourceStatus, writeMeta } from './src/
 import { runAgent as executeAgent, type AgentName, type AgentOptions } from './src/agents/agent-runner.js';
 import { ingestFromSalesforce, type SalesforceIngestOptions } from './src/phases/ingest/salesforce.js';
 import type { AccountKey } from './src/types.js';
-import { callSalesforceTool, callGongTool, closeMCPClients } from './src/mcp-client.js';
+import { callSalesforceTool, callGongTool, callNotionTool, closeMCPClients } from './src/mcp-client.js';
 import { refreshAccountContext } from './src/context/store.js';
 import { createHash } from 'crypto';
 
@@ -436,17 +436,62 @@ app.get('/api/accounts/:slug/sources/:source', async (req, res) => {
         })) || []
       };
     } else if (source === 'notion') {
-      const filePath = path.join(rawDir, 'notion_pages.json');
+      // Try new filename first, then legacy
+      let filePath = path.join(rawDir, 'notion.json');
+      try {
+        await fs.access(filePath);
+      } catch {
+        filePath = path.join(rawDir, 'notion_pages.json');
+      }
       const content = await fs.readFile(filePath, 'utf-8');
       const notion = JSON.parse(content);
+      
+      // Handle both new format (relatedPages) and legacy (pages)
+      const pages = notion.relatedPages || notion.pages || [];
+      
+      // Helper to strip emojis and emoji shortcuts
+      const stripEmojis = (text: string): string => {
+        return text
+          .replace(/[\u{1F300}-\u{1F9FF}]/gu, '') // Remove emoji characters
+          .replace(/:[a-z0-9_-]+:/gi, '') // Remove :emoji-shortcodes:
+          .replace(/🗺️|🔭|⚡|🎯|💡|📊|✅|❌|⚠️/g, '') // Remove common emojis
+          .trim();
+      };
+      
+      // Helper to recursively extract blocks including children with depth tracking
+      const extractBlocks = (blocks: any[], depth: number = 0): any[] => {
+        const result: any[] = [];
+        for (const block of blocks) {
+          const supportedTypes = ['paragraph', 'heading_1', 'heading_2', 'heading_3', 'bulleted_list_item', 'numbered_list_item', 'quote', 'callout'];
+          if (supportedTypes.includes(block.type)) {
+            const richText = block[block.type]?.rich_text || [];
+            const text = stripEmojis(richText.map((rt: any) => rt.plain_text || '').join(''));
+            if (text.trim()) {
+              result.push({ type: block.type, text, depth });
+            }
+          }
+          // Recursively process children with increased depth
+          if (block.children && block.children.length > 0) {
+            result.push(...extractBlocks(block.children, depth + 1));
+          }
+        }
+        return result;
+      };
+      
       data = {
-        pagesCount: notion.pages?.length || 0,
-        pages: notion.pages?.map((p: any) => ({
-          id: p.id,
-          title: p.properties?.title?.title?.[0]?.plain_text || p.properties?.Name?.title?.[0]?.plain_text || 'Untitled',
-          url: p.url,
-          lastEdited: p.last_edited_time
-        })) || []
+        pagesCount: pages.length,
+        pages: pages.map((p: any) => {
+          const blocks = p.content?.blocks?.results || [];
+          const contentBlocks = extractBlocks(blocks);
+          
+          return {
+            id: p.id,
+            title: stripEmojis(p.title || p.properties?.title?.title?.[0]?.plain_text || p.properties?.Name?.title?.[0]?.plain_text || 'Untitled'),
+            url: p.content?.url || p.url,
+            lastEdited: p.lastEdited || p.last_edited_time,
+            contentBlocks
+          };
+        })
       };
     }
 
@@ -783,24 +828,22 @@ app.post('/api/accounts/:slug/sources/:source/refresh', async (req, res) => {
         
         sendProgress(res, `Found ${rawCalls.length} calls, fetching transcripts...`);
         
-        // Normalize call data structure (Gong calls don't have parties in list response)
-        const calls = rawCalls.map((call: any) => ({
+        // Gong API doesn't provide participant names - keep participants empty
+        const calls = rawCalls.slice(0, 10).map((call: any) => ({
           id: call.id,
           title: call.title || 'Untitled Call',
           startTime: call.scheduled || call.started || '',
           duration: call.duration || 0,
-          participants: [] // Parties not included in list_calls response
+          participants: [] // Not available in Gong API
         }));
         
-        // Limit to most recent 10 calls
-        const recentCalls = calls.slice(0, 10);
         const summaries = [];
         const transcriptsMetadata: Record<string, { hash: string; fetchedAt: string }> = {};
         
         // Fetch transcripts for each call
-        for (let i = 0; i < recentCalls.length; i++) {
-          const call = recentCalls[i];
-          sendProgress(res, `Fetching transcript ${i + 1}/${recentCalls.length}...`);
+        for (let i = 0; i < calls.length; i++) {
+          const call = calls[i];
+          sendProgress(res, `Fetching transcript ${i + 1}/${calls.length}...`);
           
           try {
             const transcriptResult = await callGongTool('retrieve_transcripts', {
@@ -814,13 +857,14 @@ app.post('/api/accounts/:slug/sources/:source/refresh', async (req, res) => {
               const t = transcriptData.callTranscripts[0];
               
               // Parse transcript - Gong structure: [{speakerId, sentences: [{text}]}]
+              // Use shortened IDs for readability since Gong doesn't provide name mappings
               const transcriptLines: string[] = [];
               for (const segment of (t.transcript || [])) {
-                const speakerId = segment.speakerId || 'Unknown';
-                for (const sentence of (segment.sentences || [])) {
-                  if (sentence.text) {
-                    transcriptLines.push(`Speaker ${speakerId}: ${sentence.text}`);
-                  }
+                const speakerId = String(segment.speakerId || 'Unknown');
+                const shortId = speakerId.slice(-4); // Last 4 digits
+                const sentences = (segment.sentences || []).map((s: any) => s.text).join(' ');
+                if (sentences) {
+                  transcriptLines.push(`Speaker ...${shortId}: ${sentences}`);
                 }
               }
               const transcript = transcriptLines.join('\n');
@@ -850,7 +894,7 @@ app.post('/api/accounts/:slug/sources/:source/refresh', async (req, res) => {
         // Save to file
         const now = new Date().toISOString();
         const gongData = {
-          calls: recentCalls,
+          calls,
           summaries,
           transcripts: transcriptsMetadata,
           lastSyncedAt: now
@@ -864,7 +908,7 @@ app.post('/api/accounts/:slug/sources/:source/refresh', async (req, res) => {
         const updatedMeta = await readMeta(accountDir);
         updatedMeta.sources.gong = updatedMeta.sources.gong || {};
         updatedMeta.sources.gong.lastListSyncAt = now;
-        updatedMeta.sources.gong.callCount = recentCalls.length;
+        updatedMeta.sources.gong.callCount = calls.length;
         updatedMeta.sources.gong.transcripts = transcriptsMetadata;
         updatedMeta.sources.gong.status = 'fresh';
         await writeMeta(accountDir, updatedMeta);
@@ -873,14 +917,14 @@ app.post('/api/accounts/:slug/sources/:source/refresh', async (req, res) => {
         sendProgress(res, 'Rebuilding context...');
         await refreshAccountContext(accountDir);
         
-        sendProgress(res, `Complete! Fetched ${recentCalls.length} calls with ${summaries.length} transcripts`);
+        sendProgress(res, `Complete! Fetched ${calls.length} calls with ${summaries.length} transcripts`);
         res.write(`data: ${JSON.stringify({ 
           type: 'complete', 
           success: true, 
           updated: true,
           modeUsed: mode,
           stats: {
-            callsCount: recentCalls.length,
+            callsCount: calls.length,
             transcriptsCount: summaries.length
           },
           meta: updatedMeta.sources.gong
@@ -897,7 +941,127 @@ app.post('/api/accounts/:slug/sources/:source/refresh', async (req, res) => {
       }
     }
     
-    // Run refresh using Amp SDK (has MCP access)
+    // Build incremental filter list for Salesforce (for fallback Amp SDK path)
+    const sinceFilters: string[] = [];
+    if (source === 'salesforce' && mode !== 'full' && meta.sources.salesforce?.entityCheckpoints) {
+      if (meta.sources.salesforce.entityCheckpoints.Contact?.lastFetchedAt) sinceFilters.push('Contacts');
+      if (meta.sources.salesforce.entityCheckpoints.Opportunity?.lastFetchedAt) sinceFilters.push('Opportunities');
+      if (meta.sources.salesforce.entityCheckpoints.Activity?.lastFetchedAt) sinceFilters.push('Activities');
+    }
+    
+    // For Notion, build prompt to fetch competitive analysis page
+    if (source === 'notion') {
+      try {
+        sendProgress(res, 'Connecting to Notion MCP...');
+        
+        // Read notion config to get page IDs
+        const notionConfigPath = path.join(process.cwd(), 'notion-config.json');
+        const notionConfig = JSON.parse(await fs.readFile(notionConfigPath, 'utf-8'));
+        
+        sendProgress(res, 'Fetching knowledge pages...');
+        
+        const pages: any[] = [];
+        // Helper to recursively fetch child blocks (selective - only toggles and meaningful content)
+        const fetchBlocksRecursive = async (blockId: string, depth: number = 0): Promise<any[]> => {
+          if (depth > 2) return []; // Limit recursion depth to 2
+          
+          const blocksResult = await callNotionTool('API-get-block-children', { 
+            block_id: blockId,
+            page_size: 100
+          });
+          const blocksData = JSON.parse(blocksResult[0].text);
+          const blocks = blocksData.results || [];
+          
+          // Only fetch children for toggle blocks (heading_1, heading_2, heading_3 with is_toggleable)
+          // and skip structural blocks like column_list, table, etc.
+          for (const block of blocks) {
+            if (block.has_children) {
+              const blockType = block.type;
+              const isToggle = block[blockType]?.is_toggleable === true;
+              
+              // Only expand toggleable headings
+              if (isToggle && ['heading_1', 'heading_2', 'heading_3'].includes(blockType)) {
+                block.children = await fetchBlocksRecursive(block.id, depth + 1);
+              }
+            }
+          }
+          
+          return blocks;
+        };
+        
+        for (const [key, pageId] of Object.entries(notionConfig.knowledgePages)) {
+          if (pageId === 'page-id-here') {
+            console.warn(`Skipping ${key}: placeholder ID not replaced`);
+            continue;
+          }
+          
+          try {
+            const pageResult = await callNotionTool('API-retrieve-a-page', { page_id: pageId as string });
+            const page = JSON.parse(pageResult[0].text);
+            
+            sendProgress(res, `Fetching ${key} content...`);
+            const blocks = await fetchBlocksRecursive(pageId as string);
+            
+            pages.push({
+              id: pageId,
+              title: key,
+              content: { ...page, blocks: { results: blocks } },
+              lastEdited: page.last_edited_time || new Date().toISOString()
+            });
+            
+            sendProgress(res, `Fetched ${key} (${blocks.length} blocks)`);
+          } catch (pageError) {
+            console.error(`Failed to fetch ${key}:`, pageError);
+          }
+        }
+        
+        // Save to file
+        const now = new Date().toISOString();
+        const notionData = {
+          relatedPages: pages,
+          lastSyncedAt: now
+        };
+        
+        const rawDir = path.join(accountDir, 'raw');
+        await fs.mkdir(rawDir, { recursive: true });
+        await fs.writeFile(path.join(rawDir, 'notion.json'), JSON.stringify(notionData, null, 2));
+        
+        // Update meta
+        const updatedMeta = await readMeta(accountDir);
+        updatedMeta.sources.notion = updatedMeta.sources.notion || {};
+        updatedMeta.sources.notion.lastFetchedAt = now;
+        updatedMeta.sources.notion.pageCount = pages.length;
+        updatedMeta.sources.notion.status = 'fresh';
+        await writeMeta(accountDir, updatedMeta);
+        
+        // Rebuild context
+        sendProgress(res, 'Rebuilding context...');
+        await refreshAccountContext(accountDir);
+        
+        sendProgress(res, `Complete! Fetched ${pages.length} pages`);
+        res.write(`data: ${JSON.stringify({ 
+          type: 'complete', 
+          success: true, 
+          updated: true,
+          modeUsed: mode,
+          stats: {
+            pagesCount: pages.length
+          },
+          meta: updatedMeta.sources.notion
+        })}\n\n`);
+        return res.end();
+      } catch (mcpError: any) {
+        console.error('[api-server] Notion MCP call failed:', mcpError);
+        res.write(`data: ${JSON.stringify({ 
+          type: 'error', 
+          error: 'Notion MCP refresh failed', 
+          details: mcpError.message || String(mcpError)
+        })}\n\n`);
+        return res.end();
+      }
+    }
+    
+    // Run refresh using Amp SDK (has MCP access) - fallback for other sources
     const prompt = `Fetch ${source} data for account "${accountMetadata.name}" (SF ID: ${accountMetadata.salesforceId || 'lookup required'}) and save it.
 
 Steps:

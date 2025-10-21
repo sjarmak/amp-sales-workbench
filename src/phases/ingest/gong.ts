@@ -104,12 +104,14 @@ async function listCallsForAccount(
 			toDateTime: toDate.toISOString(),
 		})
 
+		// Gong API doesn't provide participant names in list_calls or get_call
+		// Participants remain empty until Gong adds this to their API
 		const calls: GongCall[] = (result.calls || []).map((call: any) => ({
 			id: call.id,
 			title: call.title || call.subject || 'Untitled Call',
 			startTime: call.scheduled || call.started || '',
 			duration: call.duration || 0,
-			participants: (call.parties || []).map((p: any) => p.emailAddress || p.name).filter(Boolean),
+			participants: [], // Not available in Gong API
 		}))
 
 		return calls
@@ -175,8 +177,17 @@ async function fetchTranscript(
 		}
 
 		const transcriptData = result.callTranscripts[0]
+		
+		// Gong API doesn't provide speaker name mappings
+		// Use shortened speaker IDs for readability
 		const transcript = (transcriptData.transcript || [])
-			.map((t: any) => `${t.speaker}: ${t.text}`)
+			.map((segment: any) => {
+				const speakerId = segment.speakerId || 'Unknown'
+				// Use last 4 digits for readability: "Speaker ...1234"
+				const shortId = speakerId.toString().slice(-4)
+				const sentences = (segment.sentences || []).map((s: any) => s.text).join(' ')
+				return `Speaker ...${shortId}: ${sentences}`
+			})
 			.join('\n')
 
 		return {
