@@ -110,6 +110,10 @@ export async function getGongClient(): Promise<Client | null> {
     await gongClient.connect(transport);
     console.log('[mcp-client] Gong MCP client connected');
     
+    // List available tools
+    const tools = await gongClient.listTools();
+    console.log('[mcp-client] Available Gong tools:', tools.tools.map(t => t.name).join(', '));
+    
     return gongClient;
   } catch (error) {
     console.error('[mcp-client] Failed to initialize Gong client:', error);
@@ -149,12 +153,18 @@ export async function callGongTool(toolName: string, args: any): Promise<any> {
 
   console.log(`[mcp-client] Calling ${toolName} with args:`, JSON.stringify(args).substring(0, 100));
   
-  const result = await client.callTool({
-    name: toolName,
-    arguments: args
-  });
+  try {
+    const result = await client.callTool({
+      name: toolName,
+      arguments: args
+    });
 
-  return result.content;
+    console.log(`[mcp-client] Result type:`, result.content[0]?.type, 'length:', result.content.length);
+    return result.content;
+  } catch (error: any) {
+    console.error(`[mcp-client] Tool call failed:`, error.message || error);
+    throw error;
+  }
 }
 
 /**

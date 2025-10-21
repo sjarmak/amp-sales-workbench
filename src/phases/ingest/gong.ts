@@ -87,8 +87,8 @@ export async function ingestFromGong(
 
 	return {
 		calls: recentCalls,
-		summaries,
-		transcripts: transcriptsMetadata,
+		summaries, // Array of GongTranscript objects with transcript text, summary, actionItems, nextSteps, topics
+		transcripts: transcriptsMetadata, // Metadata only (hash, fetchedAt) for freshness tracking
 		lastSyncedAt: new Date().toISOString(),
 	}
 }

@@ -4,7 +4,8 @@ import { useState, useEffect } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs'
 import { Badge } from './ui/badge'
-import { Database, PhoneCall, FileText, Loader2 } from 'lucide-react'
+import { Button } from './ui/button'
+import { Database, PhoneCall, FileText, Loader2, ChevronDown, ChevronUp, ExternalLink } from 'lucide-react'
 
 const API_URL = 'http://localhost:3001/api'
 
@@ -17,6 +18,7 @@ export function DataSourcesTab({ accountSlug }: DataSourcesTabProps) {
   const [gongData, setGongData] = useState<any>(null)
   const [notionData, setNotionData] = useState<any>(null)
   const [loading, setLoading] = useState<Record<string, boolean>>({})
+  const [expandedTranscripts, setExpandedTranscripts] = useState<Set<string>>(new Set())
 
   useEffect(() => {
     if (accountSlug) {
@@ -35,14 +37,29 @@ export function DataSourcesTab({ accountSlug }: DataSourcesTabProps) {
     
     setLoading(prev => ({ ...prev, [source]: true }))
     try {
+      console.log(`[DataSourcesTab] Loading ${source} for account: ${accountSlug}`)
       const res = await fetch(`${API_URL}/accounts/${accountSlug}/sources/${source}`)
+      console.log(`[DataSourcesTab] ${source} response status:`, res.status)
       if (res.ok) {
         const data = await res.json()
+        console.log(`[DataSourcesTab] ${source} data:`, { 
+          callsCount: data.callsCount, 
+          summariesCount: data.summaries?.length,
+          firstCall: data.calls?.[0],
+          firstSummary: data.summaries?.[0] ? {
+            callId: data.summaries[0].callId,
+            hasTranscript: !!data.summaries[0].transcript,
+            hasTopics: !!data.summaries[0].topics,
+            topics: data.summaries[0].topics
+          } : null
+        })
         setter(data)
       } else {
+        console.error(`[DataSourcesTab] ${source} failed:`, res.status)
         setter({ error: 'Data not available' })
       }
     } catch (error) {
+      console.error(`[DataSourcesTab] ${source} error:`, error)
       setter({ error: String(error) })
     } finally {
       setLoading(prev => ({ ...prev, [source]: false }))
@@ -100,6 +117,18 @@ export function DataSourcesTab({ accountSlug }: DataSourcesTabProps) {
     )
   }
 
+  const toggleTranscript = (callId: string) => {
+    setExpandedTranscripts(prev => {
+      const next = new Set(prev)
+      if (next.has(callId)) {
+        next.delete(callId)
+      } else {
+        next.add(callId)
+      }
+      return next
+    })
+  }
+
   const renderGongData = () => {
     if (loading.gong) return <div className="flex items-center gap-2"><Loader2 className="h-4 w-4 animate-spin" /> Loading...</div>
     if (!gongData) return <div className="text-muted-foreground">No data available</div>
@@ -110,24 +139,124 @@ export function DataSourcesTab({ accountSlug }: DataSourcesTabProps) {
         <Card>
           <CardHeader>
             <CardTitle className="text-base">Calls ({gongData.callsCount || 0})</CardTitle>
-            <CardDescription>Recent calls from Gong</CardDescription>
+            <CardDescription>Recent calls with transcripts</CardDescription>
           </CardHeader>
           {gongData.calls && gongData.calls.length > 0 && (
             <CardContent>
-              <div className="space-y-3">
-                {gongData.calls.map((call: any, idx: number) => (
-                  <div key={idx} className="border-l-2 border-primary pl-3 space-y-1">
-                    <div className="font-medium">{call.title}</div>
-                    <div className="text-sm text-muted-foreground">
-                      {new Date(call.started).toLocaleDateString()} - {Math.floor(call.duration / 60)}min
-                    </div>
-                    {call.participants && call.participants.length > 0 && (
-                      <div className="text-sm text-muted-foreground">
-                        Participants: {call.participants.join(', ')}
-                      </div>
-                    )}
-                  </div>
-                ))}
+              <div className="space-y-4">
+                {gongData.calls.map((call: any, idx: number) => {
+                  const summary = gongData.summaries?.find((s: any) => s.callId === call.id)
+                  const isExpanded = expandedTranscripts.has(call.id)
+                  
+                  return (
+                    <Card key={idx} className="border-l-2 border-primary">
+                      <CardContent className="pt-4 space-y-3">
+                        {/* Title and Call Link */}
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="font-medium text-base">{call.title}</div>
+                          {call.url && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-6 px-2"
+                              onClick={() => window.open(call.url, '_blank')}
+                            >
+                              <ExternalLink className="h-3 w-3" />
+                            </Button>
+                          )}
+                        </div>
+
+                        {/* Date and Duration */}
+                        <div className="text-sm text-muted-foreground">
+                          {new Date(call.started).toLocaleDateString()} • {Math.floor(call.duration / 60)} min
+                        </div>
+
+                        {/* Participants */}
+                        {call.participants && call.participants.length > 0 && (
+                          <div className="text-sm text-muted-foreground">
+                            <span className="font-medium">Participants:</span> {call.participants.slice(0, 3).join(', ')}
+                            {call.participants.length > 3 && ` +${call.participants.length - 3} more`}
+                          </div>
+                        )}
+                        
+                        {/* Show data if transcript OR any metadata exists */}
+                        {(summary?.transcript || summary?.topics?.length > 0 || summary?.summary || summary?.actionItems?.length > 0 || summary?.nextSteps?.length > 0) && (
+                          <div className="space-y-3 pt-2 border-t">
+                            {/* Topics */}
+                            {summary?.topics && summary.topics.length > 0 && (
+                              <div>
+                                <span className="text-sm font-medium">Topics:</span>
+                                <div className="flex flex-wrap gap-1 mt-1">
+                                  {summary.topics.map((topic: string, i: number) => (
+                                    <Badge key={i} variant="secondary" className="text-xs">{topic}</Badge>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Summary */}
+                            {summary?.summary && (
+                              <div className="text-sm">
+                                <span className="font-medium">Summary:</span>
+                                <p className="mt-1 text-muted-foreground">{summary.summary}</p>
+                              </div>
+                            )}
+
+                            {/* Action Items */}
+                            {summary?.actionItems && summary.actionItems.length > 0 && (
+                              <div className="text-sm">
+                                <span className="font-medium">Action Items:</span>
+                                <ul className="list-disc list-inside mt-1 space-y-0.5">
+                                  {summary.actionItems.map((item: string, i: number) => (
+                                    <li key={i} className="text-muted-foreground">{item}</li>
+                                  ))}
+                                </ul>
+                              </div>
+                            )}
+
+                            {/* Next Steps */}
+                            {summary?.nextSteps && summary.nextSteps.length > 0 && (
+                              <div className="text-sm">
+                                <span className="font-medium">Next Steps:</span>
+                                <ul className="list-disc list-inside mt-1 space-y-0.5">
+                                  {summary.nextSteps.map((step: string, i: number) => (
+                                    <li key={i} className="text-muted-foreground">{step}</li>
+                                  ))}
+                                </ul>
+                              </div>
+                            )}
+
+                            {/* Expandable Transcript */}
+                            {summary?.transcript && (
+                              <div className="pt-2 border-t">
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-8 px-2 -ml-2"
+                                  onClick={() => toggleTranscript(call.id)}
+                                >
+                                  {isExpanded ? (
+                                    <><ChevronUp className="h-4 w-4 mr-1" /> Hide Transcript</>
+                                  ) : (
+                                    <><ChevronDown className="h-4 w-4 mr-1" /> View Transcript</>
+                                  )}
+                                </Button>
+                                
+                                {isExpanded && (
+                                  <div className="mt-2 p-3 bg-muted rounded-md max-h-96 overflow-y-auto">
+                                    <pre className="text-xs whitespace-pre-wrap font-mono text-muted-foreground">
+                                      {summary.transcript}
+                                    </pre>
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+                  )
+                })}
               </div>
             </CardContent>
           )}

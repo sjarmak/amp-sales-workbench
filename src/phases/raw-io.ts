@@ -7,7 +7,7 @@ export type DataSource = 'salesforce' | 'gong' | 'notion'
 // Map to actual filenames used by api-server
 const FILENAME_MAP: Record<DataSource, string> = {
 	salesforce: 'salesforce.json',
-	gong: 'gong_calls.json',
+	gong: 'gong.json', // Use gong.json for consistency (contains calls, summaries, transcripts)
 	notion: 'notion_pages.json',
 }
 

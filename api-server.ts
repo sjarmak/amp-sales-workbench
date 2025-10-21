@@ -8,7 +8,9 @@ import { readMeta, computeStaleness, type SourceStatus, writeMeta } from './src/
 import { runAgent as executeAgent, type AgentName, type AgentOptions } from './src/agents/agent-runner.js';
 import { ingestFromSalesforce, type SalesforceIngestOptions } from './src/phases/ingest/salesforce.js';
 import type { AccountKey } from './src/types.js';
-import { callSalesforceTool, closeMCPClients } from './src/mcp-client.js';
+import { callSalesforceTool, callGongTool, closeMCPClients } from './src/mcp-client.js';
+import { refreshAccountContext } from './src/context/store.js';
+import { createHash } from 'crypto';
 
 // Load environment variables
 config();
@@ -185,6 +187,25 @@ app.get('/api/accounts/:slug', async (req, res) => {
     res.json({ snapshot, draft });
   } catch (error) {
     res.status(500).json({ error: 'Failed to fetch account data' });
+  }
+});
+
+// Get account context (consolidated view)
+app.get('/api/accounts/:slug/context', async (req, res) => {
+  const { slug } = req.params;
+  const accountDir = path.join(DATA_DIR, slug);
+
+  try {
+    const { getAccountContext } = await import('./src/context/store.js');
+    const context = await getAccountContext(accountDir);
+
+    if (!context) {
+      return res.status(404).json({ error: 'Context not found. Run a data refresh first.' });
+    }
+
+    res.json(context);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch context' });
   }
 });
 
@@ -386,17 +407,32 @@ app.get('/api/accounts/:slug/sources/:source', async (req, res) => {
         })) || []
       };
     } else if (source === 'gong') {
-      const filePath = path.join(rawDir, 'gong_calls.json');
+      // Try both filenames for backwards compatibility
+      let filePath = path.join(rawDir, 'gong.json');
+      try {
+        await fs.access(filePath);
+      } catch {
+        filePath = path.join(rawDir, 'gong_calls.json');
+      }
       const content = await fs.readFile(filePath, 'utf-8');
       const gong = JSON.parse(content);
       data = {
         callsCount: gong.calls?.length || 0,
         calls: gong.calls?.slice(0, 10).map((c: any) => ({
           id: c.id,
-          title: c.title,
-          started: c.started,
-          duration: c.duration,
-          participants: c.parties?.map((p: any) => p.name).filter(Boolean) || []
+          title: c.title || c.subject || 'Untitled Call',
+          started: c.started || c.scheduled || c.startTime,
+          duration: c.duration || 0,
+          participants: c.participants || c.parties?.map((p: any) => p.name || p.emailAddress).filter(Boolean) || [],
+          url: c.url || (c.id ? `https://app.gong.io/call?id=${c.id}` : null)
+        })) || [],
+        summaries: gong.summaries?.slice(0, 10).map((s: any) => ({
+          callId: s.callId,
+          summary: s.summary,
+          actionItems: s.actionItems,
+          nextSteps: s.nextSteps,
+          topics: s.topics,
+          transcript: s.transcript // Full transcript for expandable view
         })) || []
       };
     } else if (source === 'notion') {
@@ -449,6 +485,8 @@ app.get('/api/accounts/:slug/sources', async (req, res) => {
   try {
     const meta = await readMeta(accountDir);
     const staleness = computeStaleness(meta);
+    const { getAccountContext } = await import('./src/context/store.js');
+    const context = await getAccountContext(accountDir);
 
     const formatTimestamp = (ts?: string) =>
       ts ? new Date(ts).toISOString() : null;
@@ -457,6 +495,11 @@ app.get('/api/accounts/:slug/sources', async (req, res) => {
       if (!stale) return 'use-cache';
       return 'incremental';
     };
+
+    // Extract rich metadata from context
+    const transcriptsCount = context?.gong?.summaries?.length || 0;
+    const latestCallTime = context?.gong?.calls?.[0]?.startTime;
+    const accountPageId = context?.notion?.accountPage?.id;
 
     res.json({
       salesforce: {
@@ -468,6 +511,9 @@ app.get('/api/accounts/:slug/sources', async (req, res) => {
         nextRecommended: getSuggestion(staleness.salesforce.any),
         staleReasons: staleness.salesforce.reasons,
         entities: staleness.salesforce.entities,
+        contactsCount: context?.salesforce?.contacts?.length || 0,
+        opportunitiesCount: context?.salesforce?.opportunities?.length || 0,
+        activitiesCount: context?.salesforce?.activities?.length || 0,
       },
       gong: {
         status: meta.sources.gong?.status || 'missing',
@@ -475,6 +521,8 @@ app.get('/api/accounts/:slug/sources', async (req, res) => {
         nextRecommended: getSuggestion(staleness.gong.any),
         staleReasons: staleness.gong.reasons,
         callCount: meta.sources.gong?.callCount || 0,
+        transcriptsCount,
+        latestCallTime: formatTimestamp(latestCallTime),
       },
       notion: {
         status: meta.sources.notion?.status || 'missing',
@@ -484,6 +532,12 @@ app.get('/api/accounts/:slug/sources', async (req, res) => {
         nextRecommended: getSuggestion(staleness.notion.any),
         staleReasons: staleness.notion.reasons,
         pageCount: meta.sources.notion?.pageCount || 0,
+        accountPageId,
+      },
+      prospector: {
+        status: context?.prospector ? 'fresh' : 'missing',
+        ranAt: formatTimestamp(context?.prospector?.ranAt),
+        filesCount: context?.prospector?.files?.length || 0,
       },
     });
   } catch (error) {
@@ -545,17 +599,34 @@ app.post('/api/accounts/:slug/sources/:source/refresh', async (req, res) => {
     const staleness = computeStaleness(meta);
     
     // Skip refresh if data is fresh and mode is auto
-    if (source === 'salesforce' && mode === 'auto' && !staleness.salesforce.any) {
-      sendProgress(res, 'Salesforce data is already fresh, using cached data');
-      res.write(`data: ${JSON.stringify({ 
-        type: 'complete', 
-        success: true, 
-        updated: false,
-        modeUsed: 'cache',
-        stats: meta.sources.salesforce?.entityCheckpoints || {},
-        meta: meta.sources.salesforce
-      })}\n\n`);
-      return res.end();
+    if (mode === 'auto') {
+      if (source === 'salesforce' && !staleness.salesforce.any) {
+        sendProgress(res, 'Salesforce data is already fresh, using cached data');
+        res.write(`data: ${JSON.stringify({ 
+          type: 'complete', 
+          success: true, 
+          updated: false,
+          modeUsed: 'cache',
+          stats: meta.sources.salesforce?.entityCheckpoints || {},
+          meta: meta.sources.salesforce
+        })}\n\n`);
+        return res.end();
+      }
+      if (source === 'gong' && !staleness.gong.any) {
+        sendProgress(res, 'Gong data is already fresh, using cached data');
+        res.write(`data: ${JSON.stringify({ 
+          type: 'complete', 
+          success: true, 
+          updated: false,
+          modeUsed: 'cache',
+          stats: {
+            callsCount: meta.sources.gong?.callCount || 0,
+            transcriptsCount: Object.keys(meta.sources.gong?.transcripts || {}).length
+          },
+          meta: meta.sources.gong
+        })}\n\n`);
+        return res.end();
+      }
     }
     
     // Fast path: Direct MCP client for Salesforce
@@ -654,6 +725,10 @@ app.post('/api/accounts/:slug/sources/:source/refresh', async (req, res) => {
         };
         await writeMeta(accountDir, updatedMeta);
         
+        // Rebuild context
+        sendProgress(res, 'Rebuilding context...');
+        await refreshAccountContext(accountDir);
+        
         sendProgress(res, `Complete! Fetched ${contacts?.length || 0} contacts, ${opportunities?.length || 0} opportunities, ${activities?.length || 0} activities`);
         res.write(`data: ${JSON.stringify({ 
           type: 'complete', 
@@ -673,6 +748,149 @@ app.post('/api/accounts/:slug/sources/:source/refresh', async (req, res) => {
         res.write(`data: ${JSON.stringify({ 
           type: 'error', 
           error: 'MCP refresh failed', 
+          details: mcpError.message || String(mcpError)
+        })}\n\n`);
+        return res.end();
+      }
+    }
+    
+    // Fast path: Direct MCP client for Gong (ingestFromGong doesn't work outside Amp context)
+    if (source === 'gong') {
+      try {
+        sendProgress(res, 'Connecting to Gong MCP...');
+        
+        // Calculate date range
+        const toDate = new Date();
+        let fromDate: Date;
+        
+        if (mode !== 'full' && meta.sources.gong?.lastListSyncAt) {
+          sendProgress(res, 'Using incremental refresh (fetching only new calls)');
+          fromDate = new Date(meta.sources.gong.lastListSyncAt);
+          fromDate.setMinutes(fromDate.getMinutes() - 5);
+        } else {
+          sendProgress(res, 'Performing full refresh (last 14 days)');
+          fromDate = new Date();
+          fromDate.setDate(fromDate.getDate() - 14);
+        }
+        
+        // List recent calls
+        sendProgress(res, 'Fetching call list...');
+        const callsResult = await callGongTool('list_calls', {
+          fromDateTime: fromDate.toISOString(),
+          toDateTime: toDate.toISOString()
+        });
+        const rawCalls = JSON.parse(callsResult[0].text).calls || [];
+        
+        sendProgress(res, `Found ${rawCalls.length} calls, fetching transcripts...`);
+        
+        // Normalize call data structure (Gong calls don't have parties in list response)
+        const calls = rawCalls.map((call: any) => ({
+          id: call.id,
+          title: call.title || 'Untitled Call',
+          startTime: call.scheduled || call.started || '',
+          duration: call.duration || 0,
+          participants: [] // Parties not included in list_calls response
+        }));
+        
+        // Limit to most recent 10 calls
+        const recentCalls = calls.slice(0, 10);
+        const summaries = [];
+        const transcriptsMetadata: Record<string, { hash: string; fetchedAt: string }> = {};
+        
+        // Fetch transcripts for each call
+        for (let i = 0; i < recentCalls.length; i++) {
+          const call = recentCalls[i];
+          sendProgress(res, `Fetching transcript ${i + 1}/${recentCalls.length}...`);
+          
+          try {
+            const transcriptResult = await callGongTool('retrieve_transcripts', {
+              callIds: [call.id]
+            });
+            const transcriptData = JSON.parse(transcriptResult[0].text);
+            
+            console.log(`[api-server] Transcript data structure for ${call.id}:`, JSON.stringify(transcriptData).substring(0, 500));
+            
+            if (transcriptData.callTranscripts && transcriptData.callTranscripts.length > 0) {
+              const t = transcriptData.callTranscripts[0];
+              
+              // Parse transcript - Gong structure: [{speakerId, sentences: [{text}]}]
+              const transcriptLines: string[] = [];
+              for (const segment of (t.transcript || [])) {
+                const speakerId = segment.speakerId || 'Unknown';
+                for (const sentence of (segment.sentences || [])) {
+                  if (sentence.text) {
+                    transcriptLines.push(`Speaker ${speakerId}: ${sentence.text}`);
+                  }
+                }
+              }
+              const transcript = transcriptLines.join('\n');
+              
+              const hash = createHash('sha256').update(transcript).digest('hex');
+              
+              summaries.push({
+                callId: call.id,
+                transcript,
+                summary: t.summary || null,
+                actionItems: t.keyPoints || t.actionItems || [],
+                nextSteps: t.nextSteps || [],
+                topics: [...new Set((t.transcript || []).map((s: any) => s.topic).filter(Boolean))]
+              });
+              
+              transcriptsMetadata[call.id] = {
+                hash,
+                fetchedAt: new Date().toISOString()
+              };
+            }
+          } catch (transcriptError) {
+            console.error(`Failed to fetch transcript for call ${call.id}:`, transcriptError);
+            // Continue with other calls
+          }
+        }
+        
+        // Save to file
+        const now = new Date().toISOString();
+        const gongData = {
+          calls: recentCalls,
+          summaries,
+          transcripts: transcriptsMetadata,
+          lastSyncedAt: now
+        };
+        
+        const rawDir = path.join(accountDir, 'raw');
+        await fs.mkdir(rawDir, { recursive: true });
+        await fs.writeFile(path.join(rawDir, 'gong.json'), JSON.stringify(gongData, null, 2));
+        
+        // Update meta
+        const updatedMeta = await readMeta(accountDir);
+        updatedMeta.sources.gong = updatedMeta.sources.gong || {};
+        updatedMeta.sources.gong.lastListSyncAt = now;
+        updatedMeta.sources.gong.callCount = recentCalls.length;
+        updatedMeta.sources.gong.transcripts = transcriptsMetadata;
+        updatedMeta.sources.gong.status = 'fresh';
+        await writeMeta(accountDir, updatedMeta);
+        
+        // Rebuild context
+        sendProgress(res, 'Rebuilding context...');
+        await refreshAccountContext(accountDir);
+        
+        sendProgress(res, `Complete! Fetched ${recentCalls.length} calls with ${summaries.length} transcripts`);
+        res.write(`data: ${JSON.stringify({ 
+          type: 'complete', 
+          success: true, 
+          updated: true,
+          modeUsed: mode,
+          stats: {
+            callsCount: recentCalls.length,
+            transcriptsCount: summaries.length
+          },
+          meta: updatedMeta.sources.gong
+        })}\n\n`);
+        return res.end();
+      } catch (mcpError: any) {
+        console.error('[api-server] Gong MCP call failed:', mcpError);
+        res.write(`data: ${JSON.stringify({ 
+          type: 'error', 
+          error: 'Gong MCP refresh failed', 
           details: mcpError.message || String(mcpError)
         })}\n\n`);
         return res.end();
