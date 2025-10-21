@@ -19,6 +19,7 @@ export function DataSourcesTab({ accountSlug }: DataSourcesTabProps) {
   const [notionData, setNotionData] = useState<any>(null)
   const [loading, setLoading] = useState<Record<string, boolean>>({})
   const [expandedTranscripts, setExpandedTranscripts] = useState<Set<string>>(new Set())
+  const [expandedNotionPages, setExpandedNotionPages] = useState<Set<string>>(new Set())
 
   useEffect(() => {
     if (accountSlug) {
@@ -280,11 +281,31 @@ export function DataSourcesTab({ accountSlug }: DataSourcesTabProps) {
           {notionData.pages && notionData.pages.length > 0 && (
             <CardContent>
               <div className="space-y-6">
-                {notionData.pages.map((page: any, idx: number) => (
+                {notionData.pages.map((page: any, idx: number) => {
+                  const isExpanded = expandedNotionPages.has(page.id);
+                  const toggleExpanded = () => {
+                    const newSet = new Set(expandedNotionPages);
+                    if (isExpanded) {
+                      newSet.delete(page.id);
+                    } else {
+                      newSet.add(page.id);
+                    }
+                    setExpandedNotionPages(newSet);
+                  };
+                  
+                  return (
                   <div key={idx} className="border-l-2 border-primary pl-4 space-y-3">
                     <div>
-                      <div className="font-semibold text-lg">{page.title}</div>
-                      <div className="flex items-center gap-3 mt-1">
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={toggleExpanded}
+                          className="text-primary hover:text-primary/80 transition-colors"
+                        >
+                          {isExpanded ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
+                        </button>
+                        <div className="font-semibold text-lg">{page.title}</div>
+                      </div>
+                      <div className="flex items-center gap-3 mt-1 ml-7">
                         {page.lastEdited && (
                           <div className="text-sm text-muted-foreground">
                             Last edited: {new Date(page.lastEdited).toLocaleDateString()}
@@ -303,7 +324,7 @@ export function DataSourcesTab({ accountSlug }: DataSourcesTabProps) {
                       </div>
                     </div>
                     
-                    {page.contentBlocks && page.contentBlocks.length > 0 && (
+                    {isExpanded && page.contentBlocks && page.contentBlocks.length > 0 && (
                       <div className="space-y-2 text-sm max-h-[600px] overflow-y-auto pr-2">
                         <div className="text-xs text-muted-foreground mb-2">
                           {page.contentBlocks.length} blocks of content
@@ -346,7 +367,8 @@ export function DataSourcesTab({ accountSlug }: DataSourcesTabProps) {
                       </div>
                     )}
                   </div>
-                ))}
+                  );
+                })}
               </div>
             </CardContent>
           )}
