@@ -3,9 +3,8 @@ accountKey:
   domain: null
   salesforceId: null
 
-generatedAt: 2025-10-20T00:00:00Z
+generatedAt: 2025-10-21T00:00:00Z
 approved: false
 
-# No changes proposed - no baseline CRM data available
-# Account must be researched and enriched before generating patch proposals
-# Recommended: Run prospect research, verify Salesforce account exists, enrich from Gong/Notion
+# No changes proposed - Account not found in Salesforce
+# Next steps: Complete initial prospect research and locate/create Salesforce record

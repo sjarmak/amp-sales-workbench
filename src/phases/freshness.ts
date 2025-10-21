@@ -136,6 +136,9 @@ export function computeStaleness(
 		if (!checkpoints.Contact?.lastFetchedAt) {
 			sfResult.entities!.Contact = true
 			sfResult.reasons.push('Contact data missing')
+		} else if (checkpoints.Contact.count === 0) {
+			sfResult.entities!.Contact = true
+			sfResult.reasons.push('Contact data empty (0 records)')
 		} else {
 			const age = nowMs - new Date(checkpoints.Contact.lastFetchedAt).getTime()
 			if (age > TTL.salesforce.contacts) {
@@ -148,6 +151,9 @@ export function computeStaleness(
 		if (!checkpoints.Opportunity?.lastFetchedAt) {
 			sfResult.entities!.Opportunity = true
 			sfResult.reasons.push('Opportunity data missing')
+		} else if (checkpoints.Opportunity.count === 0) {
+			sfResult.entities!.Opportunity = true
+			sfResult.reasons.push('Opportunity data empty (0 records)')
 		} else {
 			const age = nowMs - new Date(checkpoints.Opportunity.lastFetchedAt).getTime()
 			if (age > TTL.salesforce.opportunities) {
@@ -160,6 +166,9 @@ export function computeStaleness(
 		if (!checkpoints.Activity?.lastFetchedAt) {
 			sfResult.entities!.Activity = true
 			sfResult.reasons.push('Activity data missing')
+		} else if (checkpoints.Activity.count === 0) {
+			sfResult.entities!.Activity = true
+			sfResult.reasons.push('Activity data empty (0 records)')
 		} else {
 			const age = nowMs - new Date(checkpoints.Activity.lastFetchedAt).getTime()
 			if (age > TTL.salesforce.activities) {

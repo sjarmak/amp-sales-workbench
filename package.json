@@ -19,7 +19,6 @@
     "closed-lost": "tsx scripts/test-closed-lost.ts",
     "backfill": "tsx scripts/test-backfill.ts",
     "test:agents": "tsx scripts/test-all-agents.ts",
-    "ui": "streamlit run streamlit_app.py",
     "api": "tsx api-server.ts",
     "web": "cd web && npm run dev",
     "start:web": "concurrently \"npm run api\" \"npm run web\"",
@@ -37,6 +36,7 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.20.1",
     "@sourcegraph/amp-sdk": "^0.1.0-20251014160341-g7c5de51",
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.3",

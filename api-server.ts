@@ -1,9 +1,18 @@
 import express from 'express';
 import cors from 'cors';
-import { spawn } from 'child_process';
 import { promises as fs } from 'fs';
 import path from 'path';
-import { readMeta, computeStaleness, type SourceStatus } from './src/phases/freshness.js';
+import { execute } from '@sourcegraph/amp-sdk';
+import { config } from 'dotenv';
+import { readMeta, computeStaleness, type SourceStatus, writeMeta } from './src/phases/freshness.js';
+import { runAgent as executeAgent, type AgentName, type AgentOptions } from './src/agents/agent-runner.js';
+import { ingestFromSalesforce, type SalesforceIngestOptions } from './src/phases/ingest/salesforce.js';
+import type { AccountKey } from './src/types.js';
+import { callSalesforceTool, closeMCPClients } from './src/mcp-client.js';
+
+// Load environment variables
+config();
+
 const app = express();
 const PORT = 3001;
 
@@ -20,67 +29,17 @@ function getMcpCapabilities(): { salesforce: boolean; gong: boolean; notion: boo
 	return { salesforce: true, gong: true, notion: true };
 }
 
-// Helper to run agent scripts
-async function runAgent(scriptPath: string, args: string[]): Promise<{ success: boolean; output: string; error?: string }> {
-  return new Promise((resolve) => {
-    const proc = spawn('npx', ['tsx', scriptPath, ...args], {
-      cwd: process.cwd(),
-      env: process.env,
-    });
-
-    let stdout = '';
-    let stderr = '';
-
-    proc.stdout.on('data', (data) => {
-      stdout += data.toString();
-    });
-
-    proc.stderr.on('data', (data) => {
-      stderr += data.toString();
-    });
-
-    proc.on('close', (code) => {
-      resolve({
-        success: code === 0,
-        output: stdout,
-        error: code !== 0 ? stderr : undefined,
-      });
-    });
-  });
-}
-
-// Helper to run agent scripts with streaming
-function runAgentStream(scriptPath: string, args: string[], onData: (data: string) => void): Promise<{ success: boolean; output: string; error?: string }> {
-  return new Promise((resolve) => {
-    const proc = spawn('npx', ['tsx', scriptPath, ...args], {
-      cwd: process.cwd(),
-      env: process.env,
-    });
-
-    let stdout = '';
-    let stderr = '';
-
-    proc.stdout.on('data', (data) => {
-      const text = data.toString();
-      stdout += text;
-      onData(text);
-    });
-
-    proc.stderr.on('data', (data) => {
-      const text = data.toString();
-      stderr += text;
-      onData(text);
-    });
-
-    proc.on('close', (code) => {
-      resolve({
-        success: code === 0,
-        output: stdout,
-        error: code !== 0 ? stderr : undefined,
-      });
-    });
-  });
-}
+/**
+ * NOTE: Agent execution is now handled by src/agents/agent-runner.ts
+ * 
+ * All agents are executed through the unified agent-runner which:
+ * - Imports agent modules directly (no spawn/exec)
+ * - Runs in Amp SDK context with MCP access
+ * - Provides consistent error handling and metadata
+ * 
+ * This ensures all agents have access to MCP tools on globalThis
+ * when running through the web UI.
+ */
 
 // Get all accounts
 app.get('/api/accounts', async (req, res) => {
@@ -245,38 +204,74 @@ const agentScripts: Record<string, string> = {
   'prospector': 'scripts/test-prospector.ts',
 };
 
-// Run agent
+// Run agent via Amp SDK (has MCP access)
 app.post('/api/agents/:agent', async (req, res) => {
   const { agent } = req.params;
   const { accountName, ...options } = req.body;
 
+  if (!accountName) {
+    return res.status(400).json({ error: 'Account name is required' });
+  }
+
   const scriptPath = agentScripts[agent];
   if (!scriptPath) {
     return res.status(404).json({ error: 'Agent not found' });
   }
 
-  const args = [accountName];
-  if (options.callId) args.push(options.callId);
-  if (options.apply) args.push('--apply');
-  
-  // For full-refresh, add full mode and all sources
-  if (agent === 'full-refresh') {
-    args.push('--mode', 'full', '--sources', 'all');
+  try {
+    const cwd = process.cwd();
+    const args = [accountName];
+    if (options.callId) args.push(options.callId);
+    if (options.apply) args.push('--apply');
+    
+    // For full-refresh, add mode and sources
+    if (agent === 'full-refresh') {
+      args.push('--mode', 'full', '--sources', 'all');
+    }
+    
+    const argsStr = args.map(a => `"${a}"`).join(' ');
+    
+    const prompt = `Run the ${agent} agent for account "${accountName}".
+
+\`\`\`bash
+cd ${cwd}
+npx tsx ${scriptPath} ${argsStr}
+\`\`\`
+
+Execute and return the result.`;
+
+    const stream = execute({ 
+      prompt,
+      options: { dangerouslyAllowAll: true }
+    });
+    
+    let output = '';
+    for await (const message of stream) {
+      if (message.type === 'assistant') {
+        for (const block of message.message.content) {
+          if (block.type === 'text') {
+            output += block.text;
+          }
+        }
+      }
+    }
+    
+    res.json({ success: true, output });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error',
+    });
   }
-
-  const result = await runAgent(scriptPath, args);
-
-  res.json(result);
 });
 
-// Stream agent execution (SSE)
+// Stream agent execution (SSE) - executes agent via Amp SDK with progress updates
 app.get('/api/agents/:agent/stream', async (req, res) => {
   const { agent } = req.params;
   const { accountName, callId, apply } = req.query;
 
-  const scriptPath = agentScripts[agent];
-  if (!scriptPath) {
-    return res.status(404).json({ error: 'Agent not found' });
+  if (!accountName) {
+    return res.status(400).json({ error: 'Account name is required' });
   }
 
   // Set up SSE
@@ -284,16 +279,22 @@ app.get('/api/agents/:agent/stream', async (req, res) => {
   res.setHeader('Cache-Control', 'no-cache');
   res.setHeader('Connection', 'keep-alive');
 
-  const args = [accountName as string];
-  if (callId) args.push(callId as string);
-  if (apply) args.push('--apply');
-
   try {
-    const result = await runAgentStream(scriptPath, args, (data) => {
-      res.write(`data: ${JSON.stringify({ type: 'log', data })}\n\n`);
+    res.write(`data: ${JSON.stringify({ type: 'log', data: `Starting ${agent} agent...\n` })}\n\n`);
+    
+    const result = await executeAgent(agent as AgentName, {
+      accountName: accountName as string,
+      callId: callId as string,
+      apply: apply === 'true',
     });
 
-    res.write(`data: ${JSON.stringify({ type: 'complete', success: result.success, error: result.error })}\n\n`);
+    if (result.success) {
+      res.write(`data: ${JSON.stringify({ type: 'log', data: 'Agent completed successfully\n' })}\n\n`);
+      res.write(`data: ${JSON.stringify({ type: 'complete', success: true, result: result.output })}\n\n`);
+    } else {
+      res.write(`data: ${JSON.stringify({ type: 'error', error: result.error })}\n\n`);
+    }
+    
     res.end();
   } catch (error) {
     res.write(`data: ${JSON.stringify({ type: 'error', error: String(error) })}\n\n`);
@@ -514,7 +515,7 @@ function sendProgress(res: express.Response, message: string) {
   res.write(`data: ${JSON.stringify({ type: 'progress', message })}\n\n`);
 }
 
-// Smart refresh endpoint with SSE (spawns Amp agent with MCP access)
+// Smart refresh endpoint with SSE (runs via Amp SDK with MCP access)
 app.post('/api/accounts/:slug/sources/:source/refresh', async (req, res) => {
   const { slug, source } = req.params;
   const { mode = 'auto' } = req.body; // auto | incremental | full
@@ -526,10 +527,11 @@ app.post('/api/accounts/:slug/sources/:source/refresh', async (req, res) => {
   res.setHeader('Connection', 'keep-alive');
 
   try {
-    // Load metadata to get account name
+    // Load metadata to get account name and key
     const metadataPath = path.join(accountDir, 'metadata.json');
     const accountMetadata = JSON.parse(await fs.readFile(metadataPath, 'utf-8'));
     
+    console.log(`[api-server] Starting ${mode} refresh for ${source}, account: ${accountMetadata.name}`);
     sendProgress(res, `Starting ${mode} refresh for ${source}...`);
     
     // Validate source
@@ -538,64 +540,353 @@ app.post('/api/accounts/:slug/sources/:source/refresh', async (req, res) => {
       return res.end();
     }
     
-    // Build args for refreshData agent
-    const args = [
-      accountMetadata.name,
-      '--mode', mode,
-      '--sources', source
-    ];
+    // Check staleness first  
+    const meta = await readMeta(accountDir);
+    const staleness = computeStaleness(meta);
     
-    // Run refresh agent in Amp context (has MCP access)
-    const result = await runAgentStream('src/agents/refreshData.ts', args, (data) => {
-      // Forward script output as progress
-      const lines = data.split('\n').filter(l => l.trim());
-      for (const line of lines) {
-        sendProgress(res, line);
-      }
-    });
-    
-    if (!result.success) {
-      res.write(`data: ${JSON.stringify({ type: 'error', error: 'Refresh failed', details: result.error })}\n\n`);
+    // Skip refresh if data is fresh and mode is auto
+    if (source === 'salesforce' && mode === 'auto' && !staleness.salesforce.any) {
+      sendProgress(res, 'Salesforce data is already fresh, using cached data');
+      res.write(`data: ${JSON.stringify({ 
+        type: 'complete', 
+        success: true, 
+        updated: false,
+        modeUsed: 'cache',
+        stats: meta.sources.salesforce?.entityCheckpoints || {},
+        meta: meta.sources.salesforce
+      })}\n\n`);
       return res.end();
     }
     
-    // Parse result from agent (last line should be JSON output)
-    const outputLines = result.output?.split('\n').filter(l => l.trim()) || [];
-    let refreshResult: any = { updated: false, modeUsed: 'unknown', stats: {} };
-    
-    // Find JSON result in output (agent prints it at the end)
-    for (let i = outputLines.length - 1; i >= 0; i--) {
+    // Fast path: Direct MCP client for Salesforce
+    if (source === 'salesforce') {
       try {
-        const parsed = JSON.parse(outputLines[i]);
-        if (parsed.success !== undefined) {
-          refreshResult = parsed;
-          break;
+        sendProgress(res, 'Connecting to Salesforce MCP...');
+        
+        // Lookup or use existing SF ID
+        let sfId = accountMetadata.salesforceId;
+        if (!sfId) {
+          sendProgress(res, 'Looking up Salesforce ID...');
+          const lookupResult = await callSalesforceTool('soql_query', {
+            query: `SELECT Id, Name FROM Account WHERE Name = '${accountMetadata.name}' LIMIT 1`
+          });
+          const records = JSON.parse(lookupResult[0].text).records;
+          if (records && records.length > 0) {
+            sfId = records[0].Id;
+            accountMetadata.salesforceId = sfId;
+            await fs.writeFile(path.join(accountDir, 'metadata.json'), JSON.stringify(accountMetadata, null, 2));
+          } else {
+            throw new Error(`Account "${accountMetadata.name}" not found in Salesforce`);
+          }
         }
-      } catch {
-        // Not JSON, continue
+        
+        // Build incremental WHERE clauses
+        const cp = meta.sources.salesforce?.entityCheckpoints || {};
+        const contactWhere = mode !== 'full' && cp.Contact?.lastFetchedAt 
+          ? `AND LastModifiedDate > ${cp.Contact.lastFetchedAt}` 
+          : '';
+        const oppWhere = mode !== 'full' && cp.Opportunity?.lastFetchedAt 
+          ? `AND LastModifiedDate > ${cp.Opportunity.lastFetchedAt}` 
+          : '';
+        const activityWhere = mode !== 'full' && cp.Activity?.lastFetchedAt 
+          ? `AND LastModifiedDate > ${cp.Activity.lastFetchedAt}` 
+          : '';
+        
+        if (mode !== 'full' && (contactWhere || oppWhere || activityWhere)) {
+          sendProgress(res, 'Using incremental refresh (fetching only changed records)');
+        } else {
+          sendProgress(res, 'Performing full refresh');
+        }
+        
+        // Fetch Account
+        sendProgress(res, 'Fetching account details...');
+        const accountResult = await callSalesforceTool('get_record', {
+          objectType: 'Account',
+          id: sfId
+        });
+        const account = JSON.parse(accountResult[0].text);
+        
+        // Fetch Contacts
+        sendProgress(res, 'Fetching contacts...');
+        const contactsResult = await callSalesforceTool('soql_query', {
+          query: `SELECT Id, Name, Email, Title, Phone, Department, LastModifiedDate FROM Contact WHERE AccountId = '${sfId}' ${contactWhere} LIMIT 100`
+        });
+        const contacts = JSON.parse(contactsResult[0].text).records;
+        
+        // Fetch Opportunities
+        sendProgress(res, 'Fetching opportunities...');
+        const oppsResult = await callSalesforceTool('soql_query', {
+          query: `SELECT Id, Name, StageName, Amount, CloseDate, Probability, NextStep, Type, LeadSource, LastModifiedDate FROM Opportunity WHERE AccountId = '${sfId}' ${oppWhere} LIMIT 100`
+        });
+        const opportunities = JSON.parse(oppsResult[0].text).records;
+        
+        // Fetch Activities
+        sendProgress(res, 'Fetching activities...');
+        const activitiesResult = await callSalesforceTool('soql_query', {
+          query: `SELECT Id, Subject, ActivityDate, Status, Priority, LastModifiedDate FROM Task WHERE AccountId = '${sfId}' ${activityWhere} LIMIT 100`
+        });
+        const activities = JSON.parse(activitiesResult[0].text).records;
+        
+        // Save to file
+        const now = new Date().toISOString();
+        const sfData = {
+          account,
+          contacts,
+          opportunities,
+          activities,
+          lastSyncedAt: now
+        };
+        
+        const rawDir = path.join(accountDir, 'raw');
+        await fs.mkdir(rawDir, { recursive: true });
+        await fs.writeFile(path.join(rawDir, 'salesforce.json'), JSON.stringify(sfData, null, 2));
+        
+        // Update meta
+        const updatedMeta = await readMeta(accountDir);
+        updatedMeta.sources.salesforce = updatedMeta.sources.salesforce || {};
+        updatedMeta.sources.salesforce.lastFetchedAt = now;
+        updatedMeta.sources.salesforce.status = 'fresh';
+        updatedMeta.sources.salesforce.entityCheckpoints = {
+          Account: { lastFetchedAt: now },
+          Contact: { lastFetchedAt: now, count: contacts?.length || 0 },
+          Opportunity: { lastFetchedAt: now, count: opportunities?.length || 0 },
+          Activity: { lastFetchedAt: now, count: activities?.length || 0 }
+        };
+        await writeMeta(accountDir, updatedMeta);
+        
+        sendProgress(res, `Complete! Fetched ${contacts?.length || 0} contacts, ${opportunities?.length || 0} opportunities, ${activities?.length || 0} activities`);
+        res.write(`data: ${JSON.stringify({ 
+          type: 'complete', 
+          success: true, 
+          updated: true,
+          modeUsed: mode,
+          stats: {
+            contactsCount: contacts?.length || 0,
+            opportunitiesCount: opportunities?.length || 0,
+            activitiesCount: activities?.length || 0
+          },
+          meta: updatedMeta.sources.salesforce
+        })}\n\n`);
+        return res.end();
+      } catch (mcpError: any) {
+        console.error('[api-server] Direct MCP call failed:', mcpError);
+        res.write(`data: ${JSON.stringify({ 
+          type: 'error', 
+          error: 'MCP refresh failed', 
+          details: mcpError.message || String(mcpError)
+        })}\n\n`);
+        return res.end();
       }
+    }
+    
+    // Run refresh using Amp SDK (has MCP access)
+    const prompt = `Fetch ${source} data for account "${accountMetadata.name}" (SF ID: ${accountMetadata.salesforceId || 'lookup required'}) and save it.
+
+Steps:
+${!accountMetadata.salesforceId ? '1. Look up the Salesforce ID for account name "' + accountMetadata.name + '" using mcp__salesforce__soql_query with: SELECT Id, Name FROM Account WHERE Name = \'' + accountMetadata.name + '\' LIMIT 1\n\n2.' : '1.'} If ${source} is "salesforce", fetch:
+   - Account details with mcp__salesforce__get_record (ID: ${accountMetadata.salesforceId || '<from step 1>'})
+   - Contacts: SELECT Id, Name, Email, Title, Phone, Department, LastModifiedDate FROM Contact WHERE AccountId = '${accountMetadata.salesforceId || '<from step 1>'}' ${sinceFilters.includes('Contacts') ? `AND LastModifiedDate > ${meta.sources.salesforce?.entityCheckpoints.Contact?.lastFetchedAt}` : ''} LIMIT 100
+   - Opportunities: SELECT Id, Name, StageName, Amount, CloseDate, Probability, NextStep, Type, LeadSource, LastModifiedDate FROM Opportunity WHERE AccountId = '${accountMetadata.salesforceId || '<from step 1>'}' ${sinceFilters.includes('Opportunities') ? `AND LastModifiedDate > ${meta.sources.salesforce?.entityCheckpoints.Opportunity?.lastFetchedAt}` : ''} LIMIT 100
+   - Activities: SELECT Id, Subject, ActivityDate, Status, Priority, LastModifiedDate FROM Task WHERE AccountId = '${accountMetadata.salesforceId || '<from step 1>'}' ${sinceFilters.includes('Activities') ? `AND LastModifiedDate > ${meta.sources.salesforce?.entityCheckpoints.Activity?.lastFetchedAt}` : ''} LIMIT 100
+
+NOTE: If any query returns 0 records, that's OK - it means no new/changed data.
+
+${!accountMetadata.salesforceId ? '3.' : '2.'} Save the results to ${accountDir}/raw/${source}.json as JSON
+
+${!accountMetadata.salesforceId ? '4.' : '3.'} Update ${accountDir}/raw/_sources.meta.json to mark ${source} as "fresh" with current timestamp
+
+${!accountMetadata.salesforceId ? '5.' : '4.'} Return a JSON object: { success: true, updated: true, modeUsed: "${mode}", stats: { contactsCount: X, opportunitiesCount: Y, activitiesCount: Z } }
+
+Execute these steps using the MCP tools and return the final JSON result.`;
+    
+    console.log(`[api-server] Calling Amp SDK execute() with prompt length: ${prompt.length}`);
+
+    // Set up keep-alive to prevent connection timeout
+    const keepAliveInterval = setInterval(() => {
+      res.write(': keep-alive\n\n');
+    }, 5000);
+    
+    // Set up progress indicator for long-running queries
+    const startTime = Date.now();
+    let lastProgressTime = startTime;
+    const progressInterval = setInterval(() => {
+      const elapsed = Math.floor((Date.now() - lastProgressTime) / 1000);
+      const totalElapsed = Math.floor((Date.now() - startTime) / 1000);
+      if (elapsed > 10) {
+        sendProgress(res, `Still running Salesforce queries (${totalElapsed}s total)...`);
+      }
+    }, 15000);
+    
+    // Set up timeout (5 minutes max - Amp SDK routing is slow)
+    const TIMEOUT_MS = 300000;
+    const timeoutHandle = setTimeout(() => {
+      clearInterval(keepAliveInterval);
+      clearInterval(progressInterval);
+      console.error('[api-server] Refresh timed out after 5 minutes');
+      res.write(`data: ${JSON.stringify({ type: 'error', error: 'Refresh timed out', details: 'Operation took longer than 5 minutes. For faster refresh, use CLI: npm run manage "Account Name"' })}\n\n`);
+      res.end();
+    }, TIMEOUT_MS);
+
+    try {
+      console.log(`[api-server] Starting execute() stream...`);
+      const stream = execute({ 
+        prompt,
+        options: { 
+          dangerouslyAllowAll: true
+        }
+      });
+      
+      let output = '';
+      let messageCount = 0;
+      let toolCallCount = 0;
+      
+      for await (const message of stream) {
+        messageCount++;
+        lastProgressTime = Date.now();
+        console.log(`[api-server] Received message #${messageCount}, type: ${message.type}`);
+        
+        if (message.type === 'assistant') {
+          for (const block of message.message.content) {
+            if (block.type === 'text') {
+              output += block.text;
+              console.log(`[api-server] Assistant text block (${block.text.length} chars):`, block.text.substring(0, 100));
+              // Send progress updates
+              const lines = block.text.split('\n').filter(l => l.trim());
+              for (const line of lines) {
+                sendProgress(res, line);
+              }
+            } else if (block.type === 'tool_use') {
+              toolCallCount++;
+              sendProgress(res, `Executing ${block.name || 'MCP tool'}... (${toolCallCount} tool calls so far)`);
+            }
+          }
+        }
+      }
+      
+      console.log(`[api-server] Stream complete. Total messages: ${messageCount}, tool calls: ${toolCallCount}, output length: ${output.length}`);
+      clearTimeout(timeoutHandle);
+      clearInterval(keepAliveInterval);
+      clearInterval(progressInterval);
+    
+    // Parse result from output
+    let refreshResult: any = { updated: false, modeUsed: 'unknown', stats: {}, success: false };
+    
+    // Try to extract JSON from output
+    const jsonMatches = output.match(/\{[\s\S]*"success"[\s\S]*\}/g);
+    if (jsonMatches) {
+      for (const match of jsonMatches) {
+        try {
+          const parsed = JSON.parse(match);
+          if (parsed.success !== undefined) {
+            refreshResult = parsed;
+            break;
+          }
+        } catch {}
+      }
+    }
+    
+    if (!refreshResult.success) {
+      res.write(`data: ${JSON.stringify({ type: 'error', error: 'Refresh failed', details: output })}\n\n`);
+      return res.end();
     }
     
     // Reload meta to get updated metadata
     const updatedMeta = await readMeta(accountDir);
     
-    sendProgress(res, 'Refresh complete!');
-    res.write(`data: ${JSON.stringify({ 
-      type: 'complete', 
-      success: true, 
-      updated: refreshResult.updated,
-      modeUsed: refreshResult.modeUsed,
-      stats: refreshResult.stats,
-      meta: updatedMeta.sources[source as 'salesforce' | 'gong' | 'notion']
-    })}\n\n`);
-    res.end();
+      sendProgress(res, 'Refresh complete!');
+      res.write(`data: ${JSON.stringify({ 
+        type: 'complete', 
+        success: true, 
+        updated: refreshResult.updated,
+        modeUsed: refreshResult.modeUsed,
+        stats: refreshResult.stats,
+        meta: updatedMeta.sources[source as 'salesforce' | 'gong' | 'notion']
+      })}\n\n`);
+      res.end();
+    } catch (streamError) {
+      clearTimeout(timeoutHandle);
+      clearInterval(keepAliveInterval);
+      clearInterval(progressInterval);
+      console.error('Stream error:', streamError);
+      res.write(`data: ${JSON.stringify({ type: 'error', error: 'Stream failed', details: String(streamError) })}\n\n`);
+      res.end();
+    }
   } catch (error) {
     console.error('Refresh failed:', error);
-    res.write(`data: ${JSON.stringify({ type: 'error', error: 'Failed to refresh data', details: String(error) })}\n\n`);
-    res.end();
+    try {
+      res.write(`data: ${JSON.stringify({ type: 'error', error: 'Failed to refresh data', details: String(error) })}\n\n`);
+      res.end();
+    } catch (e) {
+      // Response already ended
+    }
   }
 });
 
-app.listen(PORT, () => {
+// Test endpoint to verify MCP access via Amp SDK
+app.get('/api/test-mcp', async (req, res) => {
+  try {
+    const prompt = `Test Salesforce MCP access by running this query:
+
+\`\`\`typescript
+import { execute } from '@sourcegraph/amp-sdk';
+
+// Use MCP tool to query Salesforce
+const result = await (globalThis as any).mcp__salesforce__soql_query({
+  query: 'SELECT COUNT() FROM Account'
+});
+
+result;
+\`\`\`
+
+Execute and return the result.`;
+
+    const stream = execute({ 
+      prompt,
+      options: { dangerouslyAllowAll: true }
+    });
+    
+    let output = '';
+    for await (const message of stream) {
+      if (message.type === 'assistant') {
+        for (const block of message.message.content) {
+          if (block.type === 'text') {
+            output += block.text;
+          }
+        }
+      }
+    }
+    
+    res.json({ success: true, output, configured: !!process.env.AMP_API_KEY });
+  } catch (error) {
+    res.status(500).json({ 
+      success: false, 
+      error: error instanceof Error ? error.message : String(error),
+      configured: !!process.env.AMP_API_KEY
+    });
+  }
+});
+
+const server = app.listen(PORT, () => {
   console.log(`API server running on http://localhost:${PORT}`);
+  console.log(`AMP_API_KEY configured: ${!!process.env.AMP_API_KEY}`);
+  console.log(`Direct MCP client enabled for fast data refresh`);
+});
+
+// Cleanup MCP clients on shutdown
+process.on('SIGINT', async () => {
+  console.log('\nShutting down API server...');
+  await closeMCPClients();
+  server.close(() => {
+    console.log('Server closed');
+    process.exit(0);
+  });
+});
+
+process.on('SIGTERM', async () => {
+  console.log('\nShutting down API server...');
+  await closeMCPClients();
+  server.close(() => {
+    console.log('Server closed');
+    process.exit(0);
+  });
 });

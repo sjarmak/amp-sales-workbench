@@ -143,7 +143,7 @@ function formatAsMarkdown(result: MyAgentOutput): string {
 - [ ] Create CLI script in `scripts/test-<name>.ts`
 - [ ] Add to agent index: `src/agents/index.ts`
 - [ ] Document in `docs/AGENTS_GUIDE.md`
-- [ ] Add Streamlit button in `streamlit_app.py` (if applicable)
+- [ ] Add button to web UI in appropriate component
 - [ ] Test with real data
 - [ ] Add example output to documentation
 
@@ -158,18 +158,8 @@ import { runMyAgent } from './agents/myAgent.js'
 const myAgentResult = await runMyAgent(accountKey, accountDataDir)
 ```
 
-**With Streamlit UI**:
-```python
-# streamlit_app.py
-if st.button("Run My Agent", use_container_width=True):
-    result = run_agent(
-        ["npx", "tsx", "scripts/test-my-agent.ts", account_name],
-        "Running my agent..."
-    )
-    if result["success"]:
-        st.success("✅ My agent completed")
-        st.rerun()
-```
+**With Web UI**:
+Add a button to the appropriate component in `web/components/` that calls the agent script.
 
 ---
 

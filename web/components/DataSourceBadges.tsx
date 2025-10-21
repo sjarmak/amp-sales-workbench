@@ -60,30 +60,42 @@ export function DataSourceBadges({ accountSlug, capabilities, refreshTrigger = 0
   }
 
   const refreshSource = async (source: string, mode: 'auto' | 'incremental' | 'full') => {
-    console.log(`Refreshing ${source} for account slug: ${accountSlug}`)
+    console.log(`[DataSourceBadges] Refreshing ${source} for account slug: ${accountSlug}, mode: ${mode}`)
     setRefreshing(prev => ({ ...prev, [source]: true }))
     setRefreshProgress(prev => ({ ...prev, [source]: 'Starting...' }))
     
     try {
+      console.log(`[DataSourceBadges] Fetching ${API_URL}/accounts/${accountSlug}/sources/${source}/refresh`)
       const res = await fetch(`${API_URL}/accounts/${accountSlug}/sources/${source}/refresh`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ mode }),
       })
       
+      console.log(`[DataSourceBadges] Response status: ${res.status}`)
+      
+      if (!res.ok) {
+        throw new Error(`HTTP ${res.status}: ${res.statusText}`)
+      }
+      
       if (!res.body) {
-        console.error('No response body')
-        return
+        console.error('[DataSourceBadges] No response body')
+        throw new Error('No response body')
       }
       
       const reader = res.body.getReader()
       const decoder = new TextDecoder()
       
+      console.log(`[DataSourceBadges] Starting SSE stream read loop...`)
       while (true) {
         const { done, value } = await reader.read()
-        if (done) break
+        if (done) {
+          console.log(`[DataSourceBadges] SSE stream ended`)
+          break
+        }
         
         const chunk = decoder.decode(value)
+        console.log(`[DataSourceBadges] Received chunk:`, chunk.substring(0, 200))
         const lines = chunk.split('\n')
         
         for (const line of lines) {
@@ -92,6 +104,7 @@ export function DataSourceBadges({ accountSlug, capabilities, refreshTrigger = 0
               const jsonStr = line.substring(6).trim()
               if (!jsonStr) continue
               
+              console.log(`[DataSourceBadges] Parsing JSON:`, jsonStr.substring(0, 100))
               const data = JSON.parse(jsonStr)
               
               if (data.type === 'progress') {
@@ -117,15 +130,19 @@ export function DataSourceBadges({ accountSlug, capabilities, refreshTrigger = 0
                 }
               }
             } catch (e) {
-              console.error('Failed to parse SSE data:', e, 'Line:', line)
+              console.error('[DataSourceBadges] Failed to parse SSE data:', e, 'Line:', line)
             }
           }
         }
       }
+      
+      console.log(`[DataSourceBadges] Stream complete for ${source}`)
     } catch (error) {
-      console.error(`Failed to refresh ${source}:`, error)
-      setRefreshProgress(prev => ({ ...prev, [source]: `Failed: ${error}` }))
+      console.error(`[DataSourceBadges] Failed to refresh ${source}:`, error)
+      setRefreshProgress(prev => ({ ...prev, [source]: `✗ Failed: ${error}` }))
+      alert(`Failed to refresh ${source}: ${error}\n\nCheck browser console for details.`)
     } finally {
+      console.log(`[DataSourceBadges] Cleanup: setting refreshing to false for ${source}`)
       setRefreshing(prev => ({ ...prev, [source]: false }))
       setTimeout(() => {
         setRefreshProgress(prev => {

@@ -14,25 +14,18 @@ Multi-agent sales workflow system that automates prospect research, account enri
 ## Quick Start
 
 ```bash
-# 1. Install Node dependencies
+# 1. Install dependencies
 npm install
 
-# 2. Set up Python virtual environment
-python3 -m venv venv
-source venv/bin/activate.fish  # fish shell
-# source venv/bin/activate     # bash/zsh
-# venv\Scripts\activate        # Windows
-
-# 3. Install Python dependencies
-pip install -r requirements.txt
-
-# 4. Configure environment
+# 2. Configure environment
 cp .env.example .env
 # Add your AMP_API_KEY to .env
 # Configure MCP servers in Amp settings (Gong, Salesforce, Notion)
 
-# 5. Launch Streamlit UI (Recommended)
-streamlit run streamlit_app.py
+# 3. Launch Web UI (Recommended)
+npm run start:web
+# Frontend: http://localhost:3000
+# API: http://localhost:3001
 
 # Or use CLI
 npm run manage "Acme Corp"
@@ -40,52 +33,23 @@ npm run manage "Acme Corp"
 
 **See [docs/SETUP.md](./docs/SETUP.md) for detailed setup instructions.**
 
-## Streamlit UI
+## Web UI
 
-### Overview
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│  ⚡ Amp Sales Workbench                                     │
-├─────────────────────────────────────────────────────────────┤
-│  🚀 Quick Actions | 📋 Prep | 📞 After Call | 💾 CRM | 📊  │
-│                                                             │
-│  ┌───────────────┬───────────────┬───────────────┐         │
-│  │ 🔍 Research   │ 📝 Pre-Call   │ 📞 Post-Call  │         │
-│  ├───────────────┼───────────────┼───────────────┤         │
-│  │ Full Refresh  │ Generate      │ Process       │         │
-│  │ Update Gong   │ Brief         │ Latest Call   │         │
-│  └───────────────┴───────────────┴───────────────┘         │
-└─────────────────────────────────────────────────────────────┘
-```
-
-The Streamlit UI provides:
-- **Visual dashboard** for all agent workflows
-- **One-click actions** for common tasks
-- **Capability detection** showing which MCP integrations are active
-- **Interactive draft review** with approval checkboxes
-- **Real-time execution** of all agents
+The modern web UI provides:
+- **Clean interface** inspired by shadcn/ui
+- **Account selector** with capability badges
+- **One-click buttons** for all agents
+- **Tabs** for Prep, After Call, CRM, Insights workflows
+- **Real-time agent execution**
 
 ### Usage
 
 ```bash
-# Start Streamlit server
-streamlit run streamlit_app.py
-
-# Open browser to http://localhost:8501
-# Select an account from the sidebar
-# Use Quick Actions or tabbed views for workflows
+# Start web UI
+npm run start:web
+# Frontend: http://localhost:3000
+# API: http://localhost:3001
 ```
-
-### Tabs
-
-- **🚀 Quick Actions**: One-click buttons for all 11+ agents
-- **📋 Prep**: Pre-call briefs with MEDDIC, stakeholders, demo focus
-- **📞 After Call**: Post-call summaries, follow-up emails, coaching
-- **💾 CRM Updates**: Review/approve draft changes before Salesforce sync
-- **📊 Insights**: Account health, opportunities, signals, deltas
-
-See [docs/STREAMLIT_UI.md](./docs/STREAMLIT_UI.md) for complete guide.
 
 ## CLI Commands
 
@@ -259,19 +223,6 @@ cat data/accounts/<slug>/snapshots/snapshot-*.json | jq .
 # Clear cache and rebuild
 rm -rf data/accounts/<slug>/raw/*.json
 npm run manage "<Account Name>"
-```
-
-### Streamlit Issues
-
-```bash
-# Port already in use
-streamlit run streamlit_app.py --server.port 8502
-
-# Clear Streamlit cache
-streamlit cache clear
-
-# Dependencies missing
-pip install -r requirements.txt
 ```
 
 For more help, see [docs/WORKFLOWS.md](./docs/WORKFLOWS.md) and [CONTRIBUTING.md](./CONTRIBUTING.md).

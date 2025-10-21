@@ -9,7 +9,7 @@
     "domain": null,
     "industry": null,
     "size": null,
-    "summary": "No data available from connected sources. Run prospect research and enrich from Salesforce/Gong/Notion to build account profile."
+    "summary": "No account data available from any source. Account requires initial research and data enrichment."
   },
   "contacts": [],
   "opportunities": [],
@@ -19,13 +19,13 @@
     "objections": [],
     "champions": [],
     "risks": [
-      "No account data available - cannot assess relationship health"
+      "No engagement data available - unable to assess account health"
     ],
     "nextActions": [
-      "Run prospect research via amp-prospector",
-      "Verify Salesforce account exists and fetch data",
-      "Check for recent Gong calls",
-      "Search Notion for relevant account pages"
+      "Perform initial prospect research to gather company intelligence",
+      "Search Salesforce for existing account record using company name",
+      "Check for any Gong call history under alternate account names",
+      "Identify key contacts and stakeholders for outreach"
     ]
   },
   "deltas": {
@@ -33,5 +33,5 @@
     "contactChanges": [],
     "opportunityChanges": []
   },
-  "generatedAt": "2025-10-20T00:00:00Z"
+  "generatedAt": "2025-10-21T00:00:00Z"
 }

@@ -21,11 +21,6 @@ NEVER USE EMOJIS, PREFER ICONS FROM https://lucide.dev/icons/ IF IT MAKES SENSE 
   
 **Note:** Data source refresh buttons (Salesforce/Gong/Notion badges) require MCP servers configured in Amp. If MCPs aren't set up, use the "Full Refresh" button in the CRM section instead.
 
-### Streamlit UI (Alternative)
-- **Start UI**: `streamlit run streamlit_app.py`
-- Access at `http://localhost:8501`
-- Python-based UI with emoji-free design
-
 ### Main Workbench (CLI)
 - **Run for account**: `npm run manage "Acme Corp"` or `npx tsx src/execute-agent.ts "Acme Corp"`
 - **Run with options**: `npm run manage "Acme Corp" -- --domain acme.com --sfid 001xx000...`

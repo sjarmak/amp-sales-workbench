@@ -1,0 +1,172 @@
+/**
+ * Direct MCP Client for API Server
+ * 
+ * Provides fast, direct access to MCP tools without routing through Amp SDK.
+ * This bypasses LLM decision-making for 10-100x speedup on data fetches.
+ */
+
+import { Client } from '@modelcontextprotocol/sdk/client/index.js';
+import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
+import { homedir } from 'os';
+import { readFile } from 'fs/promises';
+import { join } from 'path';
+
+interface MCPConfig {
+  'amp.mcpServers'?: Record<string, {
+    command: string;
+    args?: string[];
+    env?: Record<string, string>;
+  }>;
+}
+
+let salesforceClient: Client | null = null;
+let gongClient: Client | null = null;
+
+/**
+ * Load MCP server configuration from Amp's config
+ */
+async function loadMCPConfig(): Promise<MCPConfig> {
+  try {
+    // Try Amp's settings location
+    const configPath = join(homedir(), '.config', 'amp', 'settings.json');
+    const content = await readFile(configPath, 'utf-8');
+    return JSON.parse(content);
+  } catch (error) {
+    console.warn('[mcp-client] Could not load Amp settings, MCP servers may not be available:', error);
+    return {};
+  }
+}
+
+/**
+ * Initialize MCP client for Salesforce
+ */
+export async function getSalesforceClient(): Promise<Client | null> {
+  if (salesforceClient) return salesforceClient;
+
+  try {
+    const config = await loadMCPConfig();
+    const sfConfig = config['amp.mcpServers']?.['salesforce'];
+    
+    if (!sfConfig) {
+      console.warn('[mcp-client] Salesforce MCP not configured in Amp settings');
+      return null;
+    }
+
+    console.log('[mcp-client] Initializing Salesforce MCP client...');
+    
+    const transport = new StdioClientTransport({
+      command: sfConfig.command,
+      args: sfConfig.args || [],
+      env: { ...process.env as Record<string, string>, ...sfConfig.env }
+    });
+
+    salesforceClient = new Client({
+      name: 'amp-sales-workbench-api',
+      version: '1.0.0'
+    }, {
+      capabilities: {}
+    });
+
+    await salesforceClient.connect(transport);
+    console.log('[mcp-client] Salesforce MCP client connected');
+    
+    return salesforceClient;
+  } catch (error) {
+    console.error('[mcp-client] Failed to initialize Salesforce client:', error);
+    return null;
+  }
+}
+
+/**
+ * Initialize MCP client for Gong
+ */
+export async function getGongClient(): Promise<Client | null> {
+  if (gongClient) return gongClient;
+
+  try {
+    const config = await loadMCPConfig();
+    const gongConfig = config['amp.mcpServers']?.['gong-extended'];
+    
+    if (!gongConfig) {
+      console.warn('[mcp-client] Gong MCP not configured in Amp settings');
+      return null;
+    }
+
+    console.log('[mcp-client] Initializing Gong MCP client...');
+    
+    const transport = new StdioClientTransport({
+      command: gongConfig.command,
+      args: gongConfig.args || [],
+      env: { ...process.env as Record<string, string>, ...gongConfig.env }
+    });
+
+    gongClient = new Client({
+      name: 'amp-sales-workbench-api',
+      version: '1.0.0'
+    }, {
+      capabilities: {}
+    });
+
+    await gongClient.connect(transport);
+    console.log('[mcp-client] Gong MCP client connected');
+    
+    return gongClient;
+  } catch (error) {
+    console.error('[mcp-client] Failed to initialize Gong client:', error);
+    return null;
+  }
+}
+
+/**
+ * Call a Salesforce MCP tool directly
+ */
+export async function callSalesforceTool(toolName: string, args: any): Promise<any> {
+  const client = await getSalesforceClient();
+  
+  if (!client) {
+    throw new Error('Salesforce MCP client not available');
+  }
+
+  console.log(`[mcp-client] Calling ${toolName} with args:`, JSON.stringify(args).substring(0, 100));
+  
+  const result = await client.callTool({
+    name: toolName,
+    arguments: args
+  });
+
+  return result.content;
+}
+
+/**
+ * Call a Gong MCP tool directly
+ */
+export async function callGongTool(toolName: string, args: any): Promise<any> {
+  const client = await getGongClient();
+  
+  if (!client) {
+    throw new Error('Gong MCP client not available');
+  }
+
+  console.log(`[mcp-client] Calling ${toolName} with args:`, JSON.stringify(args).substring(0, 100));
+  
+  const result = await client.callTool({
+    name: toolName,
+    arguments: args
+  });
+
+  return result.content;
+}
+
+/**
+ * Cleanup clients on shutdown
+ */
+export async function closeMCPClients() {
+  if (salesforceClient) {
+    await salesforceClient.close();
+    salesforceClient = null;
+  }
+  if (gongClient) {
+    await gongClient.close();
+    gongClient = null;
+  }
+}
