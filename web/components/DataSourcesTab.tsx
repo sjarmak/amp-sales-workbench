@@ -418,29 +418,24 @@ export function DataSourcesTab({ accountSlug }: DataSourcesTabProps) {
             {ampData.summary.sections.news.length > 0 && (
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-base">Amp News ({ampData.summary.sections.news.length} sections)</CardTitle>
-                  <CardDescription>Latest product updates and features</CardDescription>
+                  <CardTitle className="text-base">Amp News</CardTitle>
+                  <CardDescription>Latest product updates from ampcode.com/news</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="border rounded-lg overflow-hidden">
-                    <table className="w-full text-sm">
-                      <thead className="bg-muted">
-                        <tr>
-                          <th className="px-4 py-2 text-left font-medium">Section</th>
-                          <th className="px-4 py-2 text-left font-medium">Preview</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y">
-                        {ampData.summary.sections.news.map((section: any, i: number) => (
-                          <tr key={i} className="hover:bg-muted/50">
-                            <td className="px-4 py-3 font-medium whitespace-nowrap">{section.heading}</td>
-                            <td className="px-4 py-3 text-muted-foreground">
-                              {section.content.substring(0, 150)}...
-                            </td>
-                          </tr>
+                  <div className="prose prose-sm max-w-none max-h-96 overflow-y-auto text-muted-foreground">
+                    <p className="text-xs">
+                      {ampData.summary.sections.news[0]?.content
+                        .substring(0, 800)
+                        .replace(/\[.*?\]\(.*?\)/g, '')
+                        .replace(/#{1,6}\s+/g, '')
+                        .split('\n')
+                        .filter((line: string) => line.trim().length > 0)
+                        .slice(0, 15)
+                        .map((line: string, i: number) => (
+                          <span key={i}>{line.trim()}<br /></span>
                         ))}
-                      </tbody>
-                    </table>
+                      <span className="text-primary">... see full content in raw data</span>
+                    </p>
                   </div>
                 </CardContent>
               </Card>
@@ -450,28 +445,21 @@ export function DataSourcesTab({ accountSlug }: DataSourcesTabProps) {
               <Card>
                 <CardHeader>
                   <CardTitle className="text-base">Amp Manual ({ampData.summary.sections.manual.length} sections)</CardTitle>
-                  <CardDescription>Documentation and guides</CardDescription>
+                  <CardDescription>Documentation from ampcode.com/manual</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="border rounded-lg overflow-hidden">
-                    <table className="w-full text-sm">
-                      <thead className="bg-muted">
-                        <tr>
-                          <th className="px-4 py-2 text-left font-medium">Section</th>
-                          <th className="px-4 py-2 text-left font-medium">Preview</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y">
-                        {ampData.summary.sections.manual.map((section: any, i: number) => (
-                          <tr key={i} className="hover:bg-muted/50">
-                            <td className="px-4 py-3 font-medium whitespace-nowrap">{section.heading}</td>
-                            <td className="px-4 py-3 text-muted-foreground">
-                              {section.content.substring(0, 150)}...
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
+                  <div className="space-y-3 max-h-96 overflow-y-auto">
+                    {ampData.summary.sections.manual
+                      .slice(0, 20)
+                      .map((section: any, i: number) => (
+                        <div key={i} className="border-l-2 border-green-600 pl-3 py-2">
+                          <div className="font-semibold text-sm mb-1">{section.heading}</div>
+                          <div className="text-xs text-muted-foreground">
+                            {section.content.substring(0, 200).replace(/\[.*?\]\(.*?\)/g, '').replace(/\n+/g, ' ').trim()}
+                            {section.content.length > 200 && '...'}
+                          </div>
+                        </div>
+                      ))}
                   </div>
                 </CardContent>
               </Card>

@@ -1,0 +1,1215 @@
+{
+  "generatedAt": "2025-10-21T19:02:47.241Z",
+  "sourceUrls": [
+    "https://ampcode.com/news",
+    "https://ampcode.com/manual"
+  ],
+  "features": [
+    {
+      "name": "What is Amp?",
+      "sourceUrl": "https://ampcode.com/manual",
+      "sectionId": "what-is-amp?",
+      "description": "Amp is a frontier coding agent built by Sourcegraph. It runs in VS Code (and compatible forks like Cursor, Windsurf, and VSCodium) and as a command-line tool. It’s also multiplayer — you can share threads and collaborate with your team.",
+      "tags": [
+        "agent",
+        "ai",
+        "tools"
+      ]
+    },
+    {
+      "name": "Principles",
+      "sourceUrl": "https://ampcode.com/manual",
+      "sectionId": "principles",
+      "description": "1. Amp is unconstrained in token usage (and therefore cost). Our sole incentive is to make it valuable, not to match the cost of a subscription. 2. No model selector, always the best models. You don’t pick models, we do. Instead of offering selectors and checkboxes and building for the lowest common denominator, Amp is built to use the full capabilities of the best models. 3. We assume that you want to access the raw power these models have to offer. In a sense, when you’re using Amp, you aren’t using Amp — you’re talking directly to a model and Amp is the shell around your conversation with the model. 4. Built to evolve. Products that lock themselves into specific model behaviors become obsolete in months. We stay current with the best, not tied to the past.",
+      "tags": [
+        "general"
+      ]
+    },
+    {
+      "name": "Install",
+      "sourceUrl": "https://ampcode.com/manual",
+      "sectionId": "install",
+      "description": "Sign in to ampcode.com and follow the instructions for VS Code, Cursor, and Windsurf to install the extension and authenticate. You can also use the Install button at the bottom of the Amp dashboard for quick access to installation instructions for all platforms.",
+      "tags": [
+        "general"
+      ]
+    },
+    {
+      "name": "Command Line Interface",
+      "sourceUrl": "https://ampcode.com/manual",
+      "sectionId": "command-line-interface",
+      "description": "Linux, macOS & WSLnpmnpxpnpmYarn Install the Amp CLI: ` curl -fsSL https://ampcode.com/install.sh | bash ` Run interactively (will prompt for login on first run): ` amp ` You can start a new interactive thread by sending command output via stdin: ` echo \"What is today's date?\" | amp ` Run in non-interactive mode: ` echo \"what animal is the most disagreeable because it says neigh?\" > riddle.txt cat riddle.txt | amp -x \"solve this riddle\" ` Install globally: ` npm install -g @sourcegraph/amp ` Run interactively (will prompt for login on first run): ` amp ` You can start a new interactive thread by sending command output via stdin: ` echo \"What is today's date?\" | amp ` Run in non-interactive mode: ` echo \"what animal is the most disagreeable because it says neigh?\" > riddle.txt cat riddle.txt | amp -x \"solve this riddle\" ` Install globally: ` pnpm add -g @sourcegraph/amp ` Run interactively (will prompt for login on first run): ` amp ` You can start a new interactive thread by sending command output via stdin: ` echo \"What is today's date?\" | amp ` Run in non-interactive mode: ` echo \"what animal is the most disagreeable because it says neigh?\" > riddle.txt cat riddle.txt | amp -x \"solve this riddle\" ` Install globally: ` yarn global add @sourcegraph/amp ` Run interactively (will prompt for login on first run): ` amp ` You can start a new interactive thread by sending command output via stdin: ` echo \"What is today's date?\" | amp ` Run in non-interactive mode: ` echo \"what animal is the most disagreeable because it says neigh?\" > riddle.txt cat riddle.txt | amp -x \"solve this riddle\" ` Run interactively (will prompt for login on first run): ` npx @sourcegraph/amp ` You can start a new interactive thread by sending command output via stdin: ` echo \"What is today's date?\" | npx @sourcegraph/amp ` Run in non-interactive mode: ` echo \"what animal is the most disagreeable because it says neigh?\" > riddle.txt cat riddle.txt | npx @sourcegraph/amp -x \"solve this riddle\" ` For non-interactive environments (e.g. scripts, CI/CD pipelines), you’ll need to export your API key as an environment variable: export AMP_API_KEY=your-api-key-here",
+      "tags": [
+        "api",
+        "integration"
+      ]
+    },
+    {
+      "name": "Supported Platforms",
+      "sourceUrl": "https://ampcode.com/manual",
+      "sectionId": "supported-platforms",
+      "description": "Amp officially supports macOS, Linux, and Windows via WSL (Windows Subsystem for Linux). While Amp also works on Windows outside of WSL, this configuration is not officially supported—you may encounter issues, but many users run it successfully.",
+      "tags": [
+        "general"
+      ]
+    },
+    {
+      "name": "How to Prompt",
+      "sourceUrl": "https://ampcode.com/manual",
+      "sectionId": "how-to-prompt",
+      "description": "Amp currently uses Claude Sonnet 4.5 for most tasks, with up to 1 million tokens of context. For the best results, follow these guidelines: • Be explicit with what you want. Instead of “can you do X?”, try “do X.” • Keep it short, keep it focused. Break very large tasks up into smaller sub-tasks, one per thread. Do not ask the agent to write database migrations in the same thread as it previously changed CSS for a documentation page. • Don’t try to make the model guess. If you know something about how to achieve what you want the agent to do — which files to look at, which commands to run — put it in your prompt. • If you want the model to not write any code, but only to research and plan, say so: “Only plan how to implement this. Do NOT write any code.” • Use AGENTS.md files to guide Amp on how to run your tests and build steps and to avoid common mistakes. • Abandon threads if they accumulated too much noise. Sometimes things go wrong and failed attempts with error messages clutter up the context window. In those cases, it’s often best to start with a new thread and a clean context window. • Tell the agent how to best review its work: what command or test to run, what URL to open, which logs to read. Feedback helps agents as much as it helps us. The first prompt in the thread carries a lot of weight. It sets the direction for the rest of the conversation. We encourage you to be deliberate with it. That’s why we use Cmd/Ctrl+Enter to submit a message in Amp — it’s a reminder to put effort into a prompt. Here are some examples of prompts we’ve used with Amp: • “Make observeThreadGuidanceFiles return Omit<ResolvedGuidanceFile, 'content'>] and remove that field from its return value, and update the tests. Note that it is omitted because this is used in places that do not need the file contents, and this saves on data transferred over the view API.” ([See Thread) • “Run <build command> and fix all the errors” • “Look at <local development server url> to see this UI component. Then change it so that it looks more minimal. Frequently check your work by screenshotting the URL” • “Run git blame on the file I have open and figure out who added that new title” • “Convert these 5 files to use Tailwind, use one subagent per file” • “Take a look at git diff — someone helped me build a debug tool to edit a Thread directly in JSON. Please analyze the code and see how it works and how it can be improved. \\…\\]” ([See Thread) • “Check git diff --staged and remove the debug statements someone added” (See Thread) • “Find the commit that added this using git log, look at the whole commit, then help me change this feature” • “Explain the relationship between class AutoScroller and ViewUpdater using a diagram” • “Run psql and rewire all the threads in the databaser to my user (email starts with thorsten)” (See Thread) Also see Thorsten Ball’s How I Use Amp. If you’re in a workspace, use Amp’s thread sharing to learn from each other.",
+      "tags": [
+        "api",
+        "integration",
+        "agent",
+        "ai",
+        "search",
+        "codebase",
+        "tools",
+        "claude",
+        "git",
+        "version-control",
+        "testing",
+        "debugging"
+      ]
+    },
+    {
+      "name": "AGENTS.md",
+      "sourceUrl": "https://ampcode.com/manual",
+      "sectionId": "agents.md",
+      "description": "Amp looks in AGENTS.md files for guidance on codebase structure, build/test commands, and conventions. File Examples AGENTS.md in cwd, parent dirs, & subtrees Architecture, build/test commands, overview of internal APIs, review and release steps $HOME/.config/amp/AGENTS.md $HOME/.config/AGENTS.md Personal preferences, device-specific commands, and guidance that you're testing locally before committing to your repository Amp includes AGENTS.md files automatically: • AGENTS.md files in the current working directory (or editor workspace roots) _and_ parent directories (up to $HOME) are always included. • Subtree AGENTS.md files are included when the agent reads a file in the subtree. • Both $HOME/.config/amp/AGENTS.md and $HOME/.config/AGENTS.md are included if they exist. If a file named AGENT.md (without an S) exists in any of those locations, and no AGENTS.md exists, the AGENT.md file will be used for backward compatibility. In a large repository with multiple subprojects, we recommend keeping the top-level AGENTS.md general and creating more specific AGENTS.md files in subtrees for each subproject. To see the agent files that Amp is using, run /agent-files (CLI) or hover the X% of 968k indicator after you’ve sent the first message in a thread (editor extension). Amp offers to generate an AGENTS.md file for you if none exists. You can create or update any AGENTS.md files manually or by asking Amp (_“Update AGENTS.md based on what I told you in this thread”_). To include other files as context, @-mention them in agent files. For example: See @doc/style.md and @specs/**/*.md. When making commits, see @doc/git-commit-instructions.md. • Relative paths are interpreted relative to the agent file containing the mention. • Absolute paths and @~/some/path are also supported. • @-mentions in code blocks are ignored, to avoid false positives. • Glob patterns are supported (such as @doc/*.md or @.agent/**/*.md). To provide guidance that only applies when working with certain files, you can specify globs in YAML front matter of mentioned files. For example, to apply language-specific coding rules: 1. Put See @docs/*.md anywhere in your AGENTS.md file. 2. Create a file docs/typescript-conventions.md with: `--- globs: - '/*.ts' - '/*.tsx' --- Follow these TypeScript conventions: - Never use the any type - ...` 3. Repeat for other languages. Mentioned files with globs will only be included if Amp has read a file matching any of the globs (in the example above, any TypeScript file). If no globs are specified, the file is always included when @-mentioned. Globs are implicitly prefixed with **/ unless they start with ../ or ./, in which case they refer to paths relative to the mentioned file. Other examples: • Frontend-specific guidance: globs: [\"src/components/\", \"/*.tsx\"] • Backend guidance: globs: [\"server/\", \"api/\"] • Test guidance: globs: [\"*.test.ts\", \"__tests__/*\"] • From Claude Code: mv CLAUDE.md AGENTS.md && ln -s AGENTS.md CLAUDE.md, and repeat for subtree CLAUDE.md files • From Cursor: mv .cursorrules AGENTS.md && ln -s AGENTS.md .cursorrules and then add @.cursor/rules/*.mdc anywhere in AGENTS.md to include all Cursor rules files. • From existing AGENT.md: mv AGENT.md AGENTS.md (optional - both filenames continue to work)",
+      "tags": [
+        "api",
+        "integration",
+        "agent",
+        "ai",
+        "claude",
+        "git",
+        "version-control",
+        "testing"
+      ]
+    },
+    {
+      "name": "Uploading Images",
+      "sourceUrl": "https://ampcode.com/manual",
+      "sectionId": "uploading-images",
+      "description": "Amp supports image uploads, allowing you to share screenshots, diagrams, and visual references with the AI. Images can provide important context for debugging visual issues or understanding UI layouts. In the editor extension, you can: • Paste images directly into the input • Hold Shift and drag images over the input • Mention images by file path In the CLI, you can: • Drag images into the terminal (and paste them if the image is copied from a file) • Mention images by file path",
+      "tags": [
+        "debugging"
+      ]
+    },
+    {
+      "name": "Thinking Hard",
+      "sourceUrl": "https://ampcode.com/manual",
+      "sectionId": "thinking-hard",
+      "description": "If Extended Thinking is enabled (it is by default), Amp can dynamically adjust the thinking budget given to Claude Sonnet 4.5. The higher the budget, the more tokens it uses to “think”. If you tell the model to “think hard” (or “think a lot” and variations) the thinking budget will be more than doubled. If you tell the model to “think really hard” (or “think very hard”) it will be increased even more.",
+      "tags": [
+        "claude",
+        "ai"
+      ]
+    },
+    {
+      "name": "Mentioning Files",
+      "sourceUrl": "https://ampcode.com/manual",
+      "sectionId": "mentioning-files",
+      "description": "You can mention files directly in your prompts by typing @ followed by a pattern to fuzzy-search. It can help speed up responses by avoiding the need to search the codebase.",
+      "tags": [
+        "search",
+        "codebase"
+      ]
+    },
+    {
+      "name": "Queueing messages",
+      "sourceUrl": "https://ampcode.com/manual",
+      "sectionId": "queueing-messages",
+      "description": "You can queue messages to be sent to the agent once it ends its turn. That way you can already send a message to, for example, ask the agent to perform a follow-up task without interrupting what it’s currently doing. In the editor extension: • Press Cmd-Shift-Enter (macOS) or Ctrl-Shift-Enter (Windows/Linux) to queue your input instead of sending it. • Queued messages appear below the thread. Click a queued message to restore it to the editor, or use the × button to remove it. • Up to 5 messages can be queued per thread. In the CLI, you can use the /queue [message] command to enqueue a message and /dequeue to dequeue all enqueued messages.",
+      "tags": [
+        "agent",
+        "ai"
+      ]
+    },
+    {
+      "name": "CLI",
+      "sourceUrl": "https://ampcode.com/manual",
+      "sectionId": "cli",
+      "description": "After installing and logging in, run amp to start the Amp CLI. Without any arguments, it runs in interactive mode: $ amp If you pipe input to the CLI, it uses the input as the first user message in interactive mode: $ echo \"commit all my changes\" | amp Use -x or --execute to start the CLI in execute mode (not available in Amp Free). In this mode, it sends the message provided to -x to the agent, waits until the agent ended its turn, prints its final message, and exits: $ amp -x \"what files in this folder are markdown files? Print only the filenames.\" README.md AGENTS.md You can also pipe input when using -x: $ echo \"what package manager is used here?\" | amp -x cargo If you want to use -x with the agent using tools that might require approval, make sure to either use --dangerously-allow-all or configure Amp to allow them: `$ amp --dangerously-allow-all -x \"Run sed to replace 2024 with 2025 in README.\" Done. Replaced 8 occurrences of 2024 in README.md` Execute mode is automatically turned on when you redirect stdout: $ echo \"what is 2+2?\" | amp > response.txt When you pipe input and provide a prompt with -x, the agent can see both: $ cat ~/.vimrc | amp -x \"which colorscheme is used?\" The colorscheme used is gruvbox with dark background and hard contrast. `vim set background=dark let g:gruvbox_contrast_dark = \"hard\" colorscheme gruvbox ` You can use the --mcp-config flag with -x commands to specify an MCP server without modifying your configuration file. $ amp --mcp-config '{\"everything\": {\"command\": \"npx\", \"args\": [\"-y\", \"@modelcontextprotocol/server-everything\"]}}' -x \"What tools are available to you?\" To see more of what the CLI can do, run amp --help. The Amp CLI supports slash commands. Type / followed by the name of a command to execute it. • /help - Show help and hotkeys • /new - Start a new thread • /continue - Continue an existing thread • /queue [message] - Queue a message to send when inference completes • /dequeue - Dequeue all messages and restore them to the prompt editor • /generate-agent-file - Generate an AGENTS.md file in the current workspace • /agent-files - List AGENTS.md guidance files in use for the current thread • /compact - Compact the thread to reduce context usage • /editor - Open your $EDITOR to write a prompt • /permissions - Edit permission rules in $EDITOR • /quit - Exit Amp You can also create your own, custom slash commands. They allow you to reuse prompts or dynamically generate them. To create a custom slash command, create a Markdown file or an executable in one of the following locations: • .agents/commands in the current workspace • ~/.config/amp/commands (uses the $XDG_CONFIG_HOME directory if set) Each file in these directories, if it’s a Markdown file ending in .md or an executable file (having the execute bit set or a shebang on the first line)), will be turned into a slash command. The name of the slash command will be the filename without the extension. Custom slash commands based on Markdown files will, when invoked, insert the contents of the file into the prompt input. Custom slash commands based on executable files will execute the file and the combined stdout/stderr output of the file (max 50k characters) will be sent as a user message. Slash commands based on executables can also take arguments which will then be passed to the executable when it’s invoked. Here are two examples: • The file .agents/commands/pr-review.md will be turned into the slash command /pr-review and the contents of pr-review.md will be inserted into the prompt input. • ~/.config/amp/commands/outline is an executable that will be turned into the slash command /outline and can be used with arguments: /outline src/utils And here are real-world examples that you can take a closer look at: • work-on-linear-issue • resolve-pr-comments • code-review.md Execute shell commands directly in the CLI by starting your message with $. The command and its output will be included in the context window for the next message to the agent. Use $$ to activate incognito shell mode, where commands execute but aren’t included in the context. This is useful for noisy commands or quick checks you’d normally run in a separate terminal. In modern terminal emulators, such as Ghostty, Wezterm, Kitty, or iTerm2, you can use shift-enter to insert a newline in your prompts. Additionally you can also use type \\ followed by return to insert a newline. If you have the environment variable $EDITOR set, you can use the /editor slash command to open your editor to write a prompt. Amp’s CLI supports streaming JSON output format, one object per line on stdout, for programmatic integration and real-time conversation monitoring. Use the --stream-json flag with --execute mode to output in stream JSON format instead of plain text. Basic usage with argument: $ amp --execute \"what is 3 + 5?\" --stream-json Combining —stream-json with amp threads continue: $ amp threads continue --execute \"now add 8 to that\" --stream-json With stdin input: $ echo \"analyze this code\" | amp --execute --stream-json You can find the schema for the JSON output in the Appendix. Input can be also be provided on stdin with the --stream-json-input flag: $ echo '{ \"type\": \"user\", \"message\": { \"role\": \"user\", \"content\": [ { \"type\": \"text\", \"text\": \"what is 2+2?\" } ] } }' | amp -x --stream-json --stream-json-input The --stream-json flag requires --execute mode. It cannot be used standalone. And --stream-json-input requires --stream-json. When using --stream-json-input, the behavior of --execute changes in that Amp will only exit once both the assistant is done _and_ stdin has been closed. This allows for programmatic use of the Amp CLI to have conversations with multiple user messages. See the Appendix for the schema of the output, example output, and more usage examples.",
+      "tags": [
+        "agent",
+        "ai",
+        "tools",
+        "mcp",
+        "integration"
+      ]
+    },
+    {
+      "name": "Keyboard Shortcuts",
+      "sourceUrl": "https://ampcode.com/manual",
+      "sectionId": "keyboard-shortcuts",
+      "description": "Operating System macOSWindowsLinux Editor VS CodeCursorWindsurf Command Shortcut New Thread CmdL Focus/Hide Amp Sidebar CmdI Switch to Thread CmdK Go to Next Thread CmdShift\\] Go to Previous Thread CmdShift\\[ Command Shortcut New Thread CmdOptionJ Focus/Hide Amp Sidebar CmdOptionU Switch to Thread CmdK Go to Next Thread CmdShift\\] Go to Previous Thread CmdShift\\[ Command Shortcut New Thread CmdOptionJ Focus/Hide Amp Sidebar CmdOptionU Switch to Thread CmdK Go to Next Thread CmdShift\\] Go to Previous Thread CmdShift\\[ Command Shortcut New Thread CtrlL Focus/Hide Amp Sidebar CtrlI Switch to Thread CtrlK Go to Next Thread CtrlShift\\] Go to Previous Thread CtrlShift\\[ Command Shortcut New Thread CtrlAltJ Focus/Hide Amp Sidebar CtrlAltU Switch to Thread CtrlK Go to Next Thread CtrlShift\\] Go to Previous Thread CtrlShift\\[ Command Shortcut New Thread CtrlAltJ Focus/Hide Amp Sidebar CtrlAltU Switch to Thread CtrlK Go to Next Thread CtrlShift\\] Go to Previous Thread CtrlShift\\[ Command Shortcut New Thread CtrlL Focus/Hide Amp Sidebar CtrlI Switch to Thread CtrlK Go to Next Thread CtrlShift\\] Go to Previous Thread CtrlShift\\[ Command Shortcut New Thread CtrlAltJ Focus/Hide Amp Sidebar CtrlAltU Switch to Thread CtrlK Go to Next Thread CtrlShift\\] Go to Previous Thread CtrlShift\\[ Command Shortcut New Thread CtrlAltJ Focus/Hide Amp Sidebar CtrlAltU Switch to Thread CtrlK Go to Next Thread CtrlShift\\] Go to Previous Thread CtrlShift\\[",
+      "tags": [
+        "general"
+      ]
+    },
+    {
+      "name": "Customize Layout in Cursor",
+      "sourceUrl": "https://ampcode.com/manual",
+      "sectionId": "customize-layout-in-cursor",
+      "description": "Third party extensions are automatically placed in the primary sidebar in Cursor. To customize the position of Amp in Cursor please follow these steps: • Open the Command Pallete using Ctrl/⌘ + Shift + P • Search for View: Move View • Select Amp from the drop down list • Choose your desired location (New Panel Entry and New Secondary Side Bar Entry are the most common)",
+      "tags": [
+        "search",
+        "codebase"
+      ]
+    },
+    {
+      "name": "Threads",
+      "sourceUrl": "https://ampcode.com/manual",
+      "sectionId": "threads",
+      "description": "Threads are conversations with the agent, containing all your messages, context, and tool calls. Your threads are synced to ampcode.com. If you’re in a workspace, your threads are also shared with your workspace by default, just like Git branches on a shared remote repository. Including links to Amp threads with your changes when submitting for code review helps provide context. Reading and searching your workspace’s threads can help you see what’s going on and how other people are using Amp.",
+      "tags": [
+        "agent",
+        "ai",
+        "search",
+        "codebase",
+        "tools",
+        "git",
+        "version-control",
+        "code-review"
+      ]
+    },
+    {
+      "name": "Privacy & Permissions",
+      "sourceUrl": "https://ampcode.com/manual",
+      "sectionId": "privacy-&-permissions",
+      "description": "Threads can be public (visible to anyone on the internet with the link), workspace-shared (visible to your workspace members), or private (visible only to you). If you’re in a workspace, your threads are shared by default with your workspace members. If you are not in a workspace, your threads are only visible to you by default. You can change a thread’s visibility at any time through the sharing menu at the top of the thread.",
+      "tags": [
+        "general"
+      ]
+    },
+    {
+      "name": "Managing Context",
+      "sourceUrl": "https://ampcode.com/manual",
+      "sectionId": "managing-context",
+      "description": "As you work with Amp, your thread accumulates context within the model’s context window. Amp shows your context window usage and warns when approaching limits. When approaching the thread context limit, you can hover over the context window indicator and use the following: • Compact Thread — Summarizes the existing conversation to reduce context usage while preserving important information • New Thread with Summary — Creates a new thread that starts with a summary of the current conversation",
+      "tags": [
+        "general"
+      ]
+    },
+    {
+      "name": "File Changes",
+      "sourceUrl": "https://ampcode.com/manual",
+      "sectionId": "file-changes",
+      "description": "Amp tracks changes that the agent makes to files during your conversation, which you can track and revert: • Hover over the files changed indicator (located just above the message input) to see which files were modified and by how much • Revert individual file changes, or all changes made by the agent Editing a message in a thread automatically reverts any changes the agent made after that message",
+      "tags": [
+        "agent",
+        "ai"
+      ]
+    },
+    {
+      "name": "Amp Tab",
+      "sourceUrl": "https://ampcode.com/manual",
+      "sectionId": "amp-tab",
+      "description": "Amp Tab is our in-editor completion engine, designed to anticipate your next actions and reduce the time spent manually writing code. It uses a custom model that was trained to understand what you are trying to do next, based on your recent changes, your language server’s diagnostics, and what we call semantic context. Amp Tab can suggest regular single or multi-line edits to change entire code blocks, next to your cursor, further away in the document or even in other files.",
+      "tags": [
+        "general"
+      ]
+    },
+    {
+      "name": "Enabling",
+      "sourceUrl": "https://ampcode.com/manual",
+      "sectionId": "enabling",
+      "description": "Enable Amp Tab by setting \"amp.tab.enabled\": true in your editor settings.",
+      "tags": [
+        "general"
+      ]
+    },
+    {
+      "name": "How to Use",
+      "sourceUrl": "https://ampcode.com/manual",
+      "sectionId": "how-to-use",
+      "description": "• Begin typing in your editor. Amp Tab automatically presents relevant suggestions. • Press the Tab key to accept and apply the suggested edits. • Press the Tab key again to instantly jump to additional edits further from your cursor. • If you get a suggestion to jump to another file, press the Tab key to preview the file and then press Tab again to jump to it. • To ignore suggestions, simply continue typing or press Esc. If you’re using Vim extensions in VS Code and need to press Esc twice to dismiss suggestions and enter normal mode, configure amp.tab.dismissCommandIds to specify which commands should run on Esc. Defaults cover popular extensions like VSCodeVim and vscode-neovim. Currently, Amp Tab is free to use as a research preview for all Amp users.",
+      "tags": [
+        "search",
+        "codebase"
+      ]
+    },
+    {
+      "name": "Workspaces",
+      "sourceUrl": "https://ampcode.com/manual",
+      "sectionId": "workspaces",
+      "description": "Workspaces provide collaborative environments where knowledge can be shared across your organization. Create a workspace from the settings page. To join a workspace, you need an invitation from an existing workspace member. Enterprise workspaces can also enable SSO to automatically include workspace members.",
+      "tags": [
+        "general"
+      ]
+    },
+    {
+      "name": "Sharing",
+      "sourceUrl": "https://ampcode.com/manual",
+      "sectionId": "sharing",
+      "description": "Workspace threads are visible to all workspace members by default, making it easy to learn from others and build on their work. See Privacy & Permissions for all thread visibility options. Note that Enterprise workspaces can configure additional sharing controls - see Workspace Thread Visibility Controls for more details.",
+      "tags": [
+        "general"
+      ]
+    },
+    {
+      "name": "Workspace Credits",
+      "sourceUrl": "https://ampcode.com/manual",
+      "sectionId": "workspace-credits",
+      "description": "Workspaces provide pooled billing of usage, making it easier to manage costs across your organization. If a member of your workspace joins with free personal credits available, their free credits will be used before the paid workspace credits. To learn more, refer to the pricing section.",
+      "tags": [
+        "general"
+      ]
+    },
+    {
+      "name": "Leaderboard",
+      "sourceUrl": "https://ampcode.com/manual",
+      "sectionId": "leaderboard",
+      "description": "Each workspace includes a leaderboard that tracks thread activity and contributions from workspace members, encouraging engagement and highlighting active participants.",
+      "tags": [
+        "general"
+      ]
+    },
+    {
+      "name": "Tools",
+      "sourceUrl": "https://ampcode.com/manual",
+      "sectionId": "tools",
+      "description": "Tools are what the underlying model uses to assist with tasks. For the highest quality results we recommend you use a curated set of tools, with prompts adjusted to fit the underlying model.",
+      "tags": [
+        "tools"
+      ]
+    },
+    {
+      "name": "Built-in Tools",
+      "sourceUrl": "https://ampcode.com/manual",
+      "sectionId": "built-in-tools",
+      "description": "Amp comes with a curated set of built-in tools specifically designed for coding. You can find the list of built-in tools inside Amp’s extension settings.",
+      "tags": [
+        "tools"
+      ]
+    },
+    {
+      "name": "Custom Tools (MCP)",
+      "sourceUrl": "https://ampcode.com/manual",
+      "sectionId": "custom-tools-(mcp)",
+      "description": "You can add additional tools using MCP (Model Context Protocol) servers, which can be either local or remote. These can be configured in amp.mcpServers in your configuration file. You can also press \\+ Add MCP Server under Settings in the VS Code. Configuration options for local MCP servers: • command - executable • args - command arguments (optional) • env - environment variables (optional) Configuration options for remote (HTTP/SSE) MCP servers: • url - server endpoint • headers - HTTP headers to send with requests (optional) Amp automatically detects the appropriate transport type (HTTP or SSE) based on the server’s response headers. If the remote MCP server requires authorization with OAuth, you can use either use mcp-remote or pass authentication headers directly via the headers option. Example configuration: \"amp.mcpServers\": { \"playwright\": { \"command\": \"npx\", \"args\": [\"-y\", \"@playwright/mcp@latest\", \"--headless\", \"--isolated\"] }, \"semgrep\": { \"url\": \"https://mcp.semgrep.ai/mcp\" }, \"sourcegraph\": { \"url\": \"https://sourcegraph.example.com/.api/mcp/v1\", \"headers\": { \"Authorization\": \"token sgp_your-token-here\" } }, \"linear\": { \"command\": \"npx\", \"args\": [ \"mcp-remote\", \"https://mcp.linear.app/sse\" ] }, \"monday\": { \"url\": \"https://mcp.monday.com/sse\", \"headers\": { \"Authorization\": \"Bearer your-token-here\" } } } You can also add MCP servers using the CLI with header options: $ amp mcp add sourcegraph --header \"Authorization=token sgp_your-token-here\" https://sourcegraph.example.com/.api/mcp/v1 Too many available tools can reduce model performance, so for best results, be selective: • Use MCP servers that expose a small number of high-level tools with high-quality descriptions. • Disable MCP tools that you aren’t using, by hovering over a tool name in the extension’s Settings interface and clicking so it’s shown as tool\\_name, or by adding them to amp.tools.disable in your configuration file. • Consider using CLI tools instead of MCP servers. Amp also supports MCP prompts and resources, both available under the @ mentions menu.",
+      "tags": [
+        "api",
+        "integration",
+        "tools",
+        "mcp",
+        "testing"
+      ]
+    },
+    {
+      "name": "Toolboxes",
+      "sourceUrl": "https://ampcode.com/manual",
+      "sectionId": "toolboxes",
+      "description": "Toolboxes allow you to extend Amp with simple scripts instead of needing to provide an MCP server. When Amp starts it invokes each executable in the directory indicated by AMP_TOOLBOX, with the environment variable TOOLBOX_ACTION set to describe. The tool is expected to write its description to stdout as a list of key-value pairs, one per line. When Amp decides to use your tool it runs the executable again, setting TOOLBOX_ACTION to execute. The tool receives parameters in the same format on stdin and then performs its work: function runTests() { let dir = require('fs') .readFileSync(0, 'utf-8') .split('\\n') .filter((line) => line.startsWith('dir: ')) dir = dir.length > 0 ? dir[0].replace('dir: ', '') : '.' require('child_process').spawnSync('pnpm', ['-C', dir, 'run', 'test', '--no-color', '--run'], { stdio: 'inherit', }) } If your tool needs object or array parameters, the executable can write its tool schema as JSON instead to stdout. In this case it’ll also receive inputs as JSON. We recommend using tools to express specific, deterministic and project-local behavior, like: • querying a development database, • running test and build actions in the project, • exposing CLIs tools in a controlled manner. See the Appendix for the full technical reference.",
+      "tags": [
+        "tools",
+        "mcp",
+        "integration",
+        "testing"
+      ]
+    },
+    {
+      "name": "Permissions",
+      "sourceUrl": "https://ampcode.com/manual",
+      "sectionId": "permissions",
+      "description": "Before invoking a tool, Amp checks the user’s list of permissions for the first matching entry to decide whether to run the tool. If no match is found, Amp scans through its built-in permission list, rejecting the tool use in case no match is found there either. The matched entry tells Amp to either _allow_ the tool use without asking, _reject_ the tool use outright, _ask_ the operator, or _delegate_ the decision to another program. Permissions are configured in your configuration file under the entry amp.permissions: \"amp.permissions\": [ // Ask before running command line containing git commit { \"tool\": \"Bash\", \"matches\": { \"cmd\": \"*git commit*\" }, \"action\": \"ask\"}, // Reject command line containing python or python3 { \"tool\": \"Bash\", \"matches\": { \"cmd\": [\"*python *\", \"*python3 *\"] }, \"action\": \"reject\"}, // Allow all playwright MCP tools { \"tool\": \"mcp__playwright_*\", \"action\": \"allow\"}, // Ask before running any other MCP tool { \"tool\": \"mcp__*\", \"action\": \"ask\"}, // Delegate everything else to a permission helper (must be on $PATH) { \"tool\": \"*\", \"action\": \"delegate\", \"to\": \"my-permission-helper\"} ] Complex objects must be configured in VS Code’s Settings JSON. A JSON schema for permissions is integrated into VS Code to offer guidance when editing permissions. Rules with action ask only work for the Bash tool in VS Code. Using amp permissions edit you can edit your permissions rules programmatically and interactively using $EDITOR. The amp permissions test command evaluates permission rules without actually running any tools, providing a safe way for verifying that your rules work as intended. $ amp permissions edit <<'EOF' allow Bash --cmd 'git status' --cmd 'git diff*' ask Bash --cmd '*' EOF $ amp permission test Bash --cmd 'git diff --name-only' tool: Bash arguments: {\"cmd\":\"git diff --name-only\"} action: allow matched-rule: 0 source: user $ amp permission test Bash --cmd 'git push' tool: Bash arguments: {\"cmd\":\"push\"} action: ask matched-rule: 1 source: user Running amp permissions list displays known permissions rules in the same format understood by amp permissions edit: $ amp permissions list allow Bash --cmd 'git status' --cmd 'git diff*' ask Bash --cmd '*' Refer to the output of amp permissions --help for the full set of available operations. For full control, you can tell Amp to consult another program before invoking a tool: { \"action\": \"delegate\", \"to\": \"amp-permission-helper\", \"tool\": \"Bash\" } Now every time Amp wants to run a shell command, it will invoke amp-permission-helper: The error code and stderr are used to tell Amp how to proceed. See the Appendix for the full technical reference.",
+      "tags": [
+        "tools",
+        "mcp",
+        "integration",
+        "git",
+        "version-control",
+        "testing"
+      ]
+    },
+    {
+      "name": "Subagents",
+      "sourceUrl": "https://ampcode.com/manual",
+      "sectionId": "subagents",
+      "description": "Amp can spawn subagents (via the Task tool) for complex tasks that benefit from independent execution. Each subagent has its own context window and access to tools like file editing and terminal commands. Subagents are most useful for multi-step tasks that can be broken into independent parts, operations producing extensive output not needed after completion, parallel work across different code areas, and keeping the main thread’s context clean while coordinating complex work. However, subagents work in isolation — they can’t communicate with each other, you can’t guide them mid-task, they start fresh without your conversation’s accumulated context, and the main agent only receives their final summary rather than monitoring their step-by-step work. Amp may use subagents automatically for suitable tasks, or you can encourage their use by mentioning subagents or suggesting parallel work.",
+      "tags": [
+        "agent",
+        "ai",
+        "tools"
+      ]
+    },
+    {
+      "name": "Oracle",
+      "sourceUrl": "https://ampcode.com/manual",
+      "sectionId": "oracle",
+      "description": "Amp has access to a powerful “second opinion” model that’s better suited for complex reasoning or analysis tasks, at the cost of being slightly slower, slightly more expensive, and less suited to day-to-day code editing tasks than the main agent’s model. This model is available to Amp’s main agent through a tool called oracle, and it currently uses GPT-5. The main agent can autonomously decide to ask the oracle for help when debugging or reviewing a complex piece of code. We intentionally do not force the main agent to _always_ use the oracle, due to higher costs and slower inference speed. We recommend explicitly asking Amp’s main agent to use the oracle when you think it will be helpful. Here are some examples from our own usage of Amp: • “Use the oracle to review the last commit’s changes. I want to make sure that the actual logic for when an idle or requires-user-input notification sound plays has not changed.” • “Ask the oracle whether there isn’t a better solution.” • “I have a bug in these files: … It shows up when I run this command: … Help me fix this bug. Use the oracle as much as possible, since it’s smart.” • “Analyze how the functions foobar and barfoo are used. Then I want you to work a lot with the oracle to figure out how we can refactor the duplication between them while keeping changes backwards compatible.”",
+      "tags": [
+        "agent",
+        "ai",
+        "oracle",
+        "tools",
+        "debugging",
+        "refactoring"
+      ]
+    },
+    {
+      "name": "Librarian",
+      "sourceUrl": "https://ampcode.com/manual",
+      "sectionId": "librarian",
+      "description": "Amp can search remote codebases with the use of the Librarian subagent. The Librarian can search and read all public code on GitHub as well as your private GitHub repositories. Tell Amp to summon the Librarian when you need to do cross-repository research, or, for example, when you want it to read the code of the frameworks and libraries you’re using. The Librarian’s answers are typically longer and more detailed as we built it to provide in-depth explanations. The Librarian will only search code on the default branch of the repository. You need to configure a connection to GitHub in your settings to use it. If you want the Librarian to be able to see your private repositories, you need to select them when configuring your GitHub connection. You might need to prompt the main agent explicitly to use the Librarian. Here are some examples: • “Explain how new versions of our documentation are deployed when we release. Search our docs and infra repositories to see how they get to X.Y.sourcegraph.com.” • “I have a bug in this validation code using Zod, it’s throwing a weird error. Ask the Librarian to investigate why the error is happening and show me the logic causing it.” • “Use the Librarian to investigate the foo service - were there any recent changes to the API endpoints I am using in bar? If so, what are they and when were they merged?”",
+      "tags": [
+        "api",
+        "integration",
+        "agent",
+        "ai",
+        "search",
+        "codebase",
+        "git",
+        "version-control"
+      ]
+    },
+    {
+      "name": "IDE CLI Integration",
+      "sourceUrl": "https://ampcode.com/manual",
+      "sectionId": "ide-cli-integration",
+      "description": "The Amp CLI can connect directly to your IDE using the --ide flag for Neovim and VS Code, and --jetbrains for JetBrains IDEs. Features: • View current file and selected code — Amp can see which files are open and what code you have selected • Direct file editing — Reading and writing files through your IDE with full undo support • Diagnostics integration — Access to build errors and IDE insights Requirements: • Latest version of the Amp CLI • Node.js 21+ Run amp --ide from your project root with the Amp VS Code extension installed. The CLI will connect to the IDE in the current workspace. Run amp --ide from your project root with the Neovim plugin installed. The CLI will connect to the IDE in the current workspace. Run amp in the integrated JetBrains terminal, or amp --jetbrains anywhere else. After installing the plugin and restarting your IDE, you can launch Amp by clicking on the Amp logo in your JetBrains toolbar, or by going to Tools > Start Amp. The --jetbrains flag is active by default in the IDE terminal. Supports all JetBrains IDEs (IntelliJ, WebStorm, GoLand, etc.). Requirements: • JetBrains IDE 2025.1+. We recommend 2025.2.2+ for the best CLI experience.",
+      "tags": [
+        "tools",
+        "testing"
+      ]
+    },
+    {
+      "name": "Configuration Settings",
+      "sourceUrl": "https://ampcode.com/manual",
+      "sectionId": "configuration-settings",
+      "description": "Amp can be configured through settings in your editor extension (e.g. .vscode/settings.json) and the CLI configuration file. The CLI configuration file location varies by operating system: • Windows: %APPDATA%\\amp\\settings.json • macOS: ~/.config/amp/settings.json • Linux: ~/.config/amp/settings.json All settings use the amp. prefix.",
+      "tags": [
+        "general"
+      ]
+    },
+    {
+      "name": "Settings",
+      "sourceUrl": "https://ampcode.com/manual",
+      "sectionId": "settings",
+      "description": "• amp.anthropic.thinking.enabled Type: boolean, Default: true Enable Claude’s extended thinking capabilities • amp.permissions Type: array, Default: [] Configures which tool uses are allowed, rejected or ask for approval. See Permissions. • amp.git.commit.ampThread.enabled Type: boolean, Default: true Enable adding Amp-Thread trailer in git commits. When disabled, commits made with the commit tool will not include the Amp-Thread: <thread-url> trailer. • amp.git.commit.coauthor.enabled Type: boolean, Default: true Enable adding Amp as co-author in git commits. When disabled, commits made with the commit tool will not include the Co-authored-by: Amp <amp@ampcode.com> trailer. • amp.mcpServers Type: object Model Context Protocol servers that expose tools. See Custom Tools (MCP) documentation. • amp.terminal.commands.nodeSpawn.loadProfile Type: string, Default: \"always\", Options: \"always\" | \"never\" | \"daily\" Before running commands (including MCP servers), whether to load environment variables from the user’s profile (.bashrc, .zshrc, .envrc) as visible from the workspace root directory • amp.todos.enabled Type: boolean, Default: true Enable TODOs tracking for managing tasks • amp.tools.disable Type: array, Default: [] Disable specific tools by name. Use ‘builtin:toolname’ to disable only the builtin tool with that name (allowing an MCP server to provide a tool by that name). Glob patterns using * are supported. • amp.tools.stopTimeout Type: number, Default: 300 How many seconds to wait before canceling a running tool • amp.debugLogs Type: boolean, Default: false Enable debug logging in the Amp output channel • amp.notifications.enabled Type: boolean, Default: true Play notification sound when done or blocked • amp.notifications.system.enabled Type: boolean, Default: true Show system notifications when CLI terminal is not focused • amp.tab.enabled Type: boolean, Default: false Enable Amp Tab completion engine • amp.ui.zoomLevel Type: number, Default: 1 Zoom level for the Amp user interface • amp.updates.mode Type: string, Default: \"auto\" Control update checking behavior: \"warn\" shows update notifications, \"disabled\" turns off checking, \"auto\" automatically runs update. Note: Setting AMP_SKIP_UPDATE_CHECK=1 environment variable will override this setting and disable all update checking.",
+      "tags": [
+        "tools",
+        "mcp",
+        "integration",
+        "claude",
+        "ai",
+        "git",
+        "version-control",
+        "debugging"
+      ]
+    },
+    {
+      "name": "Enterprise managed settings",
+      "sourceUrl": "https://ampcode.com/manual",
+      "sectionId": "enterprise-managed-settings",
+      "description": "Enterprise workspace administrators can enforce settings that override user and workspace settings by deploying their policies to the following locations on machines running Amp: • macOS: /Library/Application Support/ampcode/managed-settings.json • Linux: /etc/ampcode/managed-settings.json • Windows: C:\\ProgramData\\ampcode\\managed-settings.json This managed settings file uses the same schema as regular settings files, with one additional field: amp.admin.compatibilityDate string Date field used for determining what migrations need to be applied for settings backward compatibility. Expected format: YYYY-MM-DD (e.g., '2024-01-15').",
+      "tags": [
+        "general"
+      ]
+    },
+    {
+      "name": "Proxies and Certificates",
+      "sourceUrl": "https://ampcode.com/manual",
+      "sectionId": "proxies-and-certificates",
+      "description": "When using the Amp CLI in corporate networks with proxy servers or custom certificates, set these standard Node.js environment variables in your shell profile or CI environment as needed: export HTTP_PROXY=your-proxy-url export HTTPS_PROXY=your-proxy-url export NODE_EXTRA_CA_CERTS=/path/to/your/certificates.pem",
+      "tags": [
+        "general"
+      ]
+    },
+    {
+      "name": "Free",
+      "sourceUrl": "https://ampcode.com/manual",
+      "sectionId": "free",
+      "description": "Amp’s free mode is free of charge, supported by ads and the sharing of training data. It uses a mix of top OSS models, frontier models with limited context windows, and pre-release frontier models in testing. To use it: /mode free in the Amp CLI, or select the free mode in the prompt field of the Amp editor extension (instead of the paid smart mode). See the Amp Free announcement for more information.",
+      "tags": [
+        "testing"
+      ]
+    },
+    {
+      "name": "Paid Usage",
+      "sourceUrl": "https://ampcode.com/manual",
+      "sectionId": "paid-usage",
+      "description": "Amp’s default smart mode is more autonomous and capable than free, and it uses paid credits. You can buy more credits in user settings for yourself, or for your team in workspace settings. Upon signup, most users receive $10 USD in free credits. Usage is consumed based on LLM usage and usage of certain other tools (like web search) that cost us to serve. We pass these costs through to you directly with no markup, for individuals and non-enterprise workspaces. Workspace credits is pooled and shared by all workspace members. All unused credits expire after one year of account inactivity.",
+      "tags": [
+        "search",
+        "codebase",
+        "tools"
+      ]
+    },
+    {
+      "name": "Enterprise",
+      "sourceUrl": "https://ampcode.com/manual",
+      "sectionId": "enterprise",
+      "description": "Enterprise usage is 50% more expensive than individual and team plans, and includes access to: • SSO (Okta, SAML, etc.) and directory sync • Zero data retention for text inputs in LLM inference • Advanced thread visibility controls • Managed user settings • Configurable thread retention (on request) • Support for user groups for cost attribution and per-group thread visibility options (on request) • APIs for workspace analytics and data management (on request) • IP allowlisting for workspace access (on request) For more information about Amp Enterprise security features, see the Amp Security Reference. To start using Amp Enterprise, go to your workspace and click “Change Plan” in the top right corner. This requires a special one-time $1,000 USD purchase, which grants your workspace $1,000 USD of Amp Enterprise usage and upgrades your workspace to Enterprise. With Amp Enterprise Premium, invoice payments are offered for purchases of $5,000+ USD, and volume discounts are available for purchases of $25,000+ USD. Contact amp-devs@sourcegraph.com for access to these purchasing options and for general information about Amp Enterprise.",
+      "tags": [
+        "analytics",
+        "api",
+        "integration"
+      ]
+    },
+    {
+      "name": "Security",
+      "sourceUrl": "https://ampcode.com/manual",
+      "sectionId": "security",
+      "description": "See the Amp Security Reference document.",
+      "tags": [
+        "general"
+      ]
+    },
+    {
+      "name": "Signup Restrictions",
+      "sourceUrl": "https://ampcode.com/manual",
+      "sectionId": "signup-restrictions",
+      "description": "If you see a “Signup is restricted” message, this likely means we cannot provide access to your region due to US export restrictions. Amp is available in most countries worldwide, but we cannot provide access to countries under US embargo to comply with applicable laws. If you believe this is a mistake, please contact support@sourcegraph.com.",
+      "tags": [
+        "general"
+      ]
+    },
+    {
+      "name": "Support & Community",
+      "sourceUrl": "https://ampcode.com/manual",
+      "sectionId": "support-&-community",
+      "description": "Join the Amp Discord to connect with the Amp team and other Amp users, share tips and tricks, and get help from the community. For billing questions, contact support@sourcegraph.com.",
+      "tags": [
+        "general"
+      ]
+    },
+    {
+      "name": "[Edit, restore and fork in the CLI](/news/cli-tab-navigation)",
+      "sourceUrl": "https://ampcode.com/news",
+      "sectionId": "[edit,-restore-and-fork-in-the-cli](/news/cli-tab-navigation)",
+      "description": "You can now edit messages in the Amp CLI, restore the thread to a specific point, or fork a new thread from a message. Hit Tab to select a previous message, then hit e to edit the message, r to restore the thread up to and including that message, or f to fork the thread from that message. 2. October 21, 2025",
+      "tags": [
+        "general",
+        "news"
+      ]
+    },
+    {
+      "name": "[50% Faster Search Agent](/news/faster-search-agent)",
+      "sourceUrl": "https://ampcode.com/news",
+      "sectionId": "[50%-faster-search-agent](/news/faster-search-agent)",
+      "description": "Amp's search subagent is now 50% faster. We switched the model powering the finder subagent to Haiku 4.5. In our evaluations and usage, this resulted in an approximate 50% speedup with no noticeable loss in quality. This means less waiting for Amp to uncover the relevant context. The search agent should be around 3X cheaper now, as well. Happy (speedy) hacking! 3. October 20, 2025",
+      "tags": [
+        "agent",
+        "ai",
+        "search",
+        "codebase",
+        "news"
+      ]
+    },
+    {
+      "name": "[The Librarian](/news/librarian)",
+      "sourceUrl": "https://ampcode.com/news",
+      "sectionId": "[the-librarian](/news/librarian)",
+      "description": "Amp has a new tool: the Librarian. It's a subagent built for searching remote codebases. It allows Amp to search all public code on GitHub as well as your private GitHub repositories. Tell Amp to summon the Librarian when you need to find code in multiple repositories, or, for example, when you want it to read the code of the frameworks and libraries you're using. Or when you want it to find examples of what you're trying to do in open-source code. Or when you want it to connect the dots between your code and its dependencies. Or... well, anytime you want it to find and look up code on GitHub. Here are some example prompts that lead Amp to use the Librarian: • \"Use the Librarian to lookup how React's useEffect cleanup function is implemented.\" • \"Explain how new versions of our documentation are deployed when we release. Search our docs and infra repositories to see how they get to X.Y.sourcegraph.com.\" • \"Ask the Librarian to explain why we're getting this error from Zod and show me the validation logic causing it.\" In order to use the Librarian, all you need to do is configure a GitHub connection in your Amp settings and then tell Amp to use it. !The Librarian at work 4. October 15, 2025",
+      "tags": [
+        "agent",
+        "ai",
+        "search",
+        "codebase",
+        "tools",
+        "git",
+        "version-control",
+        "news"
+      ]
+    },
+    {
+      "name": "[Amp Free](/news/amp-free)",
+      "sourceUrl": "https://ampcode.com/news",
+      "sectionId": "[amp-free](/news/amp-free)",
+      "description": "Amp has a new mode: free. It's free of charge, supported by ads and the sharing of training data. Like our default mode in Amp (which is now called smart), Amp Free is a unique combination of system prompt, tools, and a selection of top OSS and frontier models. Models have changed tremendously in the last six months. Many are now great at being agents, and they’re cheaper too. All this means Amp Free is now possible—plenty of good tokens at a discount, a coding agent that knows how to use them, and the Internet’s best business model: advertisements. In turn, we’re now going to make agentic programming accessible to everyone and start exploring what’s possible when good tokens become cheap. Try it: sign in & install Amp, then use /mode free in the Amp CLI, or select free in the prompt field in the Amp editor extension. Read more about Amp Free » 5. October 14, 2025",
+      "tags": [
+        "agent",
+        "ai",
+        "tools",
+        "news"
+      ]
+    },
+    {
+      "name": "[Monthly Automatic Top Ups](/news/monthly-automatic-top-ups)",
+      "sourceUrl": "https://ampcode.com/news",
+      "sectionId": "[monthly-automatic-top-ups](/news/monthly-automatic-top-ups)",
+      "description": "You can now top up your Amp balance with a fixed amount each month, with the new monthly automatic top up option. This new mode gives you a more predictable Amp budget each month. And once you’ve used your balance you can top it up manually, or wait until your next top up date. And like always, any unused credits can be used in the following months. Head to your user or workspace settings to configure monthly automatic top ups. 6. October 3, 2025",
+      "tags": [
+        "general",
+        "news"
+      ]
+    },
+    {
+      "name": "[Amp TypeScript SDK](/news/typescript-sdk)",
+      "sourceUrl": "https://ampcode.com/news",
+      "sectionId": "[amp-typescript-sdk](/news/typescript-sdk)",
+      "description": "Today we've launched the Amp TypeScript SDK. It allows you to programmatically use the Amp agent in your TypeScript programs. Here is a program, for example, that instructs the Amp agent to find and list specific files in a folder using a custom toolbox tool: `typescript import { AmpOptions, execute } from '@sourcegraph/amp-sdk' import path from 'path' const prompt = ` What files use authentication in this directory? Go through all the files and folders. Use the format_file_tree tool to format results. Only output the file tree. ` const options: AmpOptions = { cwd: path.join(process.cwd(), 'src'), // Run in ./src folder dangerouslyAllowAll: true, // Allow all tools, trust in Amp toolbox: path.join(process.cwd(), 'toolbox'), // Location of custom toolbox } // execute starts the agent and streams messages const messages = execute({ prompt, options }) for await (const message of messages) { // A system message contains information about the current session if (message.type === 'system') { console.log(Started thread: ${message.session_id}) // For example, the custom tools that were found in the toolbox console.log( 'Available tools in Toolbox: ', message.tools.filter((tool) => tool.startsWith('tb__')).join(', '), ) } else if (message.type === 'assistant') { // An assistant message contains the assistants text replies // or tool uses console.log('Assistant:', message) } else if (message.type === 'result') { // A result message contains the last message of the assistant console.log('Files using authentication:', message.result) } } ` You only need to install one package to get started: `shell-session $ npm install @sourcegraph/amp-sdk ` Since you can invoke Amp in any TypeScript program, there are very few limits to what you can build. Here are some ideas and examples of things we've built internally: • Code Review Agent: Automated pull request analysis and feedback • Documentation Generator: Create and maintain project documentation • Test Automation: Generate and execute test suites • Migration Assistant: Help upgrade codebases and refactor legacy code • CI/CD Integration: Smart build and deployment pipelines • Issue Triage: Automatically categorize and prioritize bug reports To get more ideas and familiar with the SDK, take a look at the examples in the manual. 7. October 1, 2025",
+      "tags": [
+        "sdk",
+        "integration",
+        "agent",
+        "ai",
+        "tools",
+        "testing",
+        "code-review",
+        "refactoring",
+        "news"
+      ]
+    },
+    {
+      "name": "[GPT-5 Oracle](/news/gpt-5-oracle)",
+      "sourceUrl": "https://ampcode.com/news",
+      "sectionId": "[gpt-5-oracle](/news/gpt-5-oracle)",
+      "description": "The --try-gpt5 experiment is over. GPT-5 is here to stay as the new model for the oracle, replacing o3, but no longer as an experimental primary model in Amp. We found GPT-5 to be surprisingly good in certain contexts, when planning or debugging, for example, which makes it a great model to take on the role of the oracle. But it's also less proactive, less likely to jump over that last hurdle, compared to Sonnet, and these are qualities we look for in the main agent model. Then again, its reasoning capabilities, its different training lineage, and the absence of certain idiosyncracies make it a great partner for Sonnet. Now GPT-5 is the oracle in Amp. That means you can summon it at any point in an Amp thread to help with complex plans and bugs: • \"Look at the DB query calls and ask the oracle to provide a plan for how to refactor that reduces code duplication\" • \"Use the oracle to figure out when createSupervisor threads can throw an uncaught error based on the debug log output in @log.txt\" • \"I don't like that architecture. Use the oracle to analyze the callers and design a better architecture with clearer separation of concerns and pluggable storage.\" • \"Ask the oracle to review the code we just wrote\" (You can find more examples in the manual.) Thanks to everybody for testing and evaluating GPT-5 and sharing their experiences with us! We're still tweaking system prompts, still exploring new mechanics of how to interact with agents, and still thinking about where else we could fit GPT-5 into Amp. Because it is a fascinating model and there has to be a way to get even more out of it. 8. September 30, 2025",
+      "tags": [
+        "agent",
+        "ai",
+        "oracle",
+        "testing",
+        "debugging",
+        "refactoring",
+        "news"
+      ]
+    },
+    {
+      "name": "[Amp CLI connects to VS Code and Neovim](/news/cli-vscode-neovim)",
+      "sourceUrl": "https://ampcode.com/news",
+      "sectionId": "[amp-cli-connects-to-vs-code-and-neovim](/news/cli-vscode-neovim)",
+      "description": "You can now connect the Amp CLI to VS Code and Neovim. This allows Amp to access your current file, selected text, and diagnostics. It also enables Amp to edit files directly through your IDE. All that's required is the latest version of the Amp CLI, and either the Neovim plugin or the Amp VS Code extension. Then you can run amp --ide from your project root and the CLI will connect to the IDE in the current workspace. Here, for example, is the Amp CLI connected to Neovim: And here is the Amp CLI connected to VS Code: Learn more about the new integration in the manual. 9. September 29, 2025",
+      "tags": [
+        "testing",
+        "news"
+      ]
+    },
+    {
+      "name": "[Now Using Claude Sonnet 4.5](/news/claude-sonnet-4-5)",
+      "sourceUrl": "https://ampcode.com/news",
+      "sectionId": "[now-using-claude-sonnet-4.5](/news/claude-sonnet-4-5)",
+      "description": "We've switched Amp's primary model to Claude Sonnet 4.5, the latest release from Anthropic. In our testing of Sonnet 4.5 in Amp, we found noticeable improvements for coding, including: • Reduced sycophancy • Higher success rates for file edits • Improved reasoning during complex tasks like debugging The switch is automatic. Update to the latest release of Amp's VS Code extension or CLI to start using Claude Sonnet 4.5. 10. September 23, 2025",
+      "tags": [
+        "claude",
+        "ai",
+        "testing",
+        "debugging",
+        "news"
+      ]
+    },
+    {
+      "name": "[Amp Tab for All](/news/amp-tab-for-all)",
+      "sourceUrl": "https://ampcode.com/news",
+      "sectionId": "[amp-tab-for-all](/news/amp-tab-for-all)",
+      "description": "Amp Tab is our free in-editor completion engine for when you need to edit code manually in VS Code, Windsurf and Cursor. It's fast (really fast), understands diagnostic errors, and can suggest updates across multiple files. And we've just turned it on by default for all new Amp extension installs. If you’ve already installed the Amp extension, you can run “Enable Amp Tab” from the command palette (Cmd+Shift+P on macOS, Ctrl+Shift+P on Windows/Linux) to get started. Fast accurate edits: Resolve errors introduced by recent changes: Make changes across multiple files: 11. September 23, 2025",
+      "tags": [
+        "general",
+        "news"
+      ]
+    },
+    {
+      "name": "[Globs in AGENTS.md](/news/globs-in-AGENTS.md)",
+      "sourceUrl": "https://ampcode.com/news",
+      "sectionId": "[globs-in-agents.md](/news/globs-in-agents.md)",
+      "description": "Your AGENTS.md files can now include other context files dynamically, with glob mentions and filters, so you can give more granular guidance to the agent. For example, to apply language-specific coding rules: 1. Put See @docs/*.md anywhere in your AGENTS.md file. 2. Create a file docs/typescript-conventions.md with: `markdown --- globs: • '**/*.ts' --- Follow these TypeScript conventions: • Never use the any type • ... ` 3. Repeat for other languages. There's nothing special about @docs/*.md; you could instead mention @.agent/rules/*.md or @.cursor/rules/*.mdc or anywhere else you want these rules to live. These @-mentioned files with globs will only be included if Amp has read a file matching any of the globs (in the example above, any TypeScript file). Use /agent-files (CLI) or hover over X% of 968k (editor extension) to see the guidance files in use. 12. September 9, 2025",
+      "tags": [
+        "agent",
+        "ai",
+        "news"
+      ]
+    },
+    {
+      "name": "[Streaming JSON](/news/streaming-json)",
+      "sourceUrl": "https://ampcode.com/news",
+      "sectionId": "[streaming-json](/news/streaming-json)",
+      "description": "The Amp CLI has two new flags: --stream-json and --stream-json-input. They can be used together with the --execute flag to turn on structured JSON output and input, respectively. Here is an example: `shell-session $ amp --execute \"what is 2+2?\" --stream-json ` This would print something like the following on stdout: ` {\"type\":\"system\",\"subtype\":\"init\",\"cwd\":\"/Users/mrnugget/work/amp\",\"session_id\":\"T-2775dc92-90ed-4f85-8b73-8f9766029e83\",\"tools\":[\"oracle\",\"...\"],\"mcp_servers\":[]} {\"type\":\"user\",\"message\":{\"role\":\"user\",\"content\":[{\"type\":\"text\",\"text\":\"what is 2+2?\"}]},\"parent_tool_use_id\":null,\"session_id\":\"T-2775dc92-90ed-4f85-8b73-8f9766029e83\"} {\"type\":\"assistant\",\"message\":{\"type\":\"message\",\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"2 + 2 equals 4.\"}],\"stop_reason\":\"end_turn\",\"usage\":{\"input_tokens\":12783,\"cache_creation_input_tokens\":367,\"cache_read_input_tokens\":12416,\"output_tokens\":8,\"max_tokens\":224000,\"service_tier\":\"standard\"}},\"parent_tool_use_id\":null,\"session_id\":\"T-2775dc92-90ed-4f85-8b73-8f9766029e83\"} {\"type\":\"result\",\"subtype\":\"success\",\"duration_ms\":2906,\"is_error\":false,\"num_turns\":1,\"result\":\"2 + 2 equals 4.\",\"session_id\":\"T-2775dc92-90ed-4f85-8b73-8f9766029e83\"} ` Structured input can be provided on stdin with the --stream-json-input flag: `shell-session $ echo '{ \"type\": \"user\", \"message\": { \"role\": \"user\", \"content\": [ { \"type\": \"text\", \"text\": \"what is 2+2?\" } ] } }' | amp -x --stream-json --stream-json-input ` If --stream-json-input is set, the Amp CLI will process user messages as soon as they are received on stdin and exit as soon as stdin is closed and the agent has ended its turns. Combined with amp threads continue [thread id], multi-turn conversations can even happen across multiple invocations of the CLI: `shell-session $ amp -x \"what is 2+2?\" --stream-json ... $ amp threads continue -x \"and now add 7 to that\" --stream-json ... {\"type\":\"result\",\"result\":\"11.\", \"subtype\":\"success\",\"duration_ms\":2906,\"is_error\":false,\"num_turns\":2,\"session_id\":\"T-2775dc92-90ed-4f85-8b73-8f9766029e83\"} ` See the Manual for more details and the Appendix for the full schema. 13. September 2, 2025",
+      "tags": [
+        "agent",
+        "ai",
+        "oracle",
+        "tools",
+        "mcp",
+        "integration",
+        "news"
+      ]
+    },
+    {
+      "name": "[Look ma, no flicker](/news/look-ma-no-flicker)",
+      "sourceUrl": "https://ampcode.com/news",
+      "sectionId": "[look-ma,-no-flicker](/news/look-ma-no-flicker)",
+      "description": "Today the Amp CLI reached the next stage in its evolution. It’s no longer just a command-line tool, but a proper terminal user interface — fullscreen, responsive, fast, and built on our own framework. Our framework now lets us do things that were previously awkward or impossible: smooth scrolling while tool calls stream in, real mouse interactions with the transcript and the rest of the interface, overlays, popups, and clickable buttons. But maybe most importantly: no flicker. No jarring redraws. No stuttering text. And without flicker, really, anything’s possible. 14. August 29, 2025",
+      "tags": [
+        "tools",
+        "news"
+      ]
+    },
+    {
+      "name": "[Bring Your Own Tools](/news/toolboxes)",
+      "sourceUrl": "https://ampcode.com/news",
+      "sectionId": "[bring-your-own-tools](/news/toolboxes)",
+      "description": "You can now provide tools to Amp in the form of executable files. If the environment variable AMP_TOOLBOX is set and contains the path to a directory, Amp will look in that directory for executables to be used as tools. On start, Amp will invoke each executable it found, with the environment variable TOOLBOX_ACTION set to describe. The tool is then expected to write its description (which is what will end up in the system prompt that's sent to the agent) to stdout. Here is an example: `javascript import fs from 'node:fs' const action = process.env.TOOLBOX_ACTION if (action === 'describe') showDescription() else if (action === 'execute') runTests() function showDescription() { process.stdout.write( JSON.stringify({ name: 'run-tests', description: 'use this tool instead of Bash to run tests in a workspace', args: { dir: ['string', 'the workspace directory'] }, }), ) } ` When the agent then decides to invoke your tool, Amp runs the executable again, this time setting TOOLBOX_ACTION to execute. Amp passes the tool call arguments on stdin and the executable can then execute the tool call: `javascript function runTests() { let dir = JSON.parse(fs.readFileSync(0, 'utf-8'))['dir'] dir = dir && dir.length > 0 ? dir : '.' Bun.spawn(['pnpm', '-C', dir, 'run', 'test', '--no-color', '--run'], { stdio: ['inherit', 'inherit', 'inherit'], }) } ` You can read more about toolboxes and possible input and output formats in the manual. 15. August 27, 2025",
+      "tags": [
+        "agent",
+        "ai",
+        "tools",
+        "testing",
+        "news"
+      ]
+    },
+    {
+      "name": "[1,000,000 Tokens](/news/1m-tokens)",
+      "sourceUrl": "https://ampcode.com/news",
+      "sectionId": "[1,000,000-tokens](/news/1m-tokens)",
+      "description": "Amp can now use 1 million tokens of context with Claude Sonnet 4, up from 432,000 tokens two weeks ago. You should not use the full context window for most tasks in Amp. Instead, use small threads that are scoped to a single task. Amp is better, faster, and cheaper when used this way. A notice will appear when you hit 20% of the context window to remind you of this. Longer threads are more expensive, both because each iteration of the agentic loop sends more and more tokens, and because requests with more than 200k tokens are roughly twice as expensive per token in Anthropic's API pricing. !Amp thread with 1,000,000 tokens of context _Note: the screenshot shows 968k tokens because the context window is composed of 968k input tokens and 32k output tokens._ 16. August 25, 2025",
+      "tags": [
+        "api",
+        "integration",
+        "agent",
+        "ai",
+        "claude",
+        "news"
+      ]
+    },
+    {
+      "name": "[Custom Slash Commands](/news/custom-slash-commands)",
+      "sourceUrl": "https://ampcode.com/news",
+      "sectionId": "[custom-slash-commands](/news/custom-slash-commands)",
+      "description": "You can now define custom slash commands in the Amp CLI. They allow you to insert pre-defined or dynamically-generated text into the prompt input. To define a custom slash command, create a file at the root of your repository in a .agents/commands/ folder. The name of the file serves as the name of the slash command. For example, if you create .agents/commands/pr-review.md it will create the /pr-review slash command. When you use the command, the contents of the pr-review.md file will be inserted into the prompt input. Alongside this, we're also shipping an experimental mode for _executable_ slash commands: if a text file in .agents/commands is executable and has a #! on its first line (as in #!/usr/bin/env bash, for example), it will also get turned into a slash command. And when that command is then invoked, the corresponding file is executed and its output will be inserted. 17. August 25, 2025",
+      "tags": [
+        "agent",
+        "ai",
+        "news"
+      ]
+    },
+    {
+      "name": "[Enterprise Managed Settings](/news/enterprise-managed-settings)",
+      "sourceUrl": "https://ampcode.com/news",
+      "sectionId": "[enterprise-managed-settings](/news/enterprise-managed-settings)",
+      "description": "Amp now allows system administrators to configure organization-wide settings that override individual settings for Enterprise Amp customers. These settings can help ensure security, standardization, and best practices across an organization. Managed settings can be used, for example, to do the following: • Set MCP servers to those that work well in your organization (amp.mcpServers) • Allow or block MCP servers (amp.mcpPermissions) • Allow or block Bash commands that match specified patterns (amp.permissions) • Override any other Amp setting To use managed settings, system administrators should ensure the settings are defined in the following files: • macOS: /Library/Application Support/ampcode/managed-settings.json • Linux: /etc/ampcode/managed-settings.json • Windows: C:\\ProgramData\\ampcode\\managed-settings.json Settings in these files use the same schema as individual settings. You can read more about managed settings in the manual. 18. August 25, 2025",
+      "tags": [
+        "mcp",
+        "integration",
+        "news"
+      ]
+    },
+    {
+      "name": "[MCP Permissions](/news/mcp-permissions)",
+      "sourceUrl": "https://ampcode.com/news",
+      "sectionId": "[mcp-permissions](/news/mcp-permissions)",
+      "description": "The setting amp.mcpPermissions defines rules that block or allow MCP servers. MCP permissions are evaluated using a rule-based system with the same pattern matching syntax that is used for tool permissions. The first matching rule determines the action. If no rules match, the MCP server is allowed by default. The following configuration would block all MCP servers except locally-executed servers from the @modelcontextprotocol npm organization and remote servers from trusted-service.com: `json { \"amp.mcpPermissions\": [ { \"matches\": { \"command\": \"npx @modelcontextprotocol/server-*\" }, \"action\": \"allow\" }, { \"matches\": { \"url\": \"https://trusted-service.com/mcp/*\" }, \"action\": \"allow\" }, { \"matches\": { \"url\": \"*\" }, \"action\": \"reject\" } { \"matches\": { \"command\": \"*\" }, \"action\": \"reject\" } ] } ` Read more about amp.mcpPermissions in the manual. 19. August 21, 2025",
+      "tags": [
+        "tools",
+        "mcp",
+        "integration",
+        "news"
+      ]
+    },
+    {
+      "name": "[JetBrains Diagnostics for Java, Kotlin, and Scala](/news/jetbrains-diagnostics)",
+      "sourceUrl": "https://ampcode.com/news",
+      "sectionId": "[jetbrains-diagnostics-for-java,-kotlin,-and-scala](/news/jetbrains-diagnostics)",
+      "description": "Amp CLI can now read diagnostics from JetBrains IDEs for JVM languages such as Java, Kotlin, and Scala. See the Manual for how to connect Amp CLI to your JetBrains IDE. 20. August 21, 2025",
+      "tags": [
+        "general",
+        "news"
+      ]
+    },
+    {
+      "name": "[Multi-File Tab](/news/multi-file-tab)",
+      "sourceUrl": "https://ampcode.com/news",
+      "sectionId": "[multi-file-tab](/news/multi-file-tab)",
+      "description": "Amp Tab will now suggest edits across multiple recently-viewed files when an accepted edit introduces diagnostic errors. Press Tab once to preview the file, and Tab again to make the jump. 21. August 21, 2025",
+      "tags": [
+        "general",
+        "news"
+      ]
+    },
+    {
+      "name": "[Through the Agent, Into the Shell](/news/through-the-agent-into-the-shell)",
+      "sourceUrl": "https://ampcode.com/news",
+      "sectionId": "[through-the-agent,-into-the-shell](/news/through-the-agent-into-the-shell)",
+      "description": "Finally: the Amp CLI now also lets you execute shell commands, right there in the prompt input. It's called shell mode. You activate it by starting a message with $. Everything you type after that will be executed as a shell command. The command and its output will be included in the context window the next time you send a message to the agent. It's a good way to show the agent the output of a command without the agent having to execute it. Type $$ and you'll activate the incognito version of shell mode in which the commands are executed in the same way, but not included in the context. That, in turn, is handy when you want to run noisy commands to check on something, or fire off a quick command that you'd otherwise run in a separate terminal. 22. August 20, 2025",
+      "tags": [
+        "agent",
+        "ai",
+        "news"
+      ]
+    },
+    {
+      "name": "[From AGENT.md to AGENTS.md](/news/AGENTS.md)",
+      "sourceUrl": "https://ampcode.com/news",
+      "sectionId": "[from-agent.md-to-agents.md](/news/agents.md)",
+      "description": "In May we added support for AGENT.md files to Amp. Not long after, OpenAI picked AGENTS.md (plural) for their agent and, instead of insisting on what we came up with, we decided that we'd prefer one standard. Our condition: if OpenAI can get the agents.md domain, we'll switch. And that condition has now been met. True to our word, and as of today, Amp will look for AGENTS.md files (while staying backwards compatible with existing AGENT.md files, of course) !AGENTS.md standard 23. August 20, 2025",
+      "tags": [
+        "agent",
+        "ai",
+        "news"
+      ]
+    },
+    {
+      "name": "[A New Model for Amp Tab](/news/new-model-for-amp-tab)",
+      "sourceUrl": "https://ampcode.com/news",
+      "sectionId": "[a-new-model-for-amp-tab](/news/new-model-for-amp-tab)",
+      "description": "Amp Tab now uses an updated custom model to provide better completions. In order to train this model, we rebuilt our training dataset to include synthetically generated examples to improve the model's performance in specific scenarios in which the previous model produced poor or missing suggestions, such as follow-up edits. The new model also uses DPO (Direct Preference Optimization) post-training on top of our SFT (Supervised Fine-Tuning) base. To do that, we used the model's previous bad outputs as negative examples alongside the new synthetic ground truth as positive examples, teaching it to avoid common failure patterns. Here, see how follow-up edits work much better now. In this video, deleting a proxy variable triggers a chain of completions, including fixes to the constructor and updates to the header. 24. August 19, 2025",
+      "tags": [
+        "general",
+        "news"
+      ]
+    },
+    {
+      "name": "[New Threads without Leaving the CLI](/news/new-threads-without-leaving-the-cli)",
+      "sourceUrl": "https://ampcode.com/news",
+      "sectionId": "[new-threads-without-leaving-the-cli](/news/new-threads-without-leaving-the-cli)",
+      "description": "You can now start new threads and continue old threads without leaving your CLI session. Use /new for a new thread and /continue to pick an old thread. 25. August 18, 2025",
+      "tags": [
+        "general",
+        "news"
+      ]
+    },
+    {
+      "name": "[Queue Messages in the CLI](/news/queue-messages-in-the-cli)",
+      "sourceUrl": "https://ampcode.com/news",
+      "sectionId": "[queue-messages-in-the-cli](/news/queue-messages-in-the-cli)",
+      "description": "You can now also queue messages in the CLI. Once queued, messages will be sent to the agent once it's done with its current turn. Use /queue <message> to enqueue a message and /dequeue to dequeue them. 26. August 13, 2025",
+      "tags": [
+        "agent",
+        "ai",
+        "news"
+      ]
+    },
+    {
+      "name": "[432,000 Tokens](/news/432k-tokens)",
+      "sourceUrl": "https://ampcode.com/news",
+      "sectionId": "[432,000-tokens](/news/432k-tokens)",
+      "description": "Amp can now use 432,000 tokens of context with Claude Sonnet 4, more than 2x the previous limit imposed by the model. Your threads can keep going for longer, with more iterations, more context, more replies, and larger files, before you need to compact or start a new thread. We've rolled it out to all Amp users in the latest CLI and editor extension. We'll ship support for 1 million tokens of context soon. You should still start new threads for new tasks and use small threads where possible. !Amp thread with 432,000 tokens of context 27. August 13, 2025",
+      "tags": [
+        "claude",
+        "ai",
+        "testing",
+        "news"
+      ]
+    },
+    {
+      "name": "[Diagnostic-Driven Completions](/news/diagnostic-driven-completions)",
+      "sourceUrl": "https://ampcode.com/news",
+      "sectionId": "[diagnostic-driven-completions](/news/diagnostic-driven-completions)",
+      "description": "Amp Tab now uses language server diagnostics to suggest follow-up edits that resolve errors introduced by previous edits. This means you can get completions across the entire file, not just in nearby code. It's particularly useful when making changes that immediately introduce fixable errors, such as changing the signature of a function or renaming a variable. 28. August 12, 2025",
+      "tags": [
+        "general",
+        "news"
+      ]
+    },
+    {
+      "name": "[Model Evaluation](/news/model-evaluation)",
+      "sourceUrl": "https://ampcode.com/news",
+      "sectionId": "[model-evaluation](/news/model-evaluation)",
+      "description": "A lot of models have been released in the last few weeks: Kimi K2, Qwen3-Coder, GLM-4.5, gpt-oss, Claude Opus 4.1, GPT-5, diffusion models, and there's no end in sight. We've been trying a lot of them, to see whether they can make Amp better. In Amp, a new model isn't just another entry in a model selection dropdown menu. It's part of a whole in which many different models have different jobs to do and for each job we want to use the best model, regardless of cost or deployment concerns. So when a new model comes along, we ask: • Is it a frontier model that can replace Claude Sonnet 4 fully or even partially as the main agent model? • Is it a good subagent model that spikes in certain areas? (Like how the oracle uses a different model, originally o3.) • Is it a fast utility model that we can use, for example, for search, summarization, or other similar tasks? With this post, we want to show you a week in the life of the Amp team as we evaluate new models. Impressions, ideas, tips — we'll share what we discover. We'll continuously update it with notes from Thorsten, Camden, Quinn, Beyang, and other Amp team members. • GPT-5 One Week Later _(latest note)_ • GPT-5 is pretty good after a few days of use • GPT-5, Two First Impressions • Elbow Grease • Try GPT-5 • Try Claude Opus 4.1 • Good Forward-Looking Evals _Last updated: 2mo ago_ See latest notes » 29. August 7, 2025",
+      "tags": [
+        "agent",
+        "ai",
+        "oracle",
+        "search",
+        "codebase",
+        "claude",
+        "testing",
+        "news"
+      ]
+    },
+    {
+      "name": "[Try GPT-5 with us](/news/gpt-5)",
+      "sourceUrl": "https://ampcode.com/news",
+      "sectionId": "[try-gpt-5-with-us](/news/gpt-5)",
+      "description": "We're in the process of evaluating where and how GPT-5 might fit into Amp. You can join us and try GPT-5 in Amp now: • CLI: amp --try-gpt5 • Editor extension: Set \"amp.gpt5\": true in VS Code, Cursor, Windsurf (or other VS Code fork) settings (This flag and setting will only exist for a limited time, until we've made a call on how to use GPT-5.) 30. August 7, 2025",
+      "tags": [
+        "general",
+        "news"
+      ]
+    },
+    {
+      "name": "[JetBrains in the CLI](/news/jetbrains-in-the-cli)",
+      "sourceUrl": "https://ampcode.com/news",
+      "sectionId": "[jetbrains-in-the-cli](/news/jetbrains-in-the-cli)",
+      "description": "You can now connect the Amp CLI to JetBrains IDEs. This provides Amp with context about your current file and selection. It also allows Amp to edit files directly through the IDE. Update the Amp CLI to the latest version and run amp --jetbrains from the root of your project. Learn more about the new JetBrains integration in the manual. 31. August 7, 2025",
+      "tags": [
+        "testing",
+        "news"
+      ]
+    },
+    {
+      "name": "[Tool-Level Permissions](/news/tool-level-permissions)",
+      "sourceUrl": "https://ampcode.com/news",
+      "sectionId": "[tool-level-permissions](/news/tool-level-permissions)",
+      "description": "Instead of only allowing you to configure which Bash commands are allowed to run and which aren't, Amp now gives you the ability to define which tool it's allowed to run, and with which arguments. When Amp wants to call a tool, it first checks your list of permissions to find an entry that matches the tool and the tool call arguments. The matched entry then tells Amp to either _allow_ the tool call, _reject_ it, _ask_ you for confirmation, or _delegate_ the decision to another program. If no matching entry is found, Amp checks the built-in permission list that contains sensible defaults. You can define these granular tool-level permissions by adding entries to the amp.permissions list in your configuration file. Here's an example: `json \"amp.permissions\": [ // Ask before running a command containing \"git commit\" { \"tool\": \"Bash\", \"matches\": { \"cmd\": \"*git commit*\" }, \"action\": \"ask\"}, // Reject command containing \"python \" or \"python3 \" { \"tool\": \"Bash\", \"matches\": { \"cmd\": [\"*python *\", \"*python3 *\"] }, \"action\": \"reject\"}, // Ask before running any MCP tool { \"tool\": \"mcp__*\", \"action\": \"ask\"}, // Delegate everything else to a permission helper (must be on $PATH) { \"tool\": \"*\", \"action\": \"delegate\", \"to\": \"my-permission-helper\"} ] ` You can read more about the new tool-level permissions in the manual. 32. July 30, 2025",
+      "tags": [
+        "tools",
+        "mcp",
+        "integration",
+        "git",
+        "version-control",
+        "news"
+      ]
+    },
+    {
+      "name": "[Amp Tab 30% Faster](/news/amp-tab-30-percent-faster)",
+      "sourceUrl": "https://ampcode.com/news",
+      "sectionId": "[amp-tab-30%-faster](/news/amp-tab-30-percent-faster)",
+      "description": "Response times of Amp Tab, our in-editor completion engine, are now 30% faster, with up to 50% improvements during peak usage. We worked together with Baseten to optimize our custom deployment. The new infrastructure delivers roughly 2x performance improvements by switching to TensorRT-LLM as the inference engine and implementing KV caching with speculative decoding. This new infrastructure also includes a modified version of lookahead decoding that uses an improved n-gram candidate selection algorithm and variable-length speculations, which reduces both draft tokens and compute per iteration compared to standard implementations. !Chart showing Amp Tab latency improvements over time 33. July 29, 2025",
+      "tags": [
+        "general",
+        "news"
+      ]
+    },
+    {
+      "name": "[Thread Forking in VS Code](/news/thread-forking)",
+      "sourceUrl": "https://ampcode.com/news",
+      "sectionId": "[thread-forking-in-vs-code](/news/thread-forking)",
+      "description": "Click on _Fork_ to create a new thread containing all messages prior to this point. Forked threads have a backlink to the original thread. You can use it to take the same thread into different directions. For example, to explore alternative implementations or asking questions while you wait for the current task to finish. 34. July 24, 2025",
+      "tags": [
+        "general",
+        "news"
+      ]
+    },
+    {
+      "name": "[amp dash x](/news/amp-x)",
+      "sourceUrl": "https://ampcode.com/news",
+      "sectionId": "[amp-dash-x](/news/amp-x)",
+      "description": "The Amp CLI has a new flag: --execute. -x for short. That flag turns on execute mode, which allows for programmatic use of the Amp CLI. The CLI sends the given prompt to the agent and waits until the agent is done. Then it prints the agent's last message. `shell-session $ amp -x \"Give me a list of targets in this Makefile. Only the names.\" git zsh ghostty atuin jj all ` `shell-session $ amp -x \"Rename all .markdown files to .md then print the new names.\" • readme.markdown → readme.md • ghostty.markdown → ghostty.md ` You can also pipe input to it: `shell-session $ echo \"what package manager do we use here? reply only with name.\" | amp -x pnpm ` Execute mode is automatically turned on when you redirect stdout: `shell-session $ echo \"list all markdown files in here\" | amp > output.txt $ cat output.txt README.md CONTRIBUTING.md YOURE_ABSOLUTELY_RIGHT.md ` You can also use execute mode with threads continue: `shell-session $ amp -x \"what is 2+2?\" 4 $ amp threads continue -x \"add 5 to that\" 9 $ amp threads continue -x \"now minus 3\" 6 ` 35. July 23, 2025",
+      "tags": [
+        "agent",
+        "ai",
+        "git",
+        "version-control",
+        "news"
+      ]
+    },
+    {
+      "name": "[Towards a new CLI](/news/towards-a-new-cli)",
+      "sourceUrl": "https://ampcode.com/news",
+      "sectionId": "[towards-a-new-cli](/news/towards-a-new-cli)",
+      "description": "Everything is changing and everything has changed, even in something that's decades old: the terminal. Mere months ago, running agents in your terminal was considered a curiosity. Now it's something we all do. Some of us casually; others many, many, _many_ times a day — in multiple windows, multiple split panes, multiple checkouts of repositories. Today we released a new version of our Amp CLI. It's our first step into a future of which we don't know much, but this: agents in the terminal are part of it — and we are building a CLI to unleash them. You can use it right now: `bash $ npm install -g @sourcegraph/amp $ amp login $ amp ` !Four instances of the Amp CLI in action 36. July 8, 2025",
+      "tags": [
+        "agent",
+        "ai",
+        "news"
+      ]
+    },
+    {
+      "name": "[Streamable Transport for MCP](/news/streamable-mcp)",
+      "sourceUrl": "https://ampcode.com/news",
+      "sectionId": "[streamable-transport-for-mcp](/news/streamable-mcp)",
+      "description": "Amp now uses streamable HTTP transport for MCP servers by default with a fallback to Server-Sent Events. That allows you to connect to your own MCP servers hosted on Cloudflare or use other remote servers such as https://learn.microsoft.com/api/mcp. !Streamable HTTP transport in action 37. July 7, 2025",
+      "tags": [
+        "api",
+        "integration",
+        "mcp",
+        "news"
+      ]
+    },
+    {
+      "name": "[Multiple AGENT.md Files](/news/multiple-AGENT.md-files)",
+      "sourceUrl": "https://ampcode.com/news",
+      "sectionId": "[multiple-agent.md-files](/news/multiple-agent.md-files)",
+      "description": "_Update: Amp now looks in files named AGENTS.md (with an S)._ Amp now looks for AGENT.md files in subtrees, parent directories, and ~/.config/AGENT.md. This lets you keep your top-level AGENT.md general and create more specific AGENT.md files in subtrees. They'll be included only when Amp works in that subtree. You can also @-mention files in AGENT.md to include additional context. Manual » !Multiple AGENT.md files in use 38. July 4, 2025",
+      "tags": [
+        "agent",
+        "ai",
+        "news"
+      ]
+    },
+    {
+      "name": "[Oracle](/news/oracle)",
+      "sourceUrl": "https://ampcode.com/news",
+      "sectionId": "[oracle](/news/oracle)",
+      "description": "There's something new in Amp's toolbox: a tool called oracle. Behind that tool is a read-only subagent powered by one of the most powerful models today: OpenAI's o3. o3 is slightly slower than the model behind Amp's main agent, Sonnet 4. It's also slightly more expensive and less suited for day-to-day agentic coding. But it is impressively good at reviewing, at debugging, at analyzing, at figuring out what to do next. That's why we made it available as a tool, so the main agent and the oracle can work together — hand in hand, or, well, the agentic equivalent: token by token, one writing code, the other analyzing and reviewing. We consciously haven't pushed the oracle too hard in the system prompt, to avoid unnecessarily increasing costs for you or slowing you down. Instead, we rely on explicit prompting to get the main agent to consult the oracle. Here are some prompts we used: • \"Use the oracle to review the last commit's changes. I want to make sure that the actual logic for when an idle or requires-user-input notification sound plays has not changed.\" • \"Analyze how the functions foobar and barfoo are used. Then I want you to work a lot with the oracle to figure out how we can refactor the duplication between them while keeping changes backwards compatible.\" • \"I have a bug in these files: ... It shows up when I run this command: ... Help me fix this bug. Use the oracle as much as possible, since it's smart.\" !Oracle in action 39. June 27, 2025",
+      "tags": [
+        "agent",
+        "ai",
+        "oracle",
+        "tools",
+        "debugging",
+        "refactoring",
+        "news"
+      ]
+    },
+    {
+      "name": "[Better, Faster, Cheaper Summaries](/news/better-faster-cheaper-summaries)",
+      "sourceUrl": "https://ampcode.com/news",
+      "sectionId": "[better,-faster,-cheaper-summaries](/news/better-faster-cheaper-summaries)",
+      "description": "Amp now uses a different model when compacting or summarizing threads. It's 4-6x faster, roughly 30x cheaper, and provides better summaries when you either compact a thread or create a new thread with a summary. 40. June 26, 2025",
+      "tags": [
+        "general",
+        "news"
+      ]
+    },
+    {
+      "name": "[Queued Messages](/news/queued-messages)",
+      "sourceUrl": "https://ampcode.com/news",
+      "sectionId": "[queued-messages](/news/queued-messages)",
+      "description": "You can now queue messages that will only be sent to the agent once it's idle. To add a message to the queue, hold shift while submitting. 41. June 10, 2025",
+      "tags": [
+        "agent",
+        "ai",
+        "news"
+      ]
+    },
+    {
+      "name": "[Agents for the Agent](/agents-for-the-agent)",
+      "sourceUrl": "https://ampcode.com/news",
+      "sectionId": "[agents-for-the-agent](/agents-for-the-agent)",
+      "description": "Amp now has subagents. Thorsten wrote a post about subagents, what they even are, and how they make us wonder whether everything is changing again. 42. June 6, 2025",
+      "tags": [
+        "agent",
+        "ai",
+        "news"
+      ]
+    },
+    {
+      "name": "[Amp Tab](/news/amp-tab)",
+      "sourceUrl": "https://ampcode.com/news",
+      "sectionId": "[amp-tab](/news/amp-tab)",
+      "description": "Today, we're launching Amp Tab, our new in-editor completion engine, designed to anticipate your next actions and reduce the time spent manually writing code. It uses a custom model that was trained to understand what you are trying to do next, based on your recent changes, your language server's diagnostics, and what we call semantic context. Amp Tab can suggest regular single or multi-line edits to change entire code blocks, next to your cursor or farther away, somewhere else in your current document. We're releasing Amp Tab now as a research preview, free to use for all Amp users. Enable it by adding the following to your VS Code settings: `json { \"amp.tab.enabled\": true } ` 43. June 2, 2025",
+      "tags": [
+        "search",
+        "codebase",
+        "news"
+      ]
+    },
+    {
+      "name": "[Multi-Root Workspaces](/news/multi-root-workspaces)",
+      "sourceUrl": "https://ampcode.com/news",
+      "sectionId": "[multi-root-workspaces](/news/multi-root-workspaces)",
+      "description": "Amp now has improved support for multi-root workspaces: • Reading, editing, and reverting file changes now works consistently across different workspace roots • The name of the workspace root is now shown alongside file paths in the UI • The search agent now covers all workspace roots !Multi-root workspaces 44. May 30, 2025",
+      "tags": [
+        "agent",
+        "ai",
+        "search",
+        "codebase",
+        "news"
+      ]
+    },
+    {
+      "name": "[Secret Redaction](/news/secret-redaction)",
+      "sourceUrl": "https://ampcode.com/news",
+      "sectionId": "[secret-redaction](/news/secret-redaction)",
+      "description": "Amp now identifies secrets and redacts them with markers like REDACTED:aws-access-key-id], so they are not exposed to the LLM, other tools, or ampcode.com. See [Amp Security Reference for details. 45. May 29, 2025",
+      "tags": [
+        "tools",
+        "news"
+      ]
+    },
+    {
+      "name": "[Raising an Agent, Episode 6](/podcast)",
+      "sourceUrl": "https://ampcode.com/news",
+      "sectionId": "[raising-an-agent,-episode-6](/podcast)",
+      "description": "Quinn and Thorsten discuss Claude 4, sub-agents, background agents, and they share \"hot tips\" for agentic coding. 46. May 28, 2025",
+      "tags": [
+        "agent",
+        "ai",
+        "claude",
+        "news"
+      ]
+    },
+    {
+      "name": "[Terminal Improvements](/news/terminal)",
+      "sourceUrl": "https://ampcode.com/news",
+      "sectionId": "[terminal-improvements](/news/terminal)",
+      "description": "We have made multiple changes to how we run terminal commands in Amp: Environment — Commands now run by default in the integrated VS Code terminal inheriting your shell environment including Python virtual environments and direnv configuration. Interactivity — Use the new \"View in Terminal\" button to interact with commands that require stdin, or the new \"Detach\" button to let the command continue running in the background. Output — Progress bars with ANSI escape codes now render beautifully in the UI without eating up your context window, only the final output is presented to the model. 47. May 28, 2025",
+      "tags": [
+        "general",
+        "news"
+      ]
+    },
+    {
+      "name": "[TODOs for the Agent](/news/todos)",
+      "sourceUrl": "https://ampcode.com/news",
+      "sectionId": "[todos-for-the-agent](/news/todos)",
+      "description": "The TODO feature that lets the agent manage its own list of tasks is now enabled by default. 48. May 22, 2025",
+      "tags": [
+        "agent",
+        "ai",
+        "news"
+      ]
+    },
+    {
+      "name": "[Image Support in CLI](/news/cli-image-support)",
+      "sourceUrl": "https://ampcode.com/news",
+      "sectionId": "[image-support-in-cli](/news/cli-image-support)",
+      "description": "You can now refer to image files in the Amp CLI. Paste the file path, drag a file into the terminal, or use file mentions by pressing @ to fuzzy-find the file. Images are useful for prompting with screenshots, designs, and more. 49. May 22, 2025",
+      "tags": [
+        "general",
+        "news"
+      ]
+    },
+    {
+      "name": "[Amp Now Uses Claude Sonnet 4](/news/default-claude-sonnet-4)",
+      "sourceUrl": "https://ampcode.com/news",
+      "sectionId": "[amp-now-uses-claude-sonnet-4](/news/default-claude-sonnet-4)",
+      "description": "We've been using and tuning Amp with Claude 4 internally for weeks. Now that Anthropic has released it, we've switched Amp's primary model to be Claude Sonnet 4. Amp is already designed to get the most power out of Claude 4. In our testing, we've found this new model to be: • Faster • More stable, less easily distracted • Smarter at tool calling • More willing to invoke tools in parallel • Better at recovering from errors • Generally more trustworthy To start using Claude 4 in Amp, update to the latest release of Amp's VS Code extension or CLI. No settings changes are needed; see why we don't make the user switch models. 50. May 20, 2025",
+      "tags": [
+        "tools",
+        "claude",
+        "ai",
+        "testing",
+        "news"
+      ]
+    },
+    {
+      "name": "[The First 500,000 Messages](/news/500k)",
+      "sourceUrl": "https://ampcode.com/news",
+      "sectionId": "[the-first-500,000-messages](/news/500k)",
+      "description": "Last week we opened up Amp to the world, and now it's about to hit 500,000 messages sent. We've been busy fixing bugs and making the whole experience of using Amp as smooth, solid, and fast as possible. Please keep the feedback coming, on Discord, on X (1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 …), or to amp-devs@sourcegraph.com. Thank you and happy coding! 51. May 15, 2025",
+      "tags": [
+        "general",
+        "news"
+      ]
+    },
+    {
+      "name": "[Amp Is Now Available To Everyone — Here's How I Use It](/how-i-use-amp)",
+      "sourceUrl": "https://ampcode.com/news",
+      "sectionId": "[amp-is-now-available-to-everyone-—-here's-how-i-use-it](/how-i-use-amp)",
+      "description": "As of today, Amp is available to everyone. No more waitlist. Thorsten used the occasion of Amp now being available to everyone to write down how he uses it and how it changed programming for him. 52. May 14, 2025",
+      "tags": [
+        "general",
+        "news"
+      ]
+    },
+    {
+      "name": "[Raising an Agent, Episode 5](/podcast)",
+      "sourceUrl": "https://ampcode.com/news",
+      "sectionId": "[raising-an-agent,-episode-5](/podcast)",
+      "description": "Beyang interviews Thorsten and Quinn to unpack what has happened in the world of Amp in the last five weeks: how predictions played out, how working with agents shaped coding practices, and the evolution of AI coding tools from browser automation to model training. 53. May 9, 2025",
+      "tags": [
+        "agent",
+        "ai",
+        "tools",
+        "news"
+      ]
+    },
+    {
+      "name": "[History in CLI](/news/cli-history)",
+      "sourceUrl": "https://ampcode.com/news",
+      "sectionId": "[history-in-cli](/news/cli-history)",
+      "description": "You can now navigate the local history of messages in the Amp CLI. Use the arrow keys or Ctrl+P/Ctrl+N to navigate the adjacent messages in the history. PageUp and PageDown jumps directly, regardless of cursor position. Your current draft is available at the end of the history, and you can press Ctrl+C or Esc to cancel and go back to your draft. 54. May 8, 2025",
+      "tags": [
+        "general",
+        "news"
+      ]
+    },
+    {
+      "name": "[No More BYOK](/news/no-more-byok)",
+      "sourceUrl": "https://ampcode.com/news",
+      "sectionId": "[no-more-byok](/news/no-more-byok)",
+      "description": "We removed Isolated Mode, which let you use Amp with your own API keys for LLM inference, because it's not possible for it to meet our quality bar. The intent was to make it easier to use Amp in locked-down environments, but we hit many issues that made the experience bad and slowed us down: 1. Anthropic rate limit issues: Individuals can't easily get Anthropic API keys with high enough rate limits to actually use Amp. (Anthropic is understandably strict here unless you are an enterprise customer of theirs.) 2. LLM proxy and connectivity issues: Many people tried to use Isolated Mode with custom LLM proxies that weren't fully API-compatible with Anthropic's API, which led to hard-to-debug issues. 3. Gemini API parity issues: We found that Gemini 2.5 Pro only works well via Google Cloud Vertex AI (a more enterprise-y offering) rather than Google AI Studio, which is how most people would generate API keys, because of differences in how they handle thinking. Even though we _could_ work around these specific issues, more will arise in the future because tool-calling agents need to integrate more deeply into model capabilities and LLM APIs are getting more complex and differentiated. We believe the best product is built by iterating fast at the model↔product frontier, and most devs and companies want the best coding agent _more_ than they want a worse coding agent that satisfies other constraints. _If you were using Isolated Mode_: When you update Amp in VS Code, you'll see a message informing you of this change and requiring you to disable Isolated Mode to continue. Your threads are preserved locally. 55. May 7, 2025",
+      "tags": [
+        "api",
+        "integration",
+        "agent",
+        "ai",
+        "tools",
+        "debugging",
+        "news"
+      ]
+    },
+    {
+      "name": "[AGENT.md](/news/AGENT.md)",
+      "sourceUrl": "https://ampcode.com/news",
+      "sectionId": "[agent.md](/news/agent.md)",
+      "description": "_Update: Amp now looks in files named AGENTS.md (with an S)._ Amp now looks in the AGENT.md file at the root of your project for guidance on project structure, build & test steps, conventions, and avoiding common mistakes. Manual » Amp will offer to generate this file by reading your project and other agents' files (.cursorrules, .cursor/rules, .windsurfrules, .clinerules, CLAUDE.md, and .github/copilot-instructions.md). We chose AGENT.md as a naming standard to avoid the proliferation of agent-specific files in your repositories. We hope other agents will follow this convention. 56. May 7, 2025",
+      "tags": [
+        "agent",
+        "ai",
+        "claude",
+        "git",
+        "version-control",
+        "testing",
+        "news"
+      ]
+    },
+    {
+      "name": "[File Mentions in CLI](/news/cli-file-mentions)",
+      "sourceUrl": "https://ampcode.com/news",
+      "sectionId": "[file-mentions-in-cli](/news/cli-file-mentions)",
+      "description": "The Amp CLI now supports file mentions in interactive mode. Type @ followed by a pattern to fuzzy-search. Use Tab or Shift-Tab through the results, and hit Enter to confirm. 57. April 22, 2025",
+      "tags": [
+        "search",
+        "codebase",
+        "news"
+      ]
+    },
+    {
+      "name": "[Manual](/manual)",
+      "sourceUrl": "https://ampcode.com/news",
+      "sectionId": "[manual](/manual)",
+      "description": "An operator's guide to Amp 58. April 15, 2025",
+      "tags": [
+        "general",
+        "news"
+      ]
+    },
+    {
+      "name": "[How to Build an Agent](/how-to-build-an-agent)",
+      "sourceUrl": "https://ampcode.com/news",
+      "sectionId": "[how-to-build-an-agent](/how-to-build-an-agent)",
+      "description": "It’s not that hard to build a fully functioning, code-editing agent. 59. April 9, 2025",
+      "tags": [
+        "agent",
+        "ai",
+        "news"
+      ]
+    },
+    {
+      "name": "[Frequently Ignored Feedback](/fif)",
+      "sourceUrl": "https://ampcode.com/news",
+      "sectionId": "[frequently-ignored-feedback](/fif)",
+      "description": "Our responses to some common feedback that we are intentionally not acting on. 60. April 4, 2025",
+      "tags": [
+        "general",
+        "news"
+      ]
+    },
+    {
+      "name": "[Raising an Agent, Episode 4](/podcast)",
+      "sourceUrl": "https://ampcode.com/news",
+      "sectionId": "[raising-an-agent,-episode-4](/podcast)",
+      "description": "What will AI do to open-source? What does it mean for GitHub? What does it mean for interviewing engineers? 61. March 28, 2025",
+      "tags": [
+        "agent",
+        "ai",
+        "git",
+        "version-control",
+        "news"
+      ]
+    },
+    {
+      "name": "[Raising an Agent, Episode 3](/podcast)",
+      "sourceUrl": "https://ampcode.com/news",
+      "sectionId": "[raising-an-agent,-episode-3](/podcast)",
+      "description": "What does this all mean for code search? How do you balance coding knowledge/skills/experience vs. letting the AI do it? 62. March 13, 2025",
+      "tags": [
+        "agent",
+        "ai",
+        "search",
+        "codebase",
+        "news"
+      ]
+    },
+    {
+      "name": "[Raising an Agent, Episode 2](/podcast)",
+      "sourceUrl": "https://ampcode.com/news",
+      "sectionId": "[raising-an-agent,-episode-2](/podcast)",
+      "description": "Is the magic with these agents that there are no token limits? Where do the agents fail? Do they need guidance? Where? How does one even price this? Isn't it too expensive? 63. March 6, 2025",
+      "tags": [
+        "agent",
+        "ai",
+        "news"
+      ]
+    },
+    {
+      "name": "[Raising an Agent, Episode 1](/podcast)",
+      "sourceUrl": "https://ampcode.com/news",
+      "sectionId": "[raising-an-agent,-episode-1](/podcast)",
+      "description": "Thorsten and Quinn start building Amp.",
+      "tags": [
+        "agent",
+        "ai",
+        "news"
+      ]
+    }
+  ]
+}

@@ -77,25 +77,27 @@ export interface DataAvailability {
 }
 
 export async function generatePreCallBrief(
-	accountKey: AccountKey,
-	meetingDate?: string
+accountKey: AccountKey,
+meetingDate?: string,
+	callId?: string
 ): Promise<PreCallBrief> {
 	console.log(`\n📋 Generating pre-call brief for ${accountKey.name}...`)
 	
 	const accountSlug = slugify(accountKey.name)
 	const accountDataDir = join(process.cwd(), 'data/accounts', accountSlug)
 	
-	const [snapshot, gongData, notionData] = await loadDataSources(accountDataDir)
+	const [snapshot, gongData, notionData] = await loadDataSources(accountDataDir, callId)
 	
 	const dataAvailability = assessDataAvailability(snapshot, gongData, notionData)
 	logDataAvailability(dataAvailability)
 	
 	const briefSections = await generateBriefWithAI(
-		accountKey,
-		meetingDate,
-		snapshot,
-		gongData,
-		notionData
+	accountKey,
+	meetingDate,
+	snapshot,
+	gongData,
+	notionData,
+	 callId
 	)
 	
 	const brief: PreCallBrief = {
@@ -112,10 +114,11 @@ export async function generatePreCallBrief(
 }
 
 async function loadDataSources(
-	accountDataDir: string
+accountDataDir: string,
+	callId?: string
 ): Promise<[ConsolidatedSnapshot | null, any | null, any | null]> {
-	const snapshot = await loadLatestSnapshot(accountDataDir)
-	const gongData = await loadRecentGongCalls(accountDataDir)
+const snapshot = await loadLatestSnapshot(accountDataDir)
+const gongData = await loadRecentGongCalls(accountDataDir, callId)
 	const notionData = await loadNotionPages(accountDataDir)
 	
 	return [snapshot, gongData, notionData]
@@ -142,7 +145,7 @@ async function loadLatestSnapshot(
 	}
 }
 
-async function loadRecentGongCalls(accountDataDir: string): Promise<any | null> {
+async function loadRecentGongCalls(accountDataDir: string, callId?: string): Promise<any | null> {
 	try {
 		const rawDir = join(accountDataDir, 'raw')
 		const gongFile = join(rawDir, 'gong_calls.json')
@@ -153,7 +156,12 @@ async function loadRecentGongCalls(accountDataDir: string): Promise<any | null> 
 		sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7)
 		
 		if (data.calls && Array.isArray(data.calls)) {
-			data.calls = data.calls.filter((call: any) => {
+		data.calls = data.calls.filter((call: any) => {
+		// If specific callId requested, only include that call
+		if (callId) {
+		  return call.id === callId
+		  }
+				// Otherwise, filter to recent calls (last 7 days)
 				const callDate = new Date(call.started || call.created)
 				return callDate >= sevenDaysAgo
 			})
@@ -213,11 +221,12 @@ function logDataAvailability(availability: DataAvailability): void {
 }
 
 async function generateBriefWithAI(
-	accountKey: AccountKey,
-	meetingDate: string | undefined,
-	snapshot: ConsolidatedSnapshot | null,
-	gongData: any | null,
-	notionData: any | null
+accountKey: AccountKey,
+meetingDate: string | undefined,
+snapshot: ConsolidatedSnapshot | null,
+gongData: any | null,
+notionData: any | null,
+	callId?: string
 ): Promise<PreCallBrief['sections']> {
 	console.log('   Generating brief with AI...')
 	
@@ -230,7 +239,7 @@ async function generateBriefWithAI(
 		promptTemplate = getDefaultPrompt()
 	}
 	
-	const context = buildBriefContext(accountKey, meetingDate, snapshot, gongData, notionData)
+	const context = buildBriefContext(accountKey, meetingDate, snapshot, gongData, notionData, callId)
 	const fullPrompt = `${promptTemplate}\n\n---\n\n${context}\n\nPlease generate a structured PreCallBrief JSON object with the sections defined above.`
 	
 	let accumulatedText = ''
@@ -253,18 +262,43 @@ async function generateBriefWithAI(
 	return sections
 }
 
+function determineCallContext(gongData: any | null): { isFirstCall: boolean; previousCalls: any[] } {
+const calls = gongData?.calls || [];
+const hasPreviousCalls = calls.length > 0;
+
+return {
+ isFirstCall: !hasPreviousCalls,
+		previousCalls: calls
+	};
+}
+
 function buildBriefContext(
-	accountKey: AccountKey,
-	meetingDate: string | undefined,
-	snapshot: ConsolidatedSnapshot | null,
-	gongData: any | null,
-	notionData: any | null
+accountKey: AccountKey,
+meetingDate: string | undefined,
+snapshot: ConsolidatedSnapshot | null,
+gongData: any | null,
+notionData: any | null,
+callId?: string // Used indirectly through gongData filtering to determine call context
 ): string {
-	const sections: string[] = []
-	
-	sections.push(`# Pre-Call Brief for ${accountKey.name}`)
-	if (meetingDate) {
-		sections.push(`Meeting Date: ${meetingDate}`)
+const sections: string[] = []
+
+const callContext = determineCallContext(gongData)
+
+sections.push(`# Pre-Call Brief for ${accountKey.name}`)
+if (meetingDate) {
+ sections.push(`Meeting Date: ${meetingDate}`)
+	}
+	sections.push('')
+
+	// Add call context information
+	sections.push('## Call Context')
+	if (callContext.isFirstCall) {
+		sections.push('**This is the FIRST CALL** with this customer.')
+		sections.push('Focus: Discovery, relationship building, initial qualification.')
+	} else {
+		sections.push('**This is a FOLLOW-UP CALL**.')
+		sections.push(`Previous calls: ${callContext.previousCalls.length}`)
+		sections.push('Focus: Action on previous commitments, momentum building, addressing next steps.')
 	}
 	sections.push('')
 	

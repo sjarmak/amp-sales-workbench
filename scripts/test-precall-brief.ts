@@ -2,13 +2,30 @@ import { generatePreCallBrief } from '../src/agents/preCallBrief.js'
 import type { AccountKey } from '../src/types.js'
 
 async function testPreCallBrief() {
-	const accountName = process.argv[2]
-	const meetingDate = process.argv[3]
+let accountName = process.argv[2]
+let meetingDate = process.argv[3]
+let callId: string | undefined
+
+	// Parse command line arguments
+	for (let i = 2; i < process.argv.length; i++) {
+		const arg = process.argv[i]
+		if (arg === '--callId' && i + 1 < process.argv.length) {
+			callId = process.argv[i + 1]
+			i++ // Skip next arg
+		} else if (!accountName) {
+			accountName = arg
+		} else if (!meetingDate) {
+			meetingDate = arg
+		} else if (!callId) {
+			callId = arg
+		}
+	}
 	
 	if (!accountName) {
-		console.error('Usage: npx tsx scripts/test-precall-brief.ts "Account Name" [meeting-date]')
-		console.error('Example: npx tsx scripts/test-precall-brief.ts "Canva" "2025-10-22"')
-		process.exit(1)
+	console.error('Usage: npx tsx scripts/test-precall-brief.ts "Account Name" [meeting-date] [call-id]')
+	console.error('Example: npx tsx scripts/test-precall-brief.ts "Canva" "2025-10-22"')
+	console.error('Example with call: npx tsx scripts/test-precall-brief.ts "Canva" "2025-10-22" "call-123"')
+	 process.exit(1)
 	}
 	
 	const accountKey: AccountKey = {
@@ -16,7 +33,7 @@ async function testPreCallBrief() {
 	}
 	
 	try {
-		const brief = await generatePreCallBrief(accountKey, meetingDate)
+	const brief = await generatePreCallBrief(accountKey, meetingDate, callId)
 		
 		console.log('\n✅ Pre-Call Brief Generated Successfully!')
 		console.log('\n📋 Summary:')

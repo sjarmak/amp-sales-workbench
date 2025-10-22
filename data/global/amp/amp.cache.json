@@ -1,0 +1,16 @@
+{
+  "pages": {
+    "news": {
+      "url": "https://ampcode.com/news",
+      "etag": "\"1scun6k\"",
+      "hash": "d09b948fe86057735b614472feafc6bd8694f9460012cb4283415a4132c07a73",
+      "lastFetchedAt": "2025-10-21T19:02:47.125Z"
+    },
+    "manual": {
+      "url": "https://ampcode.com/manual",
+      "etag": "\"1nzjhfs\"",
+      "hash": "c98e6639671b04d37b00c7d1f715e3aba007c8ebccd44ce47830e6b20f675943",
+      "lastFetchedAt": "2025-10-21T19:02:47.237Z"
+    }
+  }
+}

@@ -7,12 +7,17 @@ import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { PreCallPrepTab } from '@/components/PreCallPrepTab'
+import { AfterCallTab } from '@/components/AfterCallTab'
 import { ProspectorTab } from '@/components/ProspectorTab'
+import { CrmUpdatesTab } from '@/components/CrmUpdatesTab'
+import { InsightsTab } from '@/components/InsightsTab'
 import { CreateAccountDialog } from '@/components/CreateAccountDialog'
 import { EditAccountDialog } from '@/components/EditAccountDialog'
 import { DataSourceBadges } from '@/components/DataSourceBadges'
 import { DataSourcesTab } from '@/components/DataSourcesTab'
 import { AgentButton } from '@/components/AgentButton'
+import { AddToNotionButton } from '@/components/AddToNotionButton'
+import { AgentResultCard } from '@/components/AgentResultCard'
 import { Loader2, Database, PhoneCall, FileText } from 'lucide-react'
 
 const API_URL = 'http://localhost:3001/api'
@@ -24,6 +29,7 @@ interface Account {
     salesforce: boolean
     gong: boolean
     notion: boolean
+    amp: boolean
   }
 }
 
@@ -37,6 +43,8 @@ export default function Home() {
   const [prospectorRunning, setProspectorRunning] = useState(false)
   const [prospectorEventSource, setProspectorEventSource] = useState<EventSource | null>(null)
   const [refreshTrigger, setRefreshTrigger] = useState(0)
+  const [showNotionButton, setShowNotionButton] = useState(false)
+  const [lastSuccessfulAgent, setLastSuccessfulAgent] = useState<string | null>(null)
 
   const loadAccounts = () => {
     fetch(`${API_URL}/accounts`)
@@ -127,6 +135,16 @@ export default function Home() {
       })
       const result = await res.json()
       if (result.success) {
+        // Show Notion button for agents that generate content
+        const contentGeneratingAgents = [
+          'precall-brief', 'postcall', 'exec-summary', 'deal-review', 
+          'qualification', 'handoff', 'email', 'coaching', 'demo-ideas'
+        ]
+        if (contentGeneratingAgents.includes(agent)) {
+          setShowNotionButton(true)
+          setLastSuccessfulAgent(agent)
+        }
+
         // Trigger data source refresh for full-refresh agent
         if (agent === 'full-refresh') {
           setRefreshTrigger(prev => prev + 1)
@@ -186,20 +204,52 @@ export default function Home() {
 
       <div className="container mx-auto px-4 py-8">
         {selectedAccount && (
-          <div className="mb-6">
+          <div className="mb-6 space-y-4">
             <DataSourceBadges
               accountSlug={selectedAccount.slug}
               capabilities={selectedAccount.capabilities}
               refreshTrigger={refreshTrigger}
             />
+            
+            {/* Show Add to Notion button after successful agent run */}
+            {showNotionButton && (
+              <Card className="border-green-200 bg-green-50">
+                <CardContent className="pt-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="font-semibold text-green-900">
+                        {lastSuccessfulAgent && lastSuccessfulAgent.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase())} Complete
+                      </h3>
+                      <p className="text-sm text-green-700">
+                        Save this output to your Notion workspace for team collaboration
+                      </p>
+                    </div>
+                    <div className="flex gap-2">
+                      <AddToNotionButton
+                        accountSlug={selectedAccount.slug}
+                        accountName={selectedAccount.name}
+                        variant="default"
+                      />
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setShowNotionButton(false)}
+                      >
+                        Dismiss
+                      </Button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
           </div>
         )}
 
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="mb-6">
             <TabsTrigger value="quick-actions">Quick Actions</TabsTrigger>
-            <TabsTrigger value="prep">Prep</TabsTrigger>
-            <TabsTrigger value="research">Research</TabsTrigger>
+            <TabsTrigger value="prep">Pre-Call Brief</TabsTrigger>
+            <TabsTrigger value="research">Prospector Results</TabsTrigger>
             <TabsTrigger value="data-sources">Data Sources</TabsTrigger>
             <TabsTrigger value="after-call">After Call</TabsTrigger>
             <TabsTrigger value="crm">CRM Updates</TabsTrigger>
@@ -228,15 +278,15 @@ export default function Home() {
                     ) : 'Run Prospector'}
                   </Button>
                   <AgentButton
-                    name="precall-brief"
-                    label="Pre-Call Brief"
-                    description="Generate a comprehensive pre-call brief with account context, recent activity, and talking points"
-                    loading={loadingAgent === 'precall-brief'}
-                    disabled={loading}
-                    onClick={() => runAgent('precall-brief')}
-                    variant="outline"
-                    requires={{ salesforce: true, gong: true, notion: true }}
-                    capabilities={selectedAccount?.capabilities}
+                  name="precall-brief"
+                  label="Create Pre-Call Brief"
+                  description="Generate a comprehensive pre-call brief with account context, recent activity, and talking points"
+                  loading={loadingAgent === 'precall-brief'}
+                  disabled={loading}
+                  onClick={() => runAgent('precall-brief')}
+                  variant="outline"
+                  requires={{ salesforce: true, gong: true, notion: true }}
+                  capabilities={selectedAccount?.capabilities}
                   />
                   <AgentButton
                     name="demo-ideas"
@@ -378,7 +428,7 @@ export default function Home() {
           </TabsContent>
 
           <TabsContent value="prep">
-            <PreCallPrepTab accountSlug={selectedAccount?.slug} />
+            <PreCallPrepTab accountSlug={selectedAccount?.slug} accountName={selectedAccount?.name} />
           </TabsContent>
 
           <TabsContent value="research">
@@ -396,30 +446,36 @@ export default function Home() {
           </TabsContent>
 
           <TabsContent value="after-call">
-            <Card>
-              <CardHeader>
-                <CardTitle>After Call Actions</CardTitle>
-                <CardDescription>Coming soon...</CardDescription>
-              </CardHeader>
-            </Card>
+            <AfterCallTab accountSlug={selectedAccount?.slug} />
           </TabsContent>
 
           <TabsContent value="crm">
-            <Card>
-              <CardHeader>
-                <CardTitle>CRM Updates</CardTitle>
-                <CardDescription>Coming soon...</CardDescription>
-              </CardHeader>
-            </Card>
+            {selectedAccount ? (
+              <CrmUpdatesTab accountSlug={selectedAccount.slug} />
+            ) : (
+              <Card>
+                <CardHeader>
+                  <CardTitle>CRM Updates</CardTitle>
+                  <CardDescription>Select an account to view CRM updates</CardDescription>
+                </CardHeader>
+              </Card>
+            )}
           </TabsContent>
 
           <TabsContent value="insights">
-            <Card>
-              <CardHeader>
-                <CardTitle>Account Insights</CardTitle>
-                <CardDescription>Coming soon...</CardDescription>
-              </CardHeader>
-            </Card>
+            {selectedAccount ? (
+              <InsightsTab 
+                accountSlug={selectedAccount.slug}
+                accountName={selectedAccount.name}
+              />
+            ) : (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Account Insights</CardTitle>
+                  <CardDescription>Select an account to view insights</CardDescription>
+                </CardHeader>
+              </Card>
+            )}
           </TabsContent>
         </Tabs>
       </div>

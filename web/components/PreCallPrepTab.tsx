@@ -3,6 +3,9 @@
 import { useEffect, useState } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card'
 import { Badge } from './ui/badge'
+import { Button } from './ui/button'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select'
+import { AddToNotionButton } from './AddToNotionButton'
 
 const API_URL = 'http://localhost:3001/api'
 
@@ -75,13 +78,35 @@ interface PreCallBrief {
   }
 }
 
-export function PreCallPrepTab({ accountSlug }: { accountSlug?: string }) {
+interface GongCall {
+  id: string
+  title: string
+  started?: string
+  scheduled?: string
+  startTime?: string
+  duration: number
+  participants?: string[]
+  url?: string
+}
+
+export function PreCallPrepTab({ accountSlug, accountName }: { accountSlug?: string, accountName?: string }) {
   const [brief, setBrief] = useState<PreCallBrief | null>(null)
+  const [calls, setCalls] = useState<GongCall[]>([])
+  const [selectedCallId, setSelectedCallId] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
+  const [loadingCalls, setLoadingCalls] = useState(false)
 
   useEffect(() => {
     if (!accountSlug) return
 
+    // Load calls
+    setLoadingCalls(true)
+    fetch(`${API_URL}/accounts/${accountSlug}/calls`)
+      .then((res) => res.json())
+      .then((data) => setCalls(data))
+      .finally(() => setLoadingCalls(false))
+
+    // Load latest brief
     setLoading(true)
     fetch(`${API_URL}/accounts/${accountSlug}/briefs`)
       .then((res) => res.json())
@@ -89,19 +114,31 @@ export function PreCallPrepTab({ accountSlug }: { accountSlug?: string }) {
       .finally(() => setLoading(false))
   }, [accountSlug])
 
-  if (loading) {
-    return <Card><CardContent className="py-8">Loading pre-call brief...</CardContent></Card>
-  }
+  const generateBriefForCall = () => {
+    if (!selectedCallId) return
 
-  if (!brief) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle>Pre-Call Prep</CardTitle>
-          <CardDescription>No brief available. Click "Pre-Call Brief" in Quick Actions to generate one.</CardDescription>
-        </CardHeader>
-      </Card>
-    )
+    setLoading(true)
+    fetch(`${API_URL}/agents/precall-brief`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        accountName: accountName,
+        callId: selectedCallId
+      }),
+    })
+      .then((res) => res.json())
+      .then((result) => {
+        if (result.success) {
+          alert('✅ Pre-call brief generated successfully!')
+          // Reload brief
+          fetch(`${API_URL}/accounts/${accountSlug}/briefs`)
+            .then((res) => res.json())
+            .then((data) => setBrief(data))
+        } else {
+          alert(`❌ Error: ${result.error}`)
+        }
+      })
+      .finally(() => setLoading(false))
   }
 
   const getPowerBadgeVariant = (power?: string) => {
@@ -112,7 +149,88 @@ export function PreCallPrepTab({ accountSlug }: { accountSlug?: string }) {
 
   return (
     <div className="space-y-6">
-      {/* Who's Who */}
+      {/* Call Selector */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Select Call for Brief</CardTitle>
+          <CardDescription>Choose a specific call to generate a tailored pre-call brief</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {loadingCalls ? (
+            <p>Loading calls...</p>
+          ) : calls.length > 0 ? (
+            <>
+              <Select value={selectedCallId || undefined} onValueChange={setSelectedCallId}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a call..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {calls.map((call) => (
+                    <SelectItem key={call.id} value={call.id}>
+                      {call.title || 'Untitled Call'} - {new Date(call.started || call.scheduled || call.startTime || '').toLocaleDateString()}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Button
+                onClick={generateBriefForCall}
+                disabled={!selectedCallId || loading}
+                className="w-full"
+              >
+                {loading ? 'Generating...' : 'Create Pre-Call Brief for Selected Call'}
+              </Button>
+            </>
+          ) : (
+            <p>No recent calls available. Run a data refresh first.</p>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Brief Display */}
+      {brief && (
+        <>
+          {/* Add to Notion Button */}
+          {accountSlug && accountName && (
+            <div className="flex justify-end">
+              <AddToNotionButton 
+                accountSlug={accountSlug}
+                accountName={accountName}
+                variant="default"
+              />
+            </div>
+          )}
+
+          {/* Call Context Indicator */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Call Context</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center gap-2">
+                {brief.dataAvailability.gongCallCount === 0 ? (
+                  <>
+                    <Badge variant="outline" className="text-blue-600 border-blue-600">
+                      First Call
+                    </Badge>
+                    <span className="text-sm text-muted-foreground">
+                      This is your first interaction with this customer
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    <Badge variant="outline" className="text-green-600 border-green-600">
+                      Follow-up Call
+                    </Badge>
+                    <span className="text-sm text-muted-foreground">
+                      Building on {brief.dataAvailability.gongCallCount} previous calls
+                    </span>
+                  </>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Who's Who */}
       <Card>
         <CardHeader>
           <CardTitle>Who's Who</CardTitle>
@@ -297,6 +415,8 @@ export function PreCallPrepTab({ accountSlug }: { accountSlug?: string }) {
             </div>
           </CardContent>
         </Card>
+      )}
+        </>
       )}
     </div>
   )

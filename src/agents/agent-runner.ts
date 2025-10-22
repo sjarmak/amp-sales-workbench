@@ -65,7 +65,7 @@ export async function runAgent(
     
     switch (agentName) {
       case 'precall-brief':
-        result = await generatePreCallBrief(accountKey, options.meetingDate);
+        result = await generatePreCallBrief(accountKey, options.meetingDate, options.callId);
         break;
         
       case 'qualification':

@@ -13,6 +13,22 @@ Analyze the provided account data and generate a comprehensive, actionable pre-c
 - Navigate competitive dynamics
 - Customize the experience based on research
 
+## Call Context Analysis
+
+**First determine if this is a first call or follow-up:**
+
+- **First Call**: No previous calls exist in the data
+  - Focus: Discovery, relationship building, initial qualification
+  - Emphasis: Broad exploration, understanding their world, establishing credibility
+  - Questions: Foundational MEDDIC (who, what, why, how)
+  - Demo: High-level value prop, industry relevance
+
+- **Follow-up Call**: Previous calls exist
+  - Focus: Action on previous commitments, momentum building, objection handling
+  - Emphasis: Following up on next steps, addressing concerns, advancing toward close
+  - Questions: Specific to gaps from previous calls, decision process updates
+  - Demo: Targeted features addressing previously identified pain points
+
 ## Output Structure
 
 Generate a JSON object with the following structure:
@@ -93,29 +109,64 @@ Generate a JSON object with the following structure:
 - Flag any radio silence or delays
 
 ### Predicted Agenda
-- Infer from meeting title/description if available
-- Consider current opportunity stage (e.g., early stage = discovery, late stage = pricing/legal)
-- Look at topics from last call that need follow-up
-- Note any upcoming deadlines or events driving urgency
+**Context-aware agenda prediction:**
+
+- **First Call**: Focus on mutual discovery
+  - Current challenges and goals
+  - Their workflow and processes
+  - Initial interest/assessment of our solution
+  - Next steps for deeper evaluation
+
+- **Follow-up Call**: Build on previous discussion
+  - Follow-up on action items/next steps from last call
+  - Address concerns or questions raised previously
+  - Advance toward decision criteria (demo, trial, proposal)
+  - Specific blockers or requirements identified last time
+
+- Always consider current opportunity stage and any upcoming deadlines
 
 ### Key Questions
+**Context-aware questioning strategy:**
+
 **MEDDIC Framework:**
-- **Metrics**: ROI, cost savings, efficiency gains, time saved
-- **Economic Buyer**: Who controls budget? Who signs contracts?
-- **Decision Criteria**: What are they evaluating? How are vendors scored?
-- **Decision Process**: Timeline, steps, who's involved at each stage?
-- **Identify Pain**: Root causes, impact, urgency, current workarounds
-- **Champion**: Who's selling internally for us? Do they have influence?
+- **First Call**: Foundational discovery questions
+  - **Metrics**: What business outcomes matter most? Any current metrics you track?
+  - **Economic Buyer**: Who would be involved in budget/signing decisions?
+  - **Decision Criteria**: What factors are most important when evaluating solutions?
+  - **Decision Process**: How do you typically evaluate and purchase solutions?
+  - **Identify Pain**: What's working well and what challenges are you facing?
+  - **Champion**: Who else should we involve in this conversation?
+
+- **Follow-up Call**: Targeted qualification and advancement
+  - **Metrics**: Based on previous discussion, what specific ROI are you targeting?
+  - **Economic Buyer**: Have you identified the budget holder? When can we meet them?
+  - **Decision Criteria**: How are we scoring against your evaluation criteria?
+  - **Decision Process**: What's changed in your timeline or process since last time?
+  - **Identify Pain**: Can you tell me more about [specific pain point from last call]?
+  - **Champion**: How has the internal conversation progressed?
 
 **Blockers**: Budget cuts, competing priorities, technical concerns, stakeholder alignment
 
 **Success Criteria**: What does "winning" look like for them? How will they measure success?
 
 ### Demo Focus Areas
-- Prioritize features that address mentioned pain points
-- Reference specific use cases from their industry or company research
+**Context-tailored demo strategy:**
+
+- **First Call**: Build credibility and relevance
+  - Start with high-level value proposition and industry relevance
+  - Show 2-3 core capabilities that align with their stated needs
+  - Focus on ease of adoption and quick wins
+  - Keep technical depth appropriate for audience
+
+- **Follow-up Call**: Demonstrate specific value
+  - Target features addressing pain points identified in previous calls
+  - Show progress toward their specific use cases or requirements
+  - Address concerns or questions raised last time
+  - Include more detailed workflows or integrations they're interested in
+
+- Always reference specific use cases from their industry/company research
 - Highlight differentiators if competitors are in play
-- Keep it relevant to attendee roles (technical vs business)
+- Keep relevant to attendee roles (technical vs business)
 
 ### Competitive Landscape
 - Extract competitor names from call transcripts and Notion pages

@@ -243,7 +243,7 @@ app.post('/api/agents/:agent', async (req, res) => {
   try {
     const cwd = process.cwd();
     const args = [accountName];
-    if (options.callId) args.push(options.callId);
+    if (options.callId) args.push('--callId', options.callId);
     if (options.apply) args.push('--apply');
     
     // For full-refresh, add mode and sources
@@ -571,6 +571,234 @@ app.get('/api/accounts/:slug/:outputType', async (req, res) => {
     res.json(data);
   } catch (error) {
     res.json(null);
+  }
+});
+
+// Get post-call update by timestamp
+app.get('/api/accounts/:slug/postcall/:timestamp', async (req, res) => {
+  const { slug, timestamp } = req.params;
+  const postcallDir = path.join(DATA_DIR, slug, 'postcall');
+
+  try {
+    const filename = `postcall-${timestamp}.json`;
+    const filePath = path.join(postcallDir, filename);
+    const data = JSON.parse(await fs.readFile(filePath, 'utf-8'));
+    res.json(data);
+  } catch (error) {
+    res.status(404).json({ error: 'Post-call data not found' });
+  }
+});
+
+// Get CRM draft patches
+app.get('/api/accounts/:slug/crm/drafts', async (req, res) => {
+  const { slug } = req.params;
+  const draftsDir = path.join(DATA_DIR, slug, 'drafts');
+
+  try {
+    const files = await fs.readdir(draftsDir);
+    const draftFiles = files
+      .filter((f) => f.startsWith('crm-draft-') && f.endsWith('.yaml'))
+      .sort()
+      .reverse();
+
+    if (draftFiles.length === 0) {
+      return res.json({ drafts: [], latest: null });
+    }
+
+    const latestFile = draftFiles[0];
+    const yaml = await import('yaml');
+    const content = await fs.readFile(path.join(draftsDir, latestFile), 'utf-8');
+    const draft = yaml.parse(content);
+
+    // Parse all patches from draft
+    const patches = [];
+    
+    // Account patches
+    if (draft.account?.changes) {
+      for (const [field, change] of Object.entries(draft.account.changes)) {
+        patches.push({
+          id: `account-${field}`,
+          objectType: 'Account',
+          objectId: draft.account.id,
+          objectName: draft.accountKey?.name || 'Account',
+          field,
+          before: change.before,
+          after: change.after,
+          confidence: change.confidence,
+          source: change.source,
+          reasoning: change.reasoning,
+          status: 'pending',
+        });
+      }
+    }
+
+    // Contact patches
+    if (draft.contacts) {
+      for (const contact of draft.contacts) {
+        for (const [field, change] of Object.entries(contact.changes || {})) {
+          patches.push({
+            id: `contact-${contact.id || contact.email}-${field}`,
+            objectType: 'Contact',
+            objectId: contact.id,
+            objectName: contact.email || 'Contact',
+            field,
+            before: change.before,
+            after: change.after,
+            confidence: change.confidence,
+            source: change.source,
+            reasoning: change.reasoning,
+            status: 'pending',
+          });
+        }
+      }
+    }
+
+    // Opportunity patches
+    if (draft.opportunities) {
+      for (const opp of draft.opportunities) {
+        for (const [field, change] of Object.entries(opp.changes || {})) {
+          patches.push({
+            id: `opportunity-${opp.id || opp.name}-${field}`,
+            objectType: 'Opportunity',
+            objectId: opp.id,
+            objectName: opp.name || 'Opportunity',
+            field,
+            before: change.before,
+            after: change.after,
+            confidence: change.confidence,
+            source: change.source,
+            reasoning: change.reasoning,
+            status: 'pending',
+          });
+        }
+      }
+    }
+
+    res.json({
+      drafts: patches,
+      latest: {
+        file: latestFile,
+        generatedAt: draft.generatedAt,
+        approved: draft.approved,
+      },
+    });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch drafts' });
+  }
+});
+
+// Get CRM change history
+app.get('/api/accounts/:slug/crm/history', async (req, res) => {
+  const { slug } = req.params;
+  const appliedDir = path.join(DATA_DIR, slug, 'applied');
+
+  try {
+    const files = await fs.readdir(appliedDir);
+    const appliedFiles = files
+      .filter((f) => f.startsWith('apply-') && f.endsWith('.json'))
+      .sort()
+      .reverse();
+
+    const history = [];
+    for (const file of appliedFiles) {
+      const content = await fs.readFile(path.join(appliedDir, file), 'utf-8');
+      const receipt = JSON.parse(content);
+
+      const changes = [];
+      
+      // Process account changes
+      if (receipt.patches?.account) {
+        changes.push({
+          objectType: 'Account',
+          objectId: receipt.patches.account.id,
+          success: receipt.patches.account.success,
+          fieldsUpdated: receipt.patches.account.fieldsUpdated,
+          error: receipt.patches.account.error,
+        });
+      }
+
+      // Process contact changes
+      if (receipt.patches?.contacts) {
+        for (const contact of receipt.patches.contacts) {
+          changes.push({
+            objectType: 'Contact',
+            objectId: contact.id,
+            success: contact.success,
+            fieldsUpdated: contact.fieldsUpdated,
+            error: contact.error,
+          });
+        }
+      }
+
+      // Process opportunity changes
+      if (receipt.patches?.opportunities) {
+        for (const opp of receipt.patches.opportunities) {
+          changes.push({
+            objectType: 'Opportunity',
+            objectId: opp.id,
+            success: opp.success,
+            fieldsUpdated: opp.fieldsUpdated,
+            error: opp.error,
+          });
+        }
+      }
+
+      history.push({
+        appliedAt: receipt.appliedAt,
+        changes,
+        errors: receipt.errors,
+      });
+    }
+
+    res.json({ history });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch history' });
+  }
+});
+
+// Apply CRM patches
+app.post('/api/accounts/:slug/crm/apply', async (req, res) => {
+  const { slug } = req.params;
+  const { patchIds } = req.body; // Optional: apply specific patches only
+
+  try {
+    // Read latest draft
+    const draftsDir = path.join(DATA_DIR, slug, 'drafts');
+    const files = await fs.readdir(draftsDir);
+    const draftFiles = files
+      .filter((f) => f.startsWith('crm-draft-') && f.endsWith('.yaml'))
+      .sort()
+      .reverse();
+
+    if (draftFiles.length === 0) {
+      return res.status(404).json({ error: 'No draft found' });
+    }
+
+    const latestFile = draftFiles[0];
+    const yaml = await import('yaml');
+    const content = await fs.readFile(path.join(draftsDir, latestFile), 'utf-8');
+    const draft = yaml.parse(content);
+
+    // Mark as approved and save
+    draft.approved = true;
+    await fs.writeFile(
+      path.join(draftsDir, latestFile),
+      yaml.stringify(draft)
+    );
+
+    // Run the sync agent
+    const accountName = draft.accountKey.name;
+    const result = await executeAgent('syncSalesforce', accountName, { apply: true });
+
+    res.json({
+      success: true,
+      result,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to apply patches',
+    });
   }
 });
 
@@ -1394,6 +1622,108 @@ Execute these steps using the MCP tools and return the final JSON result.`;
   }
 });
 
+// Mirror account data to Notion (main endpoint)
+app.post('/api/notion/mirror', async (req, res) => {
+  try {
+    const { accountSlug, name, domain, salesforceId, callSummary, contacts, opportunities, nextActions } = req.body;
+
+    if (!accountSlug || !name) {
+      return res.status(400).json({ error: 'accountSlug and name are required' });
+    }
+
+    const { mirrorToNotion } = await import('./src/phases/sync/syncNotion.js');
+    const result = await mirrorToNotion({
+      accountSlug,
+      name,
+      domain,
+      salesforceId,
+      callSummary,
+      contacts,
+      opportunities,
+      nextActions,
+    });
+
+    if (!result.success) {
+      return res.status(500).json({ 
+        success: false, 
+        error: result.error || 'Failed to mirror to Notion' 
+      });
+    }
+
+    res.json(result);
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: error instanceof Error ? error.message : String(error),
+    });
+  }
+});
+
+// Mirror specific account to Notion (proxy endpoint for UI)
+app.post('/api/accounts/:slug/notion/mirror', async (req, res) => {
+  try {
+    const { slug } = req.params;
+    const { accountName } = req.body;
+
+    // Load account metadata
+    const accountDir = path.join(DATA_DIR, slug);
+    const metadataPath = path.join(accountDir, 'metadata.json');
+    
+    let metadata: any = {};
+    try {
+      metadata = JSON.parse(await fs.readFile(metadataPath, 'utf-8'));
+    } catch {
+      // Use slug as fallback
+    }
+
+    const name = accountName || metadata.name || slug.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+
+    // Load latest consolidated snapshot if available
+    const snapshotsDir = path.join(accountDir, 'snapshots');
+    let snapshotData: any = {};
+    try {
+      const files = await fs.readdir(snapshotsDir);
+      const snapshotFiles = files.filter(f => f.startsWith('snapshot-') && f.endsWith('.json')).sort().reverse();
+      if (snapshotFiles.length > 0) {
+        const latestSnapshot = path.join(snapshotsDir, snapshotFiles[0]);
+        snapshotData = JSON.parse(await fs.readFile(latestSnapshot, 'utf-8'));
+      }
+    } catch {}
+
+    // Extract data from snapshot
+    const callSummary = snapshotData.callSummary || snapshotData.recentActivity?.lastCallsSummary;
+    const contacts = snapshotData.contacts || [];
+    const opportunities = snapshotData.opportunities || [];
+    const nextActions = snapshotData.nextActions || [];
+
+    const { mirrorToNotion } = await import('./src/phases/sync/syncNotion.js');
+    const result = await mirrorToNotion({
+      accountSlug: slug,
+      name,
+      domain: metadata.domain || snapshotData.domain,
+      salesforceId: metadata.salesforceId || snapshotData.salesforceId,
+      callSummary,
+      contacts,
+      opportunities,
+      nextActions,
+    });
+
+    if (!result.success) {
+      return res.status(500).json({ 
+        success: false, 
+        error: result.error || 'Failed to mirror to Notion' 
+      });
+    }
+
+    res.json(result);
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: error instanceof Error ? error.message : String(error),
+    });
+  }
+});
+
 // Test endpoint to verify MCP access via Amp SDK
 app.get('/api/test-mcp', async (req, res) => {
   try {
@@ -1445,6 +1775,87 @@ const server = app.listen(PORT, () => {
 });
 
 // Cleanup MCP clients on shutdown
+// Insights API endpoints
+app.get('/api/accounts/:slug/insights/exec-summary', async (req, res) => {
+  const { slug } = req.params;
+  const summariesDir = path.join(DATA_DIR, slug, 'summaries');
+
+  try {
+    const files = await fs.readdir(summariesDir);
+    const summaryFiles = files.filter(f => f.startsWith('exec-summary-') && f.endsWith('.json')).sort().reverse();
+
+    if (summaryFiles.length === 0) {
+      return res.status(404).json({ error: 'No executive summary found' });
+    }
+
+    const latestFile = summaryFiles[0];
+    const data = JSON.parse(await fs.readFile(path.join(summariesDir, latestFile), 'utf-8'));
+    res.json(data);
+  } catch (error) {
+    res.status(404).json({ error: 'Executive summary not found' });
+  }
+});
+
+app.get('/api/accounts/:slug/insights/deal-review', async (req, res) => {
+  const { slug } = req.params;
+  const reviewsDir = path.join(DATA_DIR, slug, 'reviews');
+
+  try {
+    const files = await fs.readdir(reviewsDir);
+    const reviewFiles = files.filter(f => f.startsWith('deal-review-') && f.endsWith('.json')).sort().reverse();
+
+    if (reviewFiles.length === 0) {
+      return res.status(404).json({ error: 'No deal review found' });
+    }
+
+    const latestFile = reviewFiles[0];
+    const data = JSON.parse(await fs.readFile(path.join(reviewsDir, latestFile), 'utf-8'));
+    res.json(data);
+  } catch (error) {
+    res.status(404).json({ error: 'Deal review not found' });
+  }
+});
+
+app.get('/api/accounts/:slug/insights/closed-lost', async (req, res) => {
+  const { slug } = req.params;
+  const closedLostDir = path.join(DATA_DIR, slug, 'closed-lost');
+
+  try {
+    const files = await fs.readdir(closedLostDir);
+    const analysisFiles = files.filter(f => f.startsWith('closed-lost-') && f.endsWith('.json')).sort().reverse();
+
+    if (analysisFiles.length === 0) {
+      return res.status(404).json({ error: 'No closed-lost analysis found' });
+    }
+
+    const latestFile = analysisFiles[0];
+    const data = JSON.parse(await fs.readFile(path.join(closedLostDir, latestFile), 'utf-8'));
+    res.json(data);
+  } catch (error) {
+    res.status(404).json({ error: 'Closed-lost analysis not found' });
+  }
+});
+
+app.get('/api/accounts/:slug/insights/qualification', async (req, res) => {
+  const { slug } = req.params;
+  const qualDir = path.join(DATA_DIR, slug, 'qualification');
+
+  try {
+    const files = await fs.readdir(qualDir);
+    const qualFiles = files.filter(f => f.startsWith('qual-') && f.endsWith('.json')).sort().reverse();
+
+    if (qualFiles.length === 0) {
+      return res.status(404).json({ error: 'No qualification report found' });
+    }
+
+    const latestFile = qualFiles[0];
+    const data = JSON.parse(await fs.readFile(path.join(qualDir, latestFile), 'utf-8'));
+    res.json(data);
+  } catch (error) {
+    res.status(404).json({ error: 'Qualification report not found' });
+  }
+});
+
 process.on('SIGINT', async () => {
   console.log('\nShutting down API server...');
   await closeMCPClients();
