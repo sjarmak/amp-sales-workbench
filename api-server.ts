@@ -1562,73 +1562,47 @@ app.post('/api/accounts/:slug/sources/:source/refresh', async (req, res) => {
           sendProgress(res, 'Using incremental refresh (fetching only new calls)');
         }
         
-        // Call MCP directly, no cache
-        sendProgress(res, 'Fetching Gong data via direct MCP calls (no cache)...');
+        // Use cache-based filtering for better performance
+        sendProgress(res, 'Querying Gong cache for account calls...');
         
-        // Use August 4 to today for Canva calls
-        const fromDateTime = new Date('2025-08-04T00:00:00Z').toISOString();
-        const toDateTime = new Date().toISOString();
+        const fromDateTime = new Date('2025-08-04T00:00:00Z');
+        const toDateTime = new Date();
         
         console.log('\n=== GONG REFRESH DEBUG ===');
         console.log('Account:', accountMetadata.name);
-        console.log('Date range:', fromDateTime, 'to', toDateTime);
-        console.log('Calling mcp__gong_extended__list_calls directly');
+        console.log('Date range:', fromDateTime.toISOString(), 'to', toDateTime.toISOString());
+        console.log('Using cache-based filtering');
         console.log('========================\n');
         
-        sendProgress(res, `Fetching calls from August 4 to today...`);
-        
-        // Call list_calls MCP directly
-        let allCalls: any[] = [];
-        let cursor: string | undefined;
-        let pageCount = 0;
-        let result: any = { calls: [], summaries: [], transcripts: {}, lastSyncedAt: toDateTime };
+        let result: any = { calls: [], summaries: [], transcripts: {}, lastSyncedAt: toDateTime.toISOString() };
         
         try {
-          do {
-            pageCount++;
-            console.log(`[Gong] Fetching page ${pageCount}${cursor ? ' with cursor' : ''}...`);
-            
-            const params: any = { fromDateTime, toDateTime };
-            if (cursor) params.cursor = cursor;
-            
-            const resultContent = await callGongTool('list_calls', params);
-            const listResult = JSON.parse(resultContent[0].text);
-            console.log(`[Gong] Page ${pageCount}: Got ${listResult.calls?.length || 0} calls`);
-            
-            if (listResult.calls) {
-              allCalls.push(...listResult.calls);
-            }
-            
-            cursor = listResult.records?.cursor;
-            
-            // Safety: stop after 20 pages (2000 calls)
-            if (pageCount >= 20) {
-              console.log('[Gong] Reached page limit, stopping pagination');
-              break;
-            }
-          } while (cursor);
+          // Use cache manager for efficient filtering
+          const { getGongCacheManager } = await import('./src/gong-cache/manager.js');
+          const cacheManager = getGongCacheManager();
           
-          console.log(`[Gong] Total calls retrieved: ${allCalls.length}`);
-          sendProgress(res, `Retrieved ${allCalls.length} total calls, filtering for ${accountMetadata.name}...`);
+          // Sync cache first
+          sendProgress(res, 'Syncing Gong cache...');
+          await cacheManager.sync();
           
-          // Filter for account name in title or participants
-          const accountNameLower = accountMetadata.name.toLowerCase();
-          const matchingCalls = allCalls.filter(call => {
-            const titleMatch = call.title?.toLowerCase().includes(accountNameLower);
-            return titleMatch;
+          // Query for Canva calls
+          sendProgress(res, `Searching cache for ${accountMetadata.name} calls...`);
+          const cachedCalls = await cacheManager.getCallsForAccount(accountMetadata.name.toLowerCase(), {
+            since: fromDateTime,
+            maxResults: 50
           });
           
-          console.log(`[Gong] Found ${matchingCalls.length} matching calls`);
-          sendProgress(res, `Found ${matchingCalls.length} matching calls`);
+          console.log(`[Gong] Found ${cachedCalls.length} calls from cache`);
+          sendProgress(res, `Found ${cachedCalls.length} matching calls from cache`);
           
-          // Take most recent 10 and deduplicate by ID
-          const uniqueCallsMap = new Map();
-          for (const call of matchingCalls) {
-            if (!uniqueCallsMap.has(call.id)) {
-              uniqueCallsMap.set(call.id, call);
-            }
-          }
-          const recentCalls = Array.from(uniqueCallsMap.values()).slice(0, 10);
+          // Convert cache format to expected format and take most recent 10
+          const recentCalls = cachedCalls.slice(0, 10).map(call => ({
+            id: call.id,
+            title: call.title,
+            startTime: call.scheduled,
+            duration: call.duration,
+            participants: call.participantEmails || []
+          }));
           
           // Get transcripts
           const summaries: any[] = [];

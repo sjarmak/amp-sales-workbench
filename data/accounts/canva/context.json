@@ -5,7 +5,7 @@
     "salesforceId": "0013t00001xdnmlAAA",
     "slug": "canva"
   },
-  "generatedAt": "2025-10-23T20:57:33.628Z",
+  "generatedAt": "2025-10-23T20:59:41.536Z",
   "salesforce": {
     "account": {
       "attributes": {
@@ -825,7 +825,7 @@
   "gong": {
     "calls": [],
     "summaries": [],
-    "lastSyncedAt": "2025-10-21T23:59:59.000Z"
+    "lastSyncedAt": "2025-10-23T20:59:39.589Z"
   },
   "prospector": {
     "files": [
