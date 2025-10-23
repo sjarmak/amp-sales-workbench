@@ -1565,9 +1565,9 @@ app.post('/api/accounts/:slug/sources/:source/refresh', async (req, res) => {
         // Call MCP directly, no cache
         sendProgress(res, 'Fetching Gong data via direct MCP calls (no cache)...');
         
-        // Use October 20, 2025 only for Canva calls
+        // Use October 20-21, 2025 for Canva calls (includes timezone coverage)
         const fromDateTime = new Date('2025-10-20T00:00:00Z').toISOString();
-        const toDateTime = new Date('2025-10-20T23:59:59Z').toISOString();
+        const toDateTime = new Date('2025-10-21T23:59:59Z').toISOString();
         
         console.log('\n=== GONG REFRESH DEBUG ===');
         console.log('Account:', accountMetadata.name);
