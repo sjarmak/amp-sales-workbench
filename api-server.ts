@@ -1578,7 +1578,16 @@ app.post('/api/accounts/:slug/sources/:source/refresh', async (req, res) => {
         
         try {
           // Use cache manager for efficient filtering
-          const { getGongCacheManager } = await import('./src/gong-cache/manager.js');
+          sendProgress(res, 'Loading Gong cache manager...');
+          let getGongCacheManager;
+          try {
+            const module = await import('./src/gong-cache/manager.js');
+            getGongCacheManager = module.getGongCacheManager;
+          } catch (importError: any) {
+            console.error('[Gong] Failed to import cache manager:', importError);
+            throw new Error(`Failed to load Gong cache manager: ${importError.message}`);
+          }
+          
           const cacheManager = getGongCacheManager();
           
           // Sync cache first
