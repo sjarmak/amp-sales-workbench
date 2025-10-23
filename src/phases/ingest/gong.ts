@@ -41,9 +41,9 @@ export async function ingestFromGong(
 	const maxCalls = options?.maxCalls || 10
 	
 	// Calculate date range
-	// OVERRIDE: Search August 4 to October 21, 2025 for Canva calls
+	// OVERRIDE: Search August 4 to today for Canva calls
 	const fromDate = new Date('2025-08-04T00:00:00Z')
-	const toDate = new Date('2025-10-21T23:59:59Z')
+	const toDate = new Date()
 
 	// List calls for this account using cache (fast) or direct API (slower)
 	// Cache uses list_calls to fetch all calls, then filters client-side by title

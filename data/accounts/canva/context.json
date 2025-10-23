@@ -5,7 +5,7 @@
     "salesforceId": "0013t00001xdnmlAAA",
     "slug": "canva"
   },
-  "generatedAt": "2025-10-23T20:53:59.696Z",
+  "generatedAt": "2025-10-23T20:57:33.628Z",
   "salesforce": {
     "account": {
       "attributes": {
@@ -823,30 +823,7 @@
     "lastSyncedAt": "2025-10-22T14:10:52.676Z"
   },
   "gong": {
-    "calls": [
-      {
-        "id": "8797289522310710788",
-        "url": "https://us-91160.app.gong.io/call?id=8797289522310710788",
-        "title": "Canva<>Sourcegraph: Monthly Cadence",
-        "scheduled": "2025-10-20T21:00:00-07:00",
-        "started": "2025-10-20T21:00:14-07:00",
-        "duration": 2141,
-        "primaryUserId": "3279371078751383595",
-        "direction": "Conference",
-        "system": "Zoom",
-        "scope": "External",
-        "media": "Video",
-        "language": "eng",
-        "workspaceId": "27146175746809085",
-        "sdrDisposition": null,
-        "clientUniqueId": null,
-        "customData": null,
-        "purpose": null,
-        "meetingUrl": "https://sourcegraph.zoom.us/j/98472403969",
-        "isPrivate": false,
-        "calendarEventId": "3g5g1vggjb0l5d8eetogb40o1o_R20250520T050000@google.com_2025-10-21T04:00:00Z"
-      }
-    ],
+    "calls": [],
     "summaries": [],
     "lastSyncedAt": "2025-10-21T23:59:59.000Z"
   },
