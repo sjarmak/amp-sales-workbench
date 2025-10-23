@@ -1565,9 +1565,9 @@ app.post('/api/accounts/:slug/sources/:source/refresh', async (req, res) => {
         // Call MCP directly, no cache
         sendProgress(res, 'Fetching Gong data via direct MCP calls (no cache)...');
         
-        // Use Sept 1 to today as date range
-        const toDateTime = new Date().toISOString();
-        const fromDateTime = new Date('2025-09-01T00:00:00Z').toISOString();
+        // Use October 20, 2025 only for Canva calls
+        const fromDateTime = new Date('2025-10-20T00:00:00Z').toISOString();
+        const toDateTime = new Date('2025-10-20T23:59:59Z').toISOString();
         
         console.log('\n=== GONG REFRESH DEBUG ===');
         console.log('Account:', accountMetadata.name);
@@ -1575,7 +1575,7 @@ app.post('/api/accounts/:slug/sources/:source/refresh', async (req, res) => {
         console.log('Calling mcp__gong_extended__list_calls directly');
         console.log('========================\n');
         
-        sendProgress(res, `Fetching calls from Sept 1 to today...`);
+        sendProgress(res, `Fetching calls from October 20, 2025...`);
         
         // Call list_calls MCP directly
         let allCalls: any[] = [];
@@ -1621,8 +1621,14 @@ app.post('/api/accounts/:slug/sources/:source/refresh', async (req, res) => {
           console.log(`[Gong] Found ${matchingCalls.length} matching calls`);
           sendProgress(res, `Found ${matchingCalls.length} matching calls`);
           
-          // Take most recent 10
-          const recentCalls = matchingCalls.slice(0, 10);
+          // Take most recent 10 and deduplicate by ID
+          const uniqueCallsMap = new Map();
+          for (const call of matchingCalls) {
+            if (!uniqueCallsMap.has(call.id)) {
+              uniqueCallsMap.set(call.id, call);
+            }
+          }
+          const recentCalls = Array.from(uniqueCallsMap.values()).slice(0, 10);
           
           // Get transcripts
           const summaries: any[] = [];
