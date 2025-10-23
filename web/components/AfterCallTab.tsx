@@ -57,6 +57,22 @@ interface FollowUpEmail {
   cc?: string[]
 }
 
+interface CoachingFeedback {
+  whatWentWell: string[]
+  areasForImprovement: string[]
+  suggestedNextSteps: string[]
+}
+
+interface SalesforceFieldRecommendation {
+  objectType: 'Opportunity' | 'Account' | 'Contact' | 'Task'
+  recordId?: string
+  field: string
+  currentValue: any
+  recommendedValue: any
+  reasoning: string
+  confidence: 'high' | 'medium' | 'low'
+}
+
 interface PostCallUpdate {
   accountKey: { name: string }
   callId: string
@@ -67,6 +83,8 @@ interface PostCallUpdate {
   }
   tasks: Task[]
   followUpEmail: FollowUpEmail
+  coaching: CoachingFeedback
+  salesforceFieldUpdates: SalesforceFieldRecommendation[]
   analysis: CallAnalysis
   generatedAt: string
 }
@@ -419,53 +437,109 @@ export function AfterCallTab({ accountSlug }: { accountSlug?: string }) {
       </Card>
 
       {/* Coaching Feedback */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Coaching Feedback</CardTitle>
-          <CardDescription>AI-powered insights to improve your next call</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div>
-            <h5 className="font-semibold mb-2 text-green-600">What Went Well</h5>
-            <ul className="list-disc list-inside space-y-1 text-sm">
-              <li>Effectively uncovered key decision criteria and success metrics</li>
-              <li>Built rapport with multiple stakeholders</li>
-              <li>Captured clear next steps and action items</li>
-            </ul>
-          </div>
+      {postCall.coaching && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Coaching Feedback</CardTitle>
+            <CardDescription>AI-powered insights to improve your next call</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {postCall.coaching.whatWentWell.length > 0 && (
+              <div>
+                <h5 className="font-semibold mb-2 text-green-600">What Went Well</h5>
+                <ul className="list-disc list-inside space-y-1 text-sm">
+                  {postCall.coaching.whatWentWell.map((item, i) => (
+                    <li key={i}>{item}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
 
-          <Separator />
+            {postCall.coaching.areasForImprovement.length > 0 && (
+              <>
+                <Separator />
+                <div>
+                  <h5 className="font-semibold mb-2 text-orange-600">Areas for Improvement</h5>
+                  <ul className="list-disc list-inside space-y-1 text-sm">
+                    {postCall.coaching.areasForImprovement.map((item, i) => (
+                      <li key={i}>{item}</li>
+                    ))}
+                  </ul>
+                </div>
+              </>
+            )}
 
-          <div>
-            <h5 className="font-semibold mb-2 text-orange-600">Areas for Improvement</h5>
-            <ul className="list-disc list-inside space-y-1 text-sm">
-              <li>Could have dug deeper into budget and timeline constraints</li>
-              <li>Missed opportunity to identify potential champion</li>
-              <li>Consider asking about competing solutions earlier in discovery</li>
-            </ul>
-          </div>
+            {postCall.coaching.suggestedNextSteps.length > 0 && (
+              <>
+                <Separator />
+                <div>
+                  <h5 className="font-semibold mb-2">Suggested Next Steps</h5>
+                  <ul className="list-disc list-inside space-y-1 text-sm">
+                    {postCall.coaching.suggestedNextSteps.map((item, i) => (
+                      <li key={i}>{item}</li>
+                    ))}
+                  </ul>
+                </div>
+              </>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
-          <Separator />
+      {/* Salesforce Field Updates */}
+      {postCall.salesforceFieldUpdates && postCall.salesforceFieldUpdates.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Recommended Salesforce Updates</CardTitle>
+            <CardDescription>Field-level recommendations based on this call</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {postCall.salesforceFieldUpdates.map((update, i) => (
+                <div key={i} className="border rounded-lg p-4">
+                  <div className="flex items-start justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      <Badge variant="outline">{update.objectType}</Badge>
+                      <span className="font-semibold text-sm">{update.field}</span>
+                    </div>
+                    <Badge variant={update.confidence === 'high' ? 'default' : update.confidence === 'medium' ? 'secondary' : 'outline'}>
+                      {update.confidence}
+                    </Badge>
+                  </div>
+                  <div className="space-y-2 text-sm">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <span className="text-muted-foreground">Current:</span>
+                        <div className="mt-1 p-2 bg-red-50 rounded text-xs font-mono">
+                          {update.currentValue || '(empty)'}
+                        </div>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground">Recommended:</span>
+                        <div className="mt-1 p-2 bg-green-50 rounded text-xs font-mono">
+                          {update.recommendedValue}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="text-muted-foreground italic">
+                      {update.reasoning}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
-          <div>
-            <h5 className="font-semibold mb-2">Suggested Next Steps</h5>
-            <ul className="list-disc list-inside space-y-1 text-sm">
-              <li>Schedule follow-up with economic buyer to discuss ROI</li>
-              <li>Share case study from similar customer in same industry</li>
-              <li>Prepare technical deep-dive for engineering stakeholders</li>
-            </ul>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* CRM Updates Preview */}
+      {/* CRM Updates Preview (YAML) */}
       {postCall.crmPatch && (
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between">
               <div>
-                <CardTitle>CRM Updates</CardTitle>
-                <CardDescription>Proposed changes to Salesforce</CardDescription>
+                <CardTitle>CRM Updates (YAML)</CardTitle>
+                <CardDescription>Full patch proposal for review</CardDescription>
               </div>
               <Button variant="outline" size="sm" onClick={() => copyToClipboard(postCall.crmPatch.yaml)}>
                 <Copy className="h-4 w-4 mr-2" />

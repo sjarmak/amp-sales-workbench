@@ -7,64 +7,58 @@
  * Falls back to globalThis functions when in Amp agent context for backward compatibility.
  */
 
-import { callGongTool, callSalesforceTool, callNotionTool } from '../../mcp-client.js'
+import { callSalesforceTool, callNotionTool } from '../../mcp-client.js'
 
 export async function callGongListCalls(params: {
 	fromDateTime: string
 	toDateTime: string
 }): Promise<any> {
-	// Try direct MCP client first (fast, no LLM cost)
-	try {
-		const result = await callGongTool('mcp__gong_extended__list_calls', params)
-		if (result && result[0]?.type === 'text') {
-			return JSON.parse(result[0].text)
-		}
-		return result
-	} catch (error) {
-		// Fallback to globalThis if in Amp agent context
-		if (typeof (globalThis as any).mcp__gong_extended__list_calls === 'function') {
-			return await (globalThis as any).mcp__gong_extended__list_calls(params)
-		}
-		
-		console.warn('⚠️  Gong MCP not available:', error)
-		return { calls: [] }
+	// Use mcp__gong_extended__list_calls directly (underscore, not dash)
+	// This is the exact tool that works when tested
+	if (typeof (globalThis as any).mcp__gong_extended__list_calls === 'function') {
+		return await (globalThis as any).mcp__gong_extended__list_calls(params)
 	}
+	
+	// If not in Amp context, direct MCP client won't work - return empty
+	console.warn('⚠️  Gong MCP not available (not in Amp context)')
+	return { calls: [] }
+}
+
+export async function callGongSearchCalls(params: {
+	query?: string
+	fromDateTime?: string
+	toDateTime?: string
+	participantEmails?: string[]
+}): Promise<any> {
+	// WORKAROUND: Use globalThis (Amp SDK) for Gong calls
+	if (typeof (globalThis as any).mcp__gong_extended__search_calls === 'function') {
+		return await (globalThis as any).mcp__gong_extended__search_calls(params)
+	}
+	
+	console.warn('⚠️  Gong search MCP not available (not in Amp context)')
+	return { items: [] }
 }
 
 export async function callGongRetrieveTranscripts(params: {
 	callIds: string[]
 }): Promise<any> {
-	try {
-		const result = await callGongTool('mcp__gong_extended__retrieve_transcripts', params)
-		if (result && result[0]?.type === 'text') {
-			return JSON.parse(result[0].text)
-		}
-		return result
-	} catch (error) {
-		if (typeof (globalThis as any).mcp__gong_extended__retrieve_transcripts === 'function') {
-			return await (globalThis as any).mcp__gong_extended__retrieve_transcripts(params)
-		}
-		
-		console.warn('⚠️  Gong MCP not available:', error)
-		return { callTranscripts: [] }
+	// WORKAROUND: Use globalThis (Amp SDK) for Gong calls
+	if (typeof (globalThis as any).mcp__gong_extended__retrieve_transcripts === 'function') {
+		return await (globalThis as any).mcp__gong_extended__retrieve_transcripts(params)
 	}
+	
+	console.warn('⚠️  Gong MCP not available (not in Amp context)')
+	return { callTranscripts: [] }
 }
 
 export async function callGongGetCall(params: { callId: string }): Promise<any> {
-	try {
-		const result = await callGongTool('mcp__gong_extended__get_call', params)
-		if (result && result[0]?.type === 'text') {
-			return JSON.parse(result[0].text)
-		}
-		return result
-	} catch (error) {
-		if (typeof (globalThis as any).mcp__gong_extended__get_call === 'function') {
-			return await (globalThis as any).mcp__gong_extended__get_call(params)
-		}
-		
-		console.warn('⚠️  Gong MCP not available:', error)
-		return { metaData: {} }
+	// WORKAROUND: Use globalThis (Amp SDK) for Gong calls
+	if (typeof (globalThis as any).mcp__gong_extended__get_call === 'function') {
+		return await (globalThis as any).mcp__gong_extended__get_call(params)
 	}
+	
+	console.warn('⚠️  Gong MCP not available (not in Amp context)')
+	return { metaData: {} }
 }
 
 export async function callNotionSearch(params: {

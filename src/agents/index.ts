@@ -11,6 +11,7 @@ export { generatePostCallUpdate } from './postCallUpdate.js'
 export { runHandoffAgent } from './handoff.js'
 export { runClosedLostAgent } from './closedLost.js'
 export { runBackfillAgent } from './backfill.js'
+export { analyzeRiskHeuristics } from './riskHeuristics.js'
 
 // Agent registry
 export const AGENT_REGISTRY = {
@@ -53,6 +54,11 @@ export const AGENT_REGISTRY = {
 		name: 'Backfill',
 		description: 'Suggest missing CRM data to capture',
 		handler: 'runBackfillAgent',
+	},
+	'risk-heuristics': {
+		name: 'Risk Heuristics',
+		description: 'Analyze deal risks using heuristic detection',
+		handler: 'analyzeRiskHeuristics',
 	},
 } as const
 

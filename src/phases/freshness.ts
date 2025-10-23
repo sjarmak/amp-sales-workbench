@@ -29,6 +29,7 @@ export interface EntityCheckpoint {
 	lastFetchedAt?: string // ISO timestamp
 	since?: string // ISO timestamp for incremental
 	count?: number
+	remoteLastModifiedAt?: string // Last modified on source (Salesforce, etc.)
 }
 
 export interface SourceMetadata {
@@ -45,6 +46,7 @@ export interface SalesforceMetadata extends SourceMetadata {
 		Opportunity?: EntityCheckpoint
 		Activity?: EntityCheckpoint
 	}
+	lastProbedAt?: string // Last time we checked remote source for freshness
 }
 
 export interface GongMetadata extends SourceMetadata {
@@ -52,11 +54,16 @@ export interface GongMetadata extends SourceMetadata {
 	since?: string
 	callCount?: number
 	transcripts?: Record<string, { hash: string; fetchedAt: string }>
+	latestCallAtOnSource?: string // Most recent call start time for this account on Gong
+	lastProbedAt?: string // Last time we checked remote source for freshness
 }
 
 export interface NotionMetadata extends SourceMetadata {
 	since?: string
 	pageCount?: number
+	pageUrls?: string[] // Account-specific Notion page URLs
+	lastRemoteEditedAt?: string // Most recent last_edited_time across pages
+	lastProbedAt?: string // Last time we checked remote source for freshness
 }
 
 export interface AmpPage {
@@ -65,6 +72,7 @@ export interface AmpPage {
 	lastModified?: string
 	hash?: string
 	lastFetchedAt?: string
+	lastProbedAt?: string // Last time we checked remote source for freshness
 }
 
 export interface AmpMetadata extends SourceMetadata {
@@ -74,6 +82,7 @@ export interface AmpMetadata extends SourceMetadata {
 	}
 	featuresCount?: number
 	featuresLastGeneratedAt?: string
+	lastProbedAt?: string // Last time we checked remote source for freshness
 }
 
 export interface SourcesMeta {
@@ -142,6 +151,10 @@ export function computeStaleness(
 		sfResult.reasons.push('No Salesforce data found')
 	} else {
 		const checkpoints = sfMeta.entityCheckpoints
+		
+		// If we just probed/synced recently (within last 5 minutes), consider fresh
+		const justProbed = sfMeta.lastProbedAt && (nowMs - new Date(sfMeta.lastProbedAt).getTime()) < 5 * 60 * 1000
+		const justSynced = sfMeta.lastIncrementalSyncAt && (nowMs - new Date(sfMeta.lastIncrementalSyncAt).getTime()) < 5 * 60 * 1000
 
 		// Check Account
 		if (!checkpoints.Account?.lastFetchedAt) {
@@ -149,7 +162,7 @@ export function computeStaleness(
 			sfResult.reasons.push('Account data missing')
 		} else {
 			const age = nowMs - new Date(checkpoints.Account.lastFetchedAt).getTime()
-			if (age > TTL.salesforce.account) {
+			if (age > TTL.salesforce.account && !justProbed && !justSynced) {
 				sfResult.entities!.Account = true
 				sfResult.reasons.push(`Account data stale (${Math.floor(age / (24 * 60 * 60 * 1000))}d old)`)
 			}
@@ -159,12 +172,9 @@ export function computeStaleness(
 		if (!checkpoints.Contact?.lastFetchedAt) {
 			sfResult.entities!.Contact = true
 			sfResult.reasons.push('Contact data missing')
-		} else if (checkpoints.Contact.count === 0) {
-			sfResult.entities!.Contact = true
-			sfResult.reasons.push('Contact data empty (0 records)')
 		} else {
 			const age = nowMs - new Date(checkpoints.Contact.lastFetchedAt).getTime()
-			if (age > TTL.salesforce.contacts) {
+			if (age > TTL.salesforce.contacts && !justProbed && !justSynced) {
 				sfResult.entities!.Contact = true
 				sfResult.reasons.push(`Contact data stale (${Math.floor(age / (60 * 60 * 1000))}h old)`)
 			}
@@ -174,12 +184,9 @@ export function computeStaleness(
 		if (!checkpoints.Opportunity?.lastFetchedAt) {
 			sfResult.entities!.Opportunity = true
 			sfResult.reasons.push('Opportunity data missing')
-		} else if (checkpoints.Opportunity.count === 0) {
-			sfResult.entities!.Opportunity = true
-			sfResult.reasons.push('Opportunity data empty (0 records)')
 		} else {
 			const age = nowMs - new Date(checkpoints.Opportunity.lastFetchedAt).getTime()
-			if (age > TTL.salesforce.opportunities) {
+			if (age > TTL.salesforce.opportunities && !justProbed && !justSynced) {
 				sfResult.entities!.Opportunity = true
 				sfResult.reasons.push(`Opportunity data stale (${Math.floor(age / (60 * 60 * 1000))}h old)`)
 			}
@@ -189,13 +196,11 @@ export function computeStaleness(
 		if (!checkpoints.Activity?.lastFetchedAt) {
 			sfResult.entities!.Activity = true
 			sfResult.reasons.push('Activity data missing')
-		} else if (checkpoints.Activity.count === 0) {
-			sfResult.entities!.Activity = true
-			sfResult.reasons.push('Activity data empty (0 records)')
 		} else {
 			const age = nowMs - new Date(checkpoints.Activity.lastFetchedAt).getTime()
-			if (age > TTL.salesforce.activities) {
+			if (age > TTL.salesforce.activities && !justProbed && !justSynced) {
 				sfResult.entities!.Activity = true
+				// Note: 0 activities is OK if recently fetched - it just means no activities exist
 				sfResult.reasons.push(`Activity data stale (${Math.floor(age / (60 * 60 * 1000))}h old)`)
 			}
 		}
@@ -214,8 +219,11 @@ export function computeStaleness(
 		gongResult.any = true
 		gongResult.reasons.push('No Gong call list data found')
 	} else {
+		// If we just probed/synced recently (within last 5 minutes), consider fresh
+		const justProbed = gongMeta.lastProbedAt && (nowMs - new Date(gongMeta.lastProbedAt).getTime()) < 5 * 60 * 1000
+		
 		const age = nowMs - new Date(gongMeta.lastListSyncAt).getTime()
-		if (age > TTL.gong.callList) {
+		if (age > TTL.gong.callList && !justProbed) {
 			gongResult.any = true
 			gongResult.reasons.push(`Gong call list stale (${Math.floor(age / (60 * 60 * 1000))}h old)`)
 		}
@@ -232,9 +240,12 @@ export function computeStaleness(
 		notionResult.any = true
 		notionResult.reasons.push('No Notion data found')
 	} else {
+		// If we just probed/synced recently (within last 5 minutes), consider fresh
+		const justProbed = notionMeta.lastProbedAt && (nowMs - new Date(notionMeta.lastProbedAt).getTime()) < 5 * 60 * 1000
+		
 		const age = nowMs - new Date(notionMeta.lastFullSyncAt).getTime()
 		// Use knowledge TTL as default
-		if (age > TTL.notion.knowledge) {
+		if (age > TTL.notion.knowledge && !justProbed) {
 			notionResult.any = true
 			notionResult.reasons.push(`Notion data stale (${Math.floor(age / (24 * 60 * 60 * 1000))}d old)`)
 		}
@@ -251,6 +262,9 @@ export function computeStaleness(
 		ampResult.any = true
 		ampResult.reasons.push('No Amp data found')
 	} else {
+		// If we just probed/synced recently (within last 5 minutes), consider fresh
+		const justProbed = ampMeta.lastProbedAt && (nowMs - new Date(ampMeta.lastProbedAt).getTime()) < 5 * 60 * 1000
+		
 		const { news, manual } = ampMeta.pages
 
 		// Check news page
@@ -259,7 +273,7 @@ export function computeStaleness(
 			ampResult.reasons.push('Amp news page missing')
 		} else {
 			const age = nowMs - new Date(news.lastFetchedAt).getTime()
-			if (age > TTL.amp.news) {
+			if (age > TTL.amp.news && !justProbed) {
 				ampResult.any = true
 				ampResult.reasons.push(`Amp news stale (${Math.floor(age / (60 * 60 * 1000))}h old)`)
 			}
@@ -271,7 +285,7 @@ export function computeStaleness(
 			ampResult.reasons.push('Amp manual page missing')
 		} else {
 			const age = nowMs - new Date(manual.lastFetchedAt).getTime()
-			if (age > TTL.amp.manual) {
+			if (age > TTL.amp.manual && !justProbed) {
 				ampResult.any = true
 				ampResult.reasons.push(`Amp manual stale (${Math.floor(age / (24 * 60 * 60 * 1000))}d old)`)
 			}

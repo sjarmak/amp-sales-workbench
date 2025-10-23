@@ -73,6 +73,14 @@ export async function runWorkbench(input: WorkbenchInput): Promise<WorkbenchResu
 	} else if (!staleness.salesforce.any) {
 		console.log('   ↻ Salesforce using cached data')
 		ingestedData.salesforce = await loadRawIfExists(accountDataDir, 'salesforce')
+		// Ensure metadata exists even when using cached data
+		if (!meta.sources.salesforce) {
+			meta.sources.salesforce = {
+				status: 'fresh',
+				lastFullSyncAt: new Date().toISOString(),
+				entityCheckpoints: {},
+			}
+		}
 	} else {
 		console.log(`   🔄 Salesforce refreshing: ${staleness.salesforce.reasons.join(', ')}`)
 		const sfResult = await ingestFromSalesforce(resolvedKey, {

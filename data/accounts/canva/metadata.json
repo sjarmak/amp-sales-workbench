@@ -1,6 +1,7 @@
 {
   "name": "Canva",
   "domain": "canva.com",
-  "salesforceId": null,
+  "salesforceId": "0013t00001xdnmlAAA",
+  "notionPageId": "293a8e11265880e7b1c6f3ddf8cbbfb5",
   "createdAt": "2025-10-20T21:56:00.000Z"
 }

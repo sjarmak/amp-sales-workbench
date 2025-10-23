@@ -5,7 +5,8 @@
  * Results are cached to avoid repeated detection.
  */
 
-import { execute, type AmpOptions } from '@sourcegraph/amp-sdk'
+import { executeWithMode } from '../lib/amp-executor.js'
+import type { AmpOptions } from '@sourcegraph/amp-sdk'
 import { writeFile, readFile, mkdir } from 'fs/promises'
 import { existsSync } from 'fs'
 import type { Capabilities } from '../types.js'
@@ -63,11 +64,12 @@ async function testNotion(): Promise<boolean> {
 }
 
 /**
- * Helper to test an MCP tool via Amp SDK
+ * Helper to test an MCP tool via Amp SDK (fast mode for simple testing)
  */
 async function testMcpTool(prompt: string): Promise<string> {
-	const stream = execute({
+	const stream = executeWithMode({
 		prompt,
+		mode: 'fast',
 		options: ampOptions,
 	})
 

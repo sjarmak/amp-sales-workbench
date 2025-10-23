@@ -1,7 +1,9 @@
 # Agent Instructions for Amp Sales Workbench
-NEVER RUN SERVERS, LET THE USER RUN ANY LONG RUNNING PROCESSES 
+NEVER EDIT THIS FILE
+NEVER RUN SERVERS (e.g., DO NOT RUN npm run start:web !), LET THE USER RUN ANY LONG RUNNING PROCESSES, IF YOU WANT TO START A SERVER GIVE THE USER THE COMMAND YOU WOULD RUN YOURSELF SO THEY CAN DO IT 
 NEVER USE EMOJIS, PREFER ICONS FROM https://lucide.dev/icons/ IF IT MAKES SENSE TO ADD ICONOGRAPHY
-USE BEADS (bd command) FOR ANY TASK UPDATES, DO NOT WRITE TO MARKDOWN FILES
+### Issue tracking
+We track work in Beads instead of Markdown. Run `bd onboard`as the first thing you do to see our current progress. Any time we work on a task, we should have a bd issue to track it's state. When we've made progress or finished a task we should update the bd issue as well.
 ## Overview
 
 **Amp Sales Workbench** is a multi-agent sales workflow system that automates prospect research, account enrichment, data consolidation from multiple sources (Gong, Notion, Salesforce), draft generation, and CRM synchronization. It mimics Scratchpad-like workflows while leveraging your existing MCP servers.

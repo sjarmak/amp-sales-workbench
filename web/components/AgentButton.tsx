@@ -23,6 +23,11 @@ interface AgentButtonProps {
     gong: boolean
     notion: boolean
   }
+  dataAvailable?: {
+    salesforce?: boolean
+    gong?: boolean
+    notion?: boolean
+  }
 }
 
 export function AgentButton({
@@ -34,7 +39,8 @@ export function AgentButton({
   onClick,
   variant = 'default',
   requires = {},
-  capabilities = { salesforce: false, gong: false, notion: false }
+  capabilities = { salesforce: false, gong: false, notion: false },
+  dataAvailable = {}
 }: AgentButtonProps) {
   const missingRequirements = []
   if (requires.salesforce && !capabilities.salesforce) missingRequirements.push('Salesforce')
@@ -42,7 +48,11 @@ export function AgentButton({
   if (requires.notion && !capabilities.notion) missingRequirements.push('Notion')
   
   const hasMissingRequirements = missingRequirements.length > 0
-  const requiresAny = Object.values(requires).some(Boolean)
+  
+  // Show icons for all data sources (not just required ones)
+  const showSalesforce = capabilities.salesforce
+  const showGong = capabilities.gong
+  const showNotion = capabilities.notion
 
   const buttonContent = (
     <div className="relative group">
@@ -60,16 +70,37 @@ export function AgentButton({
         ) : label}
       </Button>
       
-      {requiresAny && (
+      {(showSalesforce || showGong || showNotion) && (
         <div className="flex gap-1 mt-1 justify-center">
-          {requires.salesforce && (
-            <Database className={`h-3 w-3 ${capabilities.salesforce ? 'text-green-500' : 'text-muted-foreground'}`} />
+          {showSalesforce && (
+            <Database 
+              className={`h-3 w-3 ${
+                dataAvailable.salesforce 
+                  ? 'text-green-500' 
+                  : 'text-muted-foreground/40'
+              }`}
+              title={dataAvailable.salesforce ? 'Salesforce data available' : 'No Salesforce data'}
+            />
           )}
-          {requires.gong && (
-            <PhoneCall className={`h-3 w-3 ${capabilities.gong ? 'text-green-500' : 'text-muted-foreground'}`} />
+          {showGong && (
+            <PhoneCall 
+              className={`h-3 w-3 ${
+                dataAvailable.gong 
+                  ? 'text-green-500' 
+                  : 'text-muted-foreground/40'
+              }`}
+              title={dataAvailable.gong ? 'Gong data available' : 'No Gong data'}
+            />
           )}
-          {requires.notion && (
-            <FileText className={`h-3 w-3 ${capabilities.notion ? 'text-green-500' : 'text-muted-foreground'}`} />
+          {showNotion && (
+            <FileText 
+              className={`h-3 w-3 ${
+                dataAvailable.notion 
+                  ? 'text-green-500' 
+                  : 'text-muted-foreground/40'
+              }`}
+              title={dataAvailable.notion ? 'Notion data available' : 'No Notion data'}
+            />
           )}
         </div>
       )}

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Badge } from './ui/badge'
 import { Button } from './ui/button'
 import {
@@ -23,6 +23,7 @@ const API_URL = 'http://localhost:3001/api'
 interface SourceStatus {
   status: 'fresh' | 'stale' | 'missing'
   lastFetchedAt: string | null
+  lastDataTimestamp?: string | null // When the data on source was last generated/updated
   nextRecommended: 'use-cache' | 'incremental' | 'full'
   staleReasons?: string[]
 }
@@ -45,9 +46,16 @@ export function DataSourceBadges({ accountSlug, capabilities, refreshTrigger = 0
   const [sourceStatuses, setSourceStatuses] = useState<Record<string, SourceStatus>>({})
   const [refreshing, setRefreshing] = useState<Record<string, boolean>>({})
   const [refreshProgress, setRefreshProgress] = useState<Record<string, string>>({})
+  const hasProbed = useRef<Record<string, boolean>>({})
 
   useEffect(() => {
     fetchSourceStatuses()
+    
+    // Probe remote sources on first load for this account
+    if (!hasProbed.current[accountSlug]) {
+      hasProbed.current[accountSlug] = true
+      probeAndAutoRefresh()
+    }
   }, [accountSlug, refreshTrigger])
 
   const fetchSourceStatuses = async () => {
@@ -57,6 +65,44 @@ export function DataSourceBadges({ accountSlug, capabilities, refreshTrigger = 0
       setSourceStatuses(data)
     } catch (error) {
       console.error('Failed to fetch source statuses:', error)
+    }
+  }
+
+  const probeAndAutoRefresh = async () => {
+    try {
+      console.log(`[DataSourceBadges] Probing remote sources for ${accountSlug}...`)
+      const res = await fetch(`${API_URL}/accounts/${accountSlug}/sources/probe`)
+      if (!res.ok) {
+        console.error('[DataSourceBadges] Probe failed:', res.statusText)
+        return
+      }
+      
+      const probeResults = await res.json()
+      console.log('[DataSourceBadges] Probe results:', probeResults)
+      
+      // Guard against null/undefined response
+      if (!probeResults || typeof probeResults !== 'object') {
+        console.error('[DataSourceBadges] Invalid probe results:', probeResults)
+        return
+      }
+      
+      // Auto-refresh any stale sources
+      const staleSources: string[] = []
+      if (probeResults.salesforce?.staleOnSource) staleSources.push('salesforce')
+      if (probeResults.gong?.staleOnSource) staleSources.push('gong')
+      if (probeResults.notion?.staleOnSource) staleSources.push('notion')
+      if (probeResults.amp?.staleOnSource) staleSources.push('amp')
+      
+      if (staleSources.length > 0) {
+        console.log(`[DataSourceBadges] Auto-refreshing stale sources: ${staleSources.join(', ')}`)
+        for (const source of staleSources) {
+          await refreshSource(source, 'auto')
+        }
+      } else {
+        console.log('[DataSourceBadges] All sources are fresh')
+      }
+    } catch (error) {
+      console.error('[DataSourceBadges] Probe error:', error)
     }
   }
 
@@ -256,7 +302,11 @@ export function DataSourceBadges({ accountSlug, capabilities, refreshTrigger = 0
             {status && (
               <div 
                 className={`h-2 w-2 rounded-full ${getStatusColor(status.status)}`}
-                title={`${status.status} - Last updated: ${formatTimestamp(status.lastFetchedAt)}`}
+                title={`${status.status} - Last pulled: ${formatTimestamp(status.lastFetchedAt)}${
+                  source === 'gong' && status.lastDataTimestamp 
+                    ? ` | Latest call: ${formatTimestamp(status.lastDataTimestamp)}` 
+                    : ''
+                }`}
               />
             )}
             
@@ -296,7 +346,9 @@ export function DataSourceBadges({ accountSlug, capabilities, refreshTrigger = 0
               </span>
             ) : status && (
               <span className="text-xs text-muted-foreground">
-                {formatTimestamp(status.lastFetchedAt)}
+                {source === 'gong' && status.lastDataTimestamp
+                  ? formatTimestamp(status.lastDataTimestamp)
+                  : formatTimestamp(status.lastFetchedAt)}
               </span>
             )}
           </>
@@ -306,7 +358,7 @@ export function DataSourceBadges({ accountSlug, capabilities, refreshTrigger = 0
   }
 
   const refreshAllSources = async (mode: 'incremental' | 'full') => {
-    const sources = ['salesforce', 'gong', 'notion'].filter(
+    const sources = ['salesforce', 'gong', 'notion', 'amp'].filter(
       s => capabilities[s as keyof typeof capabilities]
     )
     

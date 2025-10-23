@@ -12,6 +12,7 @@ export interface PostCallUpdate {
 		date: string
 		duration?: number
 		participants: string[]
+		url?: string
 	}
 	crmPatch: {
 		yaml: string
@@ -24,8 +25,26 @@ export interface PostCallUpdate {
 		to: string[]
 		cc?: string[]
 	}
+	coaching: CoachingFeedback
+	salesforceFieldUpdates: SalesforceFieldRecommendation[]
 	analysis: CallAnalysis
 	generatedAt: string
+}
+
+export interface CoachingFeedback {
+	whatWentWell: string[]
+	areasForImprovement: string[]
+	suggestedNextSteps: string[]
+}
+
+export interface SalesforceFieldRecommendation {
+	objectType: 'Opportunity' | 'Account' | 'Contact' | 'Task'
+	recordId?: string
+	field: string
+	currentValue: any
+	recommendedValue: any
+	reasoning: string
+	confidence: 'high' | 'medium' | 'low'
 }
 
 export interface Task {
@@ -239,6 +258,7 @@ async function analyzeCallAndGenerateUpdates(
 			date: callData.started || callData.scheduled || new Date().toISOString(),
 			duration: callData.duration,
 			participants: (callData.parties || []).map((p: any) => p.emailAddress || p.name).filter(Boolean),
+			url: callData.url || callData.webUrl,
 		},
 		crmPatch: {
 			yaml,
@@ -250,6 +270,12 @@ async function analyzeCallAndGenerateUpdates(
 			body: '',
 			to: [],
 		},
+		coaching: parsedResponse.coaching || {
+			whatWentWell: [],
+			areasForImprovement: [],
+			suggestedNextSteps: [],
+		},
+		salesforceFieldUpdates: parsedResponse.salesforceFieldUpdates || [],
 		analysis: parsedResponse.analysis || {
 			nextSteps: [],
 			blockers: [],

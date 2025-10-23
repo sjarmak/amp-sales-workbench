@@ -1,6 +1,6 @@
 import { readFile, writeFile, mkdir } from 'fs/promises'
 import { join } from 'path'
-import { execute } from '@sourcegraph/amp-sdk'
+import { executeWithMode } from '../lib/amp-executor.js'
 import type {
 	AccountKey,
 	IngestedData,
@@ -134,9 +134,10 @@ async function executeConsolidation(
 
 	let accumulatedText = ''
 
-	// Execute with Amp SDK
-	for await (const message of execute({
+	// Execute with Amp SDK in fast mode (data consolidation is straightforward)
+	for await (const message of executeWithMode({
 		prompt: fullPrompt,
+		mode: 'fast',
 	})) {
 		if (message.type === 'assistant') {
 			// Extract text from content array

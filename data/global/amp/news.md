@@ -4,15 +4,103 @@ Dispatches from the Amp Team
 
 [RSS](/news.rss "Subscribe to RSS feed")
 
-1.  October 21, 2025
+1.  October 22, 2025
     
-    ### [Edit, restore and fork in the CLI](/news/cli-tab-navigation)
+    ### [More Tools for the Agent](/news/more-tools-for-the-agent)
+    
+    We shipped several changes to [toolboxes](/manual#toolboxes) that make them easier to use:
+    
+    *   You can now have multiple toolboxes in the `AMP_TOOLBOX` environment variable
+    *   `amp tools make` is a new command to create a functional example tool in the right location
+    *   `amp tools show` lets you inspect a tool
+    *   `amp tools use` allows you to execute it
+    
+    And Amp itself can fill in all the details to make the tool work as you intended.
+    
+    If you don't yet know what [toolboxes](/manual#toolboxes) are: a toolbox is a directory full of UNIX-style programs that provide custom tools to the agent locally. Conceptually, they sit between MCP servers and common CLI tools, but are less complex than MCP servers and easier for the agent to use than plain CLI tools.
+    
+    Let's use an example to see how we can use `amp tools make` and `amp tools use` to create and run a new tool in a new toolbox.
+    
+    Let's build a `run_tests` tool. Chances are that if you have used any coding agent before, you've probably seen it trying to run the your tests, but then stumble and having to guess a few times what the correct command invocation is. We can make (artificial) life for the agent easier by giving it a `run_tests` tool that will always use the correct command.
+    
+    First we create a `.amp/tools` directory in our repository and add it to the `AMP_TOOLBOX` variable, so Amp knows to look there for tools:
+    
+    ```bash
+    # Create the directory
+    mkdir -p .amp/tools
+    # Add to AMP_TOOLBOX. Order matters: prefer tools in the repo over global tools
+    export AMP_TOOLBOX="$PWD/.amp/tools:$HOME/.config/amp/tools"
+    ```
+    
+    Next we run `amp tools make` to create a new tool, using a built-in template:
+    
+    ```bash
+    amp tools make run_tests
+    ```
+    
+    Which prints:
+    
+    ```
+    Tool created at: /Users/dhamidi/w/amp-wip/.amp/tools/run_tests
+    Inspect with: amp tools show tb__run_tests
+    Execute with: amp tools use tb__run_tests
+    ```
+    
+    Great! Now we could open `.amp/tools/run_tests` manually and edit it as needed, so it actually does what we want and runs the tests. But, hey, we can also tell Amp to inspect our `package.json` file, find the right test command, and adjust the tool template accordingly:
+    
+    ```bash
+    amp --dangerously-allow-all -x 'Edit .amp/tools/run_tests to run the tests
+    using pnpm test according to our package.json file.
+    It should have an optional workspace parameter
+    and an optional parameter for filtering by test name'
+    ```
+    
+    Now we can use `amp tools show` to inspect the tool and see what Amp has created:
+    
+    ```
+    amp tools show tb__run_tests
+    ```
+    
+    That prints the description of the tool (which the Amp agent will see) and the schema of the input parameters (which the agent will use to run the tool):
+    
+    ```
+    # tb__run_tests (toolbox: /Users/dhamidi/w/amp-wip/.amp/tools/run_tests)
+    
+    You must use this tool to run tests instead of using the Bash tool.
+    This tool runs tests using pnpm test with optional workspace filtering
+    and test name filtering.
+    
+    # Schema
+    
+    - workspace (string): optional workspace name to run tests in (e.g., "core", "web", "server", "cli"). If not provided, runs tests in the root workspace
+    - testName (string): optional test name filter to run specific tests (passed as -t argument to vitest)
+    ```
+    
+    But before we now have the agent try it, we can use `amp tools use` to execute the tool to make sure it works:
+    
+    ```
+    amp tools use --only output tb__run_tests --testName "writes a tool"
+    ```
+    
+    Note how we specified `--testName`, one of the input parameters of the tool. If we run the command, we'll see something like this:
+    
+    ```
+    # ...
+     Test Files  1 passed | 306 skipped (307)
+          Tests  1 passed | 4181 skipped (4182)
+    ```
+    
+    It works! And now, when you start Amp, it will automatically register this tool at startup, and use it to run the tests:
+    
+2.  October 21, 2025
+    
+    ### [Edit, Restore and Fork in the CLI](/news/cli-tab-navigation)
     
     You can now edit messages in the Amp CLI, restore the thread to a specific point, or fork a new thread from a message.
     
     Hit `Tab` to select a previous message, then hit `e` to edit the message, `r` to restore the thread up to and including that message, or `f` to fork the thread from that message.
     
-2.  October 21, 2025
+3.  October 21, 2025
     
     ### [50% Faster Search Agent](/news/faster-search-agent)
     
@@ -20,7 +108,7 @@ Dispatches from the Amp Team
     
     The search agent should be around 3X cheaper now, as well. Happy (speedy) hacking!
     
-3.  October 20, 2025
+4.  October 20, 2025
     
     ### [The Librarian](/news/librarian)
     
@@ -40,7 +128,7 @@ Dispatches from the Amp Team
     
     ![The Librarian at work](https://static.ampcode.com/news/librarian_5.png?version=1)
     
-4.  October 15, 2025
+5.  October 15, 2025
     
     ### [Amp Free](/news/amp-free)
     
@@ -56,7 +144,7 @@ Dispatches from the Amp Team
     
     [Read more about Amp Free »](/news/amp-free)
     
-5.  October 14, 2025
+6.  October 14, 2025
     
     ### [Monthly Automatic Top Ups](/news/monthly-automatic-top-ups)
     
@@ -66,7 +154,7 @@ Dispatches from the Amp Team
     
     Head to your user or workspace settings to configure monthly automatic top ups.
     
-6.  October 3, 2025
+7.  October 3, 2025
     
     ### [Amp TypeScript SDK](/news/typescript-sdk)
     
@@ -132,7 +220,7 @@ Dispatches from the Amp Team
     
     To get more ideas and familiar with the SDK, take a look at the examples in the [manual](https://ampcode.com/manual/sdk#advanced-usage).
     
-7.  October 1, 2025
+8.  October 1, 2025
     
     ### [GPT-5 Oracle](/news/gpt-5-oracle)
     
@@ -153,7 +241,7 @@ Dispatches from the Amp Team
     
     We're still tweaking system prompts, still exploring new mechanics of how to interact with agents, and still thinking about where else we could fit GPT-5 into Amp. Because it is a fascinating model and there has to be a way to get even more out of it.
     
-8.  September 30, 2025
+9.  September 30, 2025
     
     ### [Amp CLI connects to VS Code and Neovim](/news/cli-vscode-neovim)
     
@@ -169,21 +257,21 @@ Dispatches from the Amp Team
     
     Learn more about the new integration in the [manual](https://ampcode.com/manual#ide).
     
-9.  September 29, 2025
-    
-    ### [Now Using Claude Sonnet 4.5](/news/claude-sonnet-4-5)
-    
-    We've switched Amp's primary model to [Claude Sonnet 4.5](https://www.anthropic.com/news/claude-sonnet-4-5), the latest release from Anthropic.
-    
-    In our testing of Sonnet 4.5 in Amp, we found noticeable improvements for coding, including:
-    
-    *   Reduced sycophancy
-    *   Higher success rates for file edits
-    *   Improved reasoning during complex tasks like debugging
-    
-    The switch is automatic. Update to the latest release of Amp's VS Code extension or CLI to start using Claude Sonnet 4.5.
-    
-10.  September 23, 2025
+10.  September 29, 2025
+     
+     ### [Now Using Claude Sonnet 4.5](/news/claude-sonnet-4-5)
+     
+     We've switched Amp's primary model to [Claude Sonnet 4.5](https://www.anthropic.com/news/claude-sonnet-4-5), the latest release from Anthropic.
+     
+     In our testing of Sonnet 4.5 in Amp, we found noticeable improvements for coding, including:
+     
+     *   Reduced sycophancy
+     *   Higher success rates for file edits
+     *   Improved reasoning during complex tasks like debugging
+     
+     The switch is automatic. Update to the latest release of Amp's VS Code extension or CLI to start using Claude Sonnet 4.5.
+     
+11.  September 23, 2025
      
      ### [Amp Tab for All](/news/amp-tab-for-all)
      
@@ -197,7 +285,7 @@ Dispatches from the Amp Team
      
      Make changes across multiple files:
      
-11.  September 23, 2025
+12.  September 23, 2025
      
      ### [Globs in AGENTS.md](/news/globs-in-AGENTS.md)
      
@@ -228,7 +316,7 @@ Dispatches from the Amp Team
      
      These @-mentioned files with `globs` will only be included if Amp has read a file matching any of the globs (in the example above, any TypeScript file). Use `/agent-files` (CLI) or hover over `X% of 968k` (editor extension) to see the guidance files in use.
      
-12.  September 9, 2025
+13.  September 9, 2025
      
      ### [Streaming JSON](/news/streaming-json)
      
@@ -282,7 +370,7 @@ Dispatches from the Amp Team
      
      See the [Manual](https://ampcode.com/manual#cli-streaming-json) for more details and the [Appendix](/manual/appendix#stream-json-output) for the full schema.
      
-13.  September 2, 2025
+14.  September 2, 2025
      
      ### [Look ma, no flicker](/news/look-ma-no-flicker)
      
@@ -296,7 +384,7 @@ Dispatches from the Amp Team
      
      And without flicker, really, anything’s possible.
      
-14.  August 29, 2025
+15.  August 29, 2025
      
      ### [Bring Your Own Tools](/news/toolboxes)
      
@@ -341,7 +429,7 @@ Dispatches from the Amp Team
      
      You can read more about toolboxes and possible input and output formats [in the manual](/manual#toolboxes).
      
-15.  August 27, 2025
+16.  August 27, 2025
      
      ### [1,000,000 Tokens](/news/1m-tokens)
      
@@ -355,7 +443,7 @@ Dispatches from the Amp Team
      
      _Note: the screenshot shows 968k tokens because the context window is composed of 968k input tokens and 32k output tokens._
      
-16.  August 25, 2025
+17.  August 25, 2025
      
      ### [Custom Slash Commands](/news/custom-slash-commands)
      
@@ -367,7 +455,7 @@ Dispatches from the Amp Team
      
      Alongside this, we're also shipping an experimental mode for _executable_ slash commands: if a text file in `.agents/commands` is executable and has a `#!` on its first line (as in `#!/usr/bin/env bash`, for example), it will also get turned into a slash command. And when that command is then invoked, the corresponding file is executed and its output will be inserted.
      
-17.  August 25, 2025
+18.  August 25, 2025
      
      ### [Enterprise Managed Settings](/news/enterprise-managed-settings)
      
@@ -388,7 +476,7 @@ Dispatches from the Amp Team
      
      You can read more about managed settings [in the manual.](/manual?internal#enterprise-managed-policy-settings)
      
-18.  August 25, 2025
+19.  August 25, 2025
      
      ### [MCP Permissions](/news/mcp-permissions)
      
@@ -423,7 +511,7 @@ Dispatches from the Amp Team
      
      Read more about `amp.mcpPermissions` in [the manual.](/manual?internal#core-settings)
      
-19.  August 21, 2025
+20.  August 21, 2025
      
      ### [JetBrains Diagnostics for Java, Kotlin, and Scala](/news/jetbrains-diagnostics)
      
@@ -431,7 +519,7 @@ Dispatches from the Amp Team
      
      See the [Manual](https://ampcode.com/manual) for how to connect Amp CLI to your JetBrains IDE.
      
-20.  August 21, 2025
+21.  August 21, 2025
      
      ### [Multi-File Tab](/news/multi-file-tab)
      
@@ -439,7 +527,7 @@ Dispatches from the Amp Team
      
      Press `Tab` once to preview the file, and `Tab` again to make the jump.
      
-21.  August 21, 2025
+22.  August 21, 2025
      
      ### [Through the Agent, Into the Shell](/news/through-the-agent-into-the-shell)
      
@@ -453,7 +541,7 @@ Dispatches from the Amp Team
      
      That, in turn, is handy when you want to run noisy commands to check on something, or fire off a quick command that you'd otherwise run in a separate terminal.
      
-22.  August 20, 2025
+23.  August 20, 2025
      
      ### [From AGENT.md to AGENTS.md](/news/AGENTS.md)
      
@@ -465,7 +553,7 @@ Dispatches from the Amp Team
      
      ![AGENTS.md standard](/news/agents-md-standard.png)
      
-23.  August 20, 2025
+24.  August 20, 2025
      
      ### [A New Model for Amp Tab](/news/new-model-for-amp-tab)
      
@@ -477,13 +565,13 @@ Dispatches from the Amp Team
      
      Here, see how follow-up edits work much better now. In this video, deleting a proxy variable triggers a chain of completions, including fixes to the constructor and updates to the header.
      
-24.  August 19, 2025
+25.  August 19, 2025
      
      ### [New Threads without Leaving the CLI](/news/new-threads-without-leaving-the-cli)
      
      You can now start new threads and continue old threads without leaving your CLI session. Use `/new` for a new thread and `/continue` to pick an old thread.
      
-25.  August 18, 2025
+26.  August 18, 2025
      
      ### [Queue Messages in the CLI](/news/queue-messages-in-the-cli)
      
@@ -491,7 +579,7 @@ Dispatches from the Amp Team
      
      Use `/queue <message>` to enqueue a message and `/dequeue` to dequeue them.
      
-26.  August 13, 2025
+27.  August 13, 2025
      
      ### [432,000 Tokens](/news/432k-tokens)
      
@@ -503,7 +591,7 @@ Dispatches from the Amp Team
      
      ![Amp thread with 432,000 tokens of context](https://static.ampcode.com/news/1m-tokens-2.png)
      
-27.  August 13, 2025
+28.  August 13, 2025
      
      ### [Diagnostic-Driven Completions](/news/diagnostic-driven-completions)
      
@@ -513,7 +601,7 @@ Dispatches from the Amp Team
      
      It's particularly useful when making changes that immediately introduce fixable errors, such as changing the signature of a function or renaming a variable.
      
-28.  August 12, 2025
+29.  August 12, 2025
      
      ### [Model Evaluation](/news/model-evaluation)
      
@@ -543,7 +631,7 @@ Dispatches from the Amp Team
      
      [See latest notes »](/news/model-evaluation)
      
-29.  August 7, 2025
+30.  August 7, 2025
      
      ### [Try GPT-5 with us](/news/gpt-5)
      
@@ -556,7 +644,7 @@ Dispatches from the Amp Team
      
      (This flag and setting will only exist for a limited time, until we've made a call on how to use GPT-5.)
      
-30.  August 7, 2025
+31.  August 7, 2025
      
      ### [JetBrains in the CLI](/news/jetbrains-in-the-cli)
      
@@ -568,7 +656,7 @@ Dispatches from the Amp Team
      
      Learn more about the new JetBrains integration [in the manual.](/manual#jetbrains)
      
-31.  August 7, 2025
+32.  August 7, 2025
      
      ### [Tool-Level Permissions](/news/tool-level-permissions)
      
@@ -593,7 +681,7 @@ Dispatches from the Amp Team
      
      You can read more about the new tool-level permissions [in the manual](/manual#permissions).
      
-32.  July 30, 2025
+33.  July 30, 2025
      
      ### [Amp Tab 30% Faster](/news/amp-tab-30-percent-faster)
      
@@ -605,7 +693,7 @@ Dispatches from the Amp Team
      
      ![Chart showing Amp Tab latency improvements over time](https://static.ampcode.com/news/next-cursor-latency-trend-dark.png)
      
-33.  July 29, 2025
+34.  July 29, 2025
      
      ### [Thread Forking in VS Code](/news/thread-forking)
      
@@ -613,7 +701,7 @@ Dispatches from the Amp Team
      
      You can use it to take the same thread into different directions. For example, to explore alternative implementations or asking questions while you wait for the current task to finish.
      
-34.  July 24, 2025
+35.  July 24, 2025
      
      ### [amp dash x](/news/amp-x)
      
@@ -671,7 +759,7 @@ Dispatches from the Amp Team
      6
      ```
      
-35.  July 23, 2025
+36.  July 23, 2025
      
      ### [Towards a new CLI](/news/towards-a-new-cli)
      
@@ -697,7 +785,7 @@ Dispatches from the Amp Team
      
      ![Four instances of the Amp CLI in action](https://static.ampcode.com/news/towards-new-cli-quad.png)
      
-36.  July 8, 2025
+37.  July 8, 2025
      
      ### [Streamable Transport for MCP](/news/streamable-mcp)
      
@@ -707,7 +795,7 @@ Dispatches from the Amp Team
      
      ![Streamable HTTP transport in action](https://static.ampcode.com/news/streamable-mcp.png)
      
-37.  July 7, 2025
+38.  July 7, 2025
      
      ### [Multiple AGENT.md Files](/news/multiple-AGENT.md-files)
      
@@ -723,7 +811,7 @@ Dispatches from the Amp Team
      
      ![Multiple AGENT.md files in use](https://static.ampcode.com/news/multiple-agent-md-files-2.png)
      
-38.  July 4, 2025
+39.  July 4, 2025
      
      ### [Oracle](/news/oracle)
      
@@ -743,7 +831,7 @@ Dispatches from the Amp Team
      
      ![Oracle in action](https://static.ampcode.com/news/oracle.png)
      
-39.  June 27, 2025
+40.  June 27, 2025
      
      ### [Better, Faster, Cheaper Summaries](/news/better-faster-cheaper-summaries)
      
@@ -751,19 +839,19 @@ Dispatches from the Amp Team
      
      It's 4-6x faster, roughly 30x cheaper, and provides better summaries when you either compact a thread or create a new thread with a summary.
      
-40.  June 26, 2025
+41.  June 26, 2025
      
      ### [Queued Messages](/news/queued-messages)
      
      You can now queue messages that will only be sent to the agent once it's idle. To add a message to the queue, hold shift while submitting.
      
-41.  June 10, 2025
+42.  June 10, 2025
      
      ### [Agents for the Agent](/agents-for-the-agent)
      
      Amp now has subagents. Thorsten [wrote a post](/agents-for-the-agent) about subagents, what they even are, and how they make us wonder whether everything is changing again.
      
-42.  June 6, 2025
+43.  June 6, 2025
      
      ### [Amp Tab](/news/amp-tab)
      
@@ -781,7 +869,7 @@ Dispatches from the Amp Team
      }
      ```
      
-43.  June 2, 2025
+44.  June 2, 2025
      
      ### [Multi-Root Workspaces](/news/multi-root-workspaces)
      
@@ -793,19 +881,19 @@ Dispatches from the Amp Team
      
      ![Multi-root workspaces](https://static.ampcode.com/news/multiroot-workspaces.png)
      
-44.  May 30, 2025
+45.  May 30, 2025
      
      ### [Secret Redaction](/news/secret-redaction)
      
      Amp now identifies secrets and redacts them with markers like `[REDACTED:aws-access-key-id]`, so they are not exposed to the LLM, other tools, or ampcode.com. See [Amp Security Reference](/security#secret-redaction) for details.
      
-45.  May 29, 2025
+46.  May 29, 2025
      
      ### [Raising an Agent, Episode 6](/podcast)
      
      Quinn and Thorsten discuss Claude 4, sub-agents, background agents, and they share "hot tips" for agentic coding.
      
-46.  May 28, 2025
+47.  May 28, 2025
      
      ### [Terminal Improvements](/news/terminal)
      
@@ -817,19 +905,19 @@ Dispatches from the Amp Team
      
      **Output** — Progress bars with ANSI escape codes now render beautifully in the UI without eating up your context window, only the final output is presented to the model.
      
-47.  May 28, 2025
+48.  May 28, 2025
      
      ### [TODOs for the Agent](/news/todos)
      
      The TODO feature that lets the agent manage its own list of tasks is now enabled by default.
      
-48.  May 22, 2025
+49.  May 22, 2025
      
      ### [Image Support in CLI](/news/cli-image-support)
      
      You can now refer to image files in the [Amp CLI](https://www.npmjs.com/package/@sourcegraph/amp). Paste the file path, drag a file into the terminal, or use file mentions by pressing @ to fuzzy-find the file. Images are useful for prompting with screenshots, designs, and more.
      
-49.  May 22, 2025
+50.  May 22, 2025
      
      ### [Amp Now Uses Claude Sonnet 4](/news/default-claude-sonnet-4)
      
@@ -846,7 +934,7 @@ Dispatches from the Amp Team
      
      To start using Claude 4 in Amp, update to the latest release of Amp's VS Code extension or CLI. No settings changes are needed; see [why we don't make the user switch models](/fif#model-selector).
      
-50.  May 20, 2025
+51.  May 20, 2025
      
      ### [The First 500,000 Messages](/news/500k)
      
@@ -858,7 +946,7 @@ Dispatches from the Amp Team
      
      Thank you and happy coding!
      
-51.  May 15, 2025
+52.  May 15, 2025
      
      ### [Amp Is Now Available To Everyone — Here's How I Use It](/how-i-use-amp)
      
@@ -866,19 +954,19 @@ Dispatches from the Amp Team
      
      Thorsten used the occasion of Amp now being available to everyone to write down how he uses it and how it changed programming for him.
      
-52.  May 14, 2025
+53.  May 14, 2025
      
      ### [Raising an Agent, Episode 5](/podcast)
      
      Beyang interviews Thorsten and Quinn to unpack what has happened in the world of Amp in the last five weeks: how predictions played out, how working with agents shaped coding practices, and the evolution of AI coding tools from browser automation to model training.
      
-53.  May 9, 2025
+54.  May 9, 2025
      
      ### [History in CLI](/news/cli-history)
      
      You can now navigate the local history of messages in the [Amp CLI](https://www.npmjs.com/package/@sourcegraph/amp). Use the arrow keys or Ctrl+P/Ctrl+N to navigate the adjacent messages in the history. PageUp and PageDown jumps directly, regardless of cursor position. Your current draft is available at the end of the history, and you can press Ctrl+C or Esc to cancel and go back to your draft.
      
-54.  May 8, 2025
+55.  May 8, 2025
      
      ### [No More BYOK](/news/no-more-byok)
      
@@ -894,7 +982,7 @@ Dispatches from the Amp Team
      
      _If you were using Isolated Mode_: When you update Amp in VS Code, you'll see a message informing you of this change and requiring you to disable Isolated Mode to continue. Your threads are preserved locally.
      
-55.  May 7, 2025
+56.  May 7, 2025
      
      ### [AGENT.md](/news/AGENT.md)
      
@@ -906,49 +994,49 @@ Dispatches from the Amp Team
      
      We chose `AGENT.md` as a naming standard to avoid the proliferation of agent-specific files in your repositories. We [hope](https://x.com/sqs/status/1920029114125201570) other agents will follow this convention.
      
-56.  May 7, 2025
+57.  May 7, 2025
      
      ### [File Mentions in CLI](/news/cli-file-mentions)
      
      The [Amp CLI](https://www.npmjs.com/package/@sourcegraph/amp) now supports file mentions in interactive mode. Type `@` followed by a pattern to fuzzy-search. Use Tab or Shift-Tab through the results, and hit Enter to confirm.
      
-57.  April 22, 2025
+58.  April 22, 2025
      
      ### [Manual](/manual)
      
      An operator's guide to Amp
      
-58.  April 15, 2025
+59.  April 15, 2025
      
      ### [How to Build an Agent](/how-to-build-an-agent)
      
      It’s not that hard to build a fully functioning, code-editing agent.
      
-59.  April 9, 2025
+60.  April 9, 2025
      
      ### [Frequently Ignored Feedback](/fif)
      
      Our responses to some common feedback that we are intentionally not acting on.
      
-60.  April 4, 2025
+61.  April 4, 2025
      
      ### [Raising an Agent, Episode 4](/podcast)
      
      What will AI do to open-source? What does it mean for GitHub? What does it mean for interviewing engineers?
      
-61.  March 28, 2025
+62.  March 28, 2025
      
      ### [Raising an Agent, Episode 3](/podcast)
      
      What does this all mean for code search? How do you balance coding knowledge/skills/experience vs. letting the AI do it?
      
-62.  March 13, 2025
+63.  March 13, 2025
      
      ### [Raising an Agent, Episode 2](/podcast)
      
      Is the magic with these agents that there are no token limits? Where do the agents fail? Do they need guidance? Where? How does one even price this? Isn't it too expensive?
      
-63.  March 6, 2025
+64.  March 6, 2025
      
      ### [Raising an Agent, Episode 1](/podcast)
      

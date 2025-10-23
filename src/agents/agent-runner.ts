@@ -22,7 +22,9 @@ export type AgentName =
   | 'backfill'
   | 'handoff'
   | 'full-refresh'
-  | 'prospector';
+  | 'prospector'
+  | 'risk-heuristics'
+  | 'meeting-summary';
 
 export interface AgentOptions {
   accountName: string;
@@ -131,6 +133,19 @@ export async function runAgent(
           message: 'Prospector integration pending - see amp-prospector repository',
           accountKey,
         };
+        break;
+        
+      case 'risk-heuristics':
+        const { analyzeRiskHeuristics } = await import('./riskHeuristics.js');
+        result = await analyzeRiskHeuristics(accountKey, accountDataDir);
+        break;
+        
+      case 'meeting-summary':
+        if (!options.callId) {
+          throw new Error('callId is required for meeting-summary agent');
+        }
+        const { generateMeetingSummary } = await import('./meetingSummary.js');
+        result = await generateMeetingSummary(accountKey, accountDataDir, options.callId);
         break;
         
       default:
@@ -248,6 +263,18 @@ export function getAgentInfo(agentName: AgentName): {
       name: 'Prospector',
       description: 'Run prospector research',
       requiredParams: ['accountName'],
+      optionalParams: [],
+    },
+    'risk-heuristics': {
+      name: 'Risk Heuristics',
+      description: 'Analyze deal risks using heuristic detection',
+      requiredParams: ['accountName'],
+      optionalParams: [],
+    },
+    'meeting-summary': {
+      name: 'Meeting Summary',
+      description: 'Generate structured meeting summary from call transcript',
+      requiredParams: ['accountName', 'callId'],
       optionalParams: [],
     },
   };

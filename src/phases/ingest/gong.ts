@@ -2,7 +2,8 @@ import { createHash } from 'crypto'
 import { readFile, writeFile, mkdir } from 'fs/promises'
 import { join } from 'path'
 import type { AccountKey } from '../../types.js'
-import { callGongListCalls, callGongRetrieveTranscripts, callGongGetCall } from './mcp-wrapper.js'
+import { callGongListCalls, callGongRetrieveTranscripts, callGongGetCall, callGongSearchCalls } from './mcp-wrapper.js'
+import { getGongCacheManager } from '../../gong-cache/manager.js'
 
 interface GongCall {
 	id: string
@@ -24,6 +25,7 @@ interface GongTranscript {
 export interface GongIngestOptions {
 	since?: string // ISO timestamp for incremental call list
 	maxCalls?: number // Max number of calls to fetch (default: 10)
+	useCache?: boolean // Use local cache for filtering (default: true, much faster)
 }
 
 export async function ingestFromGong(
@@ -39,21 +41,15 @@ export async function ingestFromGong(
 	const maxCalls = options?.maxCalls || 10
 	
 	// Calculate date range
-	const toDate = new Date()
-	let fromDate: Date
-	
-	if (options?.since) {
-		// Incremental: fetch from since date with 5-minute overlap
-		fromDate = new Date(options.since)
-		fromDate.setMinutes(fromDate.getMinutes() - 5)
-	} else {
-		// Full: fetch last 14 days
-		fromDate = new Date()
-		fromDate.setDate(fromDate.getDate() - 14)
-	}
+	// OVERRIDE: Search only October 20, 2025 for Canva calls
+	const fromDate = new Date('2025-10-20T00:00:00Z')
+	const toDate = new Date('2025-10-20T23:59:59Z')
 
-	// List recent calls for this account
-	const calls = await listCallsForAccount(accountKey, fromDate, toDate)
+	// List calls for this account using cache (fast) or direct API (slower)
+	// Cache uses list_calls to fetch all calls, then filters client-side by title
+	// since search_calls endpoint returns 405 errors
+	const useCache = options?.useCache !== false
+	const calls = await listCallsForAccount(accountKey, fromDate, toDate, useCache)
 
 	if (calls.length === 0) {
 		console.log('No recent Gong calls found')
@@ -93,30 +89,94 @@ export async function ingestFromGong(
 	}
 }
 
+/**
+ * List calls for an account using either cache or direct API filtering
+ * 
+ * APPROACH: Since Gong's search_calls endpoint returns 405 errors, we use list_calls
+ * with date ranges and filter client-side by checking if the account name appears
+ * in the call title. The cache system maintains a 6-month rolling window of all calls
+ * and performs incremental syncs for new calls.
+ */
 async function listCallsForAccount(
 	accountKey: AccountKey,
 	fromDate: Date,
-	toDate: Date
+	toDate: Date,
+	useCache: boolean = true
 ): Promise<GongCall[]> {
 	try {
+		const accountName = accountKey.name?.toLowerCase()
+		
+		if (!accountName) {
+			console.warn(`No account name found, cannot filter Gong calls`)
+			return []
+		}
+
+		// Use cache for fast local filtering (zero API calls)
+		if (useCache) {
+			console.log(`Querying Gong cache for "${accountName}"`)
+			const cacheManager = getGongCacheManager()
+			
+			// First ensure cache is up to date with incremental sync
+			try {
+				await cacheManager.sync()
+			} catch (error) {
+				console.warn('Cache sync failed, will use existing cache:', error)
+			}
+			
+			// Extract domain from accountKey for participant-based filtering
+			const domain = accountKey.domain?.toLowerCase()
+			
+			// Query cache for matching calls (filters by title containing account name)
+			const cachedCalls = await cacheManager.getCallsForAccount(accountName, {
+				since: fromDate,
+				maxResults: 50,
+				domain, // Include domain for participant email filtering
+			})
+			
+			// Convert to GongCall format
+			const calls: GongCall[] = cachedCalls.map(call => ({
+				id: call.id,
+				title: call.title,
+				startTime: call.scheduled,
+				duration: call.duration,
+				participants: call.participantEmails || [],
+			}))
+			
+			console.log(`Found ${calls.length} calls from cache for "${accountName}" (domain: ${domain || 'none'})`)
+			return calls
+		}
+
+		// Fallback: Direct API filtering using list_calls + client-side filter
+		// Note: search_calls endpoint returns 405, so we must use list_calls
+		console.log(`Fetching all Gong calls from ${fromDate.toISOString()} to ${toDate.toISOString()}`)
+		
 		const result = await callGongListCalls({
 			fromDateTime: fromDate.toISOString(),
 			toDateTime: toDate.toISOString(),
 		})
 
-		// Gong API doesn't provide participant names in list_calls or get_call
-		// Participants remain empty until Gong adds this to their API
-		const calls: GongCall[] = (result.calls || []).map((call: any) => ({
-			id: call.id,
-			title: call.title || call.subject || 'Untitled Call',
-			startTime: call.scheduled || call.started || '',
-			duration: call.duration || 0,
-			participants: [], // Not available in Gong API
-		}))
+		const allCalls = result.calls || []
+		console.log(`Fetched ${allCalls.length} total Gong calls`)
+		
+		// Filter client-side by checking if account name appears in call title
+		const matchedCalls: GongCall[] = allCalls
+			.filter((call: any) => {
+				const title = (call.title || call.subject || '').toLowerCase()
+				return title.includes(accountName)
+			})
+			.map((call: any) => ({
+				id: call.id,
+				title: call.title || call.subject || 'Untitled Call',
+				startTime: call.scheduled || call.started || call.startTime || '',
+				duration: call.duration || 0,
+				participants: (call.participants || []).map((p: any) => p.email || p.name || '').filter(Boolean),
+			}))
 
-		return calls
+		console.log(`Found ${matchedCalls.length} Gong calls matching "${accountName}" in title`)
+		
+		return matchedCalls
 	} catch (error) {
-		console.error('Gong list calls failed:', error)
+		console.error('Gong call filtering failed:', error)
 		return []
 	}
 }

@@ -45,6 +45,28 @@ export default function Home() {
   const [refreshTrigger, setRefreshTrigger] = useState(0)
   const [showNotionButton, setShowNotionButton] = useState(false)
   const [lastSuccessfulAgent, setLastSuccessfulAgent] = useState<string | null>(null)
+  const [dataAvailable, setDataAvailable] = useState<{
+    salesforce?: boolean
+    gong?: boolean
+    notion?: boolean
+  }>({})
+
+  // Load data availability for selected account
+  useEffect(() => {
+    if (!selectedAccount) return
+    
+    fetch(`${API_URL}/accounts/${selectedAccount.slug}/sources`)
+      .then(res => res.json())
+      .then(data => {
+        if (!data) return
+        setDataAvailable({
+          salesforce: data.salesforce?.status === 'fresh' || data.salesforce?.status === 'stale',
+          gong: data.gong?.status === 'fresh' || data.gong?.status === 'stale',
+          notion: data.notion?.status === 'fresh' || data.notion?.status === 'stale'
+        })
+      })
+      .catch(err => console.error('Failed to check data availability:', err))
+  }, [selectedAccount, refreshTrigger])
 
   const loadAccounts = () => {
     fetch(`${API_URL}/accounts`)
@@ -172,7 +194,7 @@ export default function Home() {
             <CreateAccountDialog onAccountCreated={loadAccounts} />
             <div className="flex items-center gap-2">
               <div className="w-64">
-                <Select value={selectedAccount?.slug} onValueChange={(slug) => {
+                <Select value={selectedAccount?.slug || ''} onValueChange={(slug) => {
                   const account = accounts.find(a => a.slug === slug)
                   if (account) {
                     setSelectedAccount(account)
@@ -248,12 +270,12 @@ export default function Home() {
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="mb-6">
             <TabsTrigger value="quick-actions">Quick Actions</TabsTrigger>
-            <TabsTrigger value="prep">Pre-Call Brief</TabsTrigger>
             <TabsTrigger value="research">Prospector Results</TabsTrigger>
-            <TabsTrigger value="data-sources">Data Sources</TabsTrigger>
+            <TabsTrigger value="prep">Pre-Call Brief</TabsTrigger>
             <TabsTrigger value="after-call">After Call</TabsTrigger>
-            <TabsTrigger value="crm">CRM Updates</TabsTrigger>
             <TabsTrigger value="insights">Insights</TabsTrigger>
+            <TabsTrigger value="crm">CRM Updates</TabsTrigger>
+            <TabsTrigger value="data-sources">Data Sources</TabsTrigger>
           </TabsList>
 
           <TabsContent value="quick-actions">
@@ -280,35 +302,39 @@ export default function Home() {
                   <AgentButton
                   name="precall-brief"
                   label="Create Pre-Call Brief"
-                  description="Generate a comprehensive pre-call brief with account context, recent activity, and talking points"
+                  description="Generate a comprehensive pre-call brief with account context, recent activity, and talking points. Works with any available data source."
                   loading={loadingAgent === 'precall-brief'}
                   disabled={loading}
                   onClick={() => runAgent('precall-brief')}
                   variant="outline"
-                  requires={{ salesforce: true, gong: true, notion: true }}
+                  requires={{ gong: false, notion: false, salesforce: false }}
                   capabilities={selectedAccount?.capabilities}
+                  dataAvailable={dataAvailable}
+                  dataAvailable={dataAvailable}
                   />
                   <AgentButton
                     name="demo-ideas"
                     label="Demo Ideas"
-                    description="Generate tailored demo ideas based on account profile and industry"
+                    description="Generate tailored demo ideas based on account profile and industry. Uses Notion for best results."
                     loading={loadingAgent === 'demo-ideas'}
                     disabled={loading}
                     onClick={() => runAgent('demo-ideas')}
                     variant="outline"
-                    requires={{ salesforce: true, notion: true }}
+                    requires={{ notion: false, salesforce: false }}
                     capabilities={selectedAccount?.capabilities}
+                  dataAvailable={dataAvailable}
                   />
                   <AgentButton
                     name="qualification"
                     label="Qualification"
-                    description="Assess deal qualification using MEDDIC, BANT, or SPICED framework"
+                    description="Assess deal qualification using MEDDIC, BANT, or SPICED framework. Works with any available data."
                     loading={loadingAgent === 'qualification'}
                     disabled={loading}
                     onClick={() => runAgent('qualification')}
                     variant="outline"
-                    requires={{ salesforce: true, gong: true }}
+                    requires={{ gong: false, salesforce: false }}
                     capabilities={selectedAccount?.capabilities}
+                  dataAvailable={dataAvailable}
                   />
                 </CardContent>
               </Card>
@@ -321,13 +347,14 @@ export default function Home() {
                   <AgentButton
                   name="postcall"
                   label="Post-Call Update"
-                  description="Analyze the most recent call and update CRM with action items and next steps"
+                  description="Analyze the most recent call and generate CRM updates (draft mode without Salesforce)"
                   loading={loadingAgent === 'postcall'}
                   disabled={loading}
                   onClick={() => runAgent('postcall')}
                   variant="outline"
-                  requires={{ gong: true }}
+                  requires={{ gong: false, salesforce: false }}
                     capabilities={selectedAccount?.capabilities}
+                  dataAvailable={dataAvailable}
                    />
                   <AgentButton
                     name="email"
@@ -337,8 +364,9 @@ export default function Home() {
                     disabled={loading}
                     onClick={() => runAgent('email')}
                     variant="outline"
-                    requires={{ salesforce: true, gong: true }}
+                    requires={{ gong: false, salesforce: false }}
                     capabilities={selectedAccount?.capabilities}
+                  dataAvailable={dataAvailable}
                   />
                   <AgentButton
                     name="coaching"
@@ -348,8 +376,9 @@ export default function Home() {
                     disabled={loading}
                     onClick={() => runAgent('coaching')}
                     variant="outline"
-                    requires={{ gong: true }}
+                    requires={{ gong: false }}
                     capabilities={selectedAccount?.capabilities}
+                  dataAvailable={dataAvailable}
                   />
                 </CardContent>
               </Card>
@@ -362,35 +391,38 @@ export default function Home() {
                   <AgentButton
                     name="exec-summary"
                     label="Exec Summary"
-                    description="Generate executive summary of account status, opportunities, and key risks"
+                    description="Generate executive summary of account status, opportunities, and key risks. Works with any data."
                     loading={loadingAgent === 'exec-summary'}
                     disabled={loading}
                     onClick={() => runAgent('exec-summary')}
                     variant="outline"
-                    requires={{ salesforce: true }}
+                    requires={{ salesforce: false, gong: false }}
                     capabilities={selectedAccount?.capabilities}
+                  dataAvailable={dataAvailable}
                   />
                   <AgentButton
                     name="deal-review"
                     label="Deal Review"
-                    description="Comprehensive deal health analysis with risks, momentum, and recommended actions"
+                    description="Comprehensive deal health analysis with risks, momentum, and recommended actions. Works with any data."
                     loading={loadingAgent === 'deal-review'}
                     disabled={loading}
                     onClick={() => runAgent('deal-review')}
                     variant="outline"
-                    requires={{ salesforce: true, gong: true }}
+                    requires={{ salesforce: false, gong: false }}
                     capabilities={selectedAccount?.capabilities}
+                  dataAvailable={dataAvailable}
                   />
                   <AgentButton
                     name="closedlost"
                     label="Closed-Lost"
-                    description="Analyze closed-lost opportunities to identify patterns and lessons learned"
+                    description="Analyze closed-lost opportunities to identify patterns and lessons learned. Works with any data."
                     loading={loadingAgent === 'closedlost'}
                     disabled={loading}
                     onClick={() => runAgent('closedlost')}
                     variant="outline"
-                    requires={{ salesforce: true, gong: true }}
+                    requires={{ salesforce: false, gong: false }}
                     capabilities={selectedAccount?.capabilities}
+                  dataAvailable={dataAvailable}
                   />
                 </CardContent>
               </Card>
@@ -403,13 +435,14 @@ export default function Home() {
                   <AgentButton
                     name="backfill"
                     label="AI Backfill"
-                    description="Automatically populate missing CRM fields using data from calls and documents"
+                    description="Analyze gaps and generate CRM field recommendations (draft mode without Salesforce)"
                     loading={loadingAgent === 'backfill'}
                     disabled={loading}
                     onClick={() => runAgent('backfill')}
                     variant="outline"
-                    requires={{ salesforce: true, gong: true }}
+                    requires={{ salesforce: false, gong: false }}
                     capabilities={selectedAccount?.capabilities}
+                  dataAvailable={dataAvailable}
                   />
                   <AgentButton
                     name="handoff"
@@ -419,8 +452,9 @@ export default function Home() {
                     disabled={loading}
                     onClick={() => runAgent('handoff')}
                     variant="outline"
-                    requires={{ salesforce: true }}
+                    requires={{ salesforce: false, gong: false }}
                     capabilities={selectedAccount?.capabilities}
+                  dataAvailable={dataAvailable}
                   />
                 </CardContent>
               </Card>

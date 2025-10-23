@@ -162,6 +162,9 @@ export async function callGongTool(toolName: string, args: any): Promise<any> {
 
     const content = result.content as any[];
     console.log(`[mcp-client] Result type:`, content[0]?.type, 'length:', content.length);
+    if (content[0]?.type === 'text') {
+      console.log(`[mcp-client] Raw text (first 200 chars):`, content[0].text.substring(0, 200));
+    }
     return content;
   } catch (error: any) {
     console.error(`[mcp-client] Tool call failed:`, error.message || error);

@@ -3,6 +3,8 @@ export interface AccountKey {
 	name: string
 	domain?: string
 	salesforceId?: string
+	notionPageId?: string // Optional: Per-account Notion page for write-back
+	capabilities?: CapabilitiesExtended // Optional: Track which integrations have data for this account
 }
 
 // Raw data from MCP servers
@@ -41,6 +43,8 @@ export interface ConsolidatedSnapshot {
 	opportunities: Opportunity[]
 	signals: AccountSignals
 	deltas: DeltaAnalysis
+	riskHeuristics?: RiskHeuristics // Optional: Computed risk factors for deal health
+	upcomingMeetings?: CalendarEvent[] // Optional: Auto-linked calendar events
 	generatedAt: string
 }
 
@@ -149,12 +153,177 @@ export interface AppliedPatch {
 	fieldsUpdated?: string[]
 }
 
-// Capability detection
+// Capability detection and tracking
 export interface Capabilities {
 	gong: boolean
 	salesforce: boolean
 	notion: boolean
 	detectedAt: string
+}
+
+/**
+ * Extended capabilities with OAuth status and last sync metadata
+ */
+export interface CapabilitiesExtended {
+	salesforce: IntegrationCapability
+	gong: IntegrationCapability
+	notion: IntegrationCapability
+	calendar?: IntegrationCapability // Optional for calendar integration
+	email?: IntegrationCapability // Optional for email integration
+	slack?: IntegrationCapability // Optional for Slack integration
+	detectedAt: string
+}
+
+/**
+ * Individual integration capability with connection status
+ */
+export interface IntegrationCapability {
+	connected: boolean
+	oauthStatus?: 'active' | 'expired' | 'invalid' | 'not_configured'
+	lastSyncAt?: string
+	lastSyncStatus?: 'success' | 'failed' | 'partial'
+	syncErrorMessage?: string
+	dataAvailable: boolean // Whether any data has been fetched
+	recordCount?: number // Approximate count of synced records
+}
+
+/**
+ * Meeting auto-linking: Calendar event with Salesforce association
+ */
+export interface CalendarEvent {
+	id: string
+	title: string
+	startTime: string
+	endTime: string
+	attendees: Attendee[]
+	source: 'google' | 'outlook' | 'ical'
+	meetingLink?: string
+	description?: string
+}
+
+/**
+ * Attendee information for calendar events
+ */
+export interface Attendee {
+	email: string
+	name?: string
+	responseStatus?: 'accepted' | 'declined' | 'tentative' | 'needs_action'
+}
+
+/**
+ * Matching rule for linking calendar events to Salesforce opportunities
+ */
+export interface AttendeeMatchRule {
+	ruleType: 'domain' | 'exact_email' | 'contact_lookup'
+	value: string
+	priority: number // Lower = higher priority
+}
+
+/**
+ * Proposed link between calendar event and Salesforce opportunity
+ */
+export interface MeetingOpportunityLink {
+	calendarEventId: string
+	opportunityId: string
+	opportunityName: string
+	confidence: 'high' | 'medium' | 'low'
+	confidenceScore: number // 0-100
+	matchReasons: string[] // e.g., "2/3 attendees match account contacts", "Domain match"
+	matchedAttendees: Array<{
+		email: string
+		contactId?: string
+		contactName?: string
+		matchType: 'exact' | 'domain' | 'fuzzy'
+	}>
+	suggestedAction: 'create_activity' | 'link_only' | 'ignore'
+	createdAt: string
+}
+
+/**
+ * Result of meeting auto-linking for an account
+ */
+export interface MeetingAutoLinkResult {
+	accountKey: AccountKey
+	proposedLinks: MeetingOpportunityLink[]
+	unmatchedEvents: CalendarEvent[] // Events that couldn't be confidently linked
+	appliedLinks?: Array<{
+		linkId: string
+		salesforceActivityId?: string
+		appliedAt: string
+		success: boolean
+		error?: string
+	}>
+	generatedAt: string
+}
+
+/**
+ * Risk heuristics for deal health monitoring
+ */
+export interface RiskHeuristics {
+	noChampion: RiskHeuristic
+	staleNextMeeting: RiskHeuristic
+	approachingCloseDate: RiskHeuristic
+	blockersPresent: RiskHeuristic
+	lowEngagement: RiskHeuristic
+	competitiveThreats: RiskHeuristic
+	budgetUnclear: RiskHeuristic
+	decisionProcessStalled: RiskHeuristic
+}
+
+/**
+ * Individual risk heuristic with severity and detection logic
+ */
+export interface RiskHeuristic {
+	detected: boolean
+	severity: 'critical' | 'high' | 'medium' | 'low'
+	message: string
+	evidence: string[] // Supporting data points
+	detectedAt?: string
+	threshold?: number // Numeric threshold used for detection (e.g., days since last meeting)
+	mitigationSteps?: string[]
+}
+
+/**
+ * Daily digest preferences per user or team
+ */
+export interface DigestPreferences {
+	userId?: string
+	teamId?: string
+	enabled: boolean
+	timezone: string // IANA timezone (e.g., "America/New_York")
+	deliveryTime: string // HH:MM format (e.g., "08:00")
+	deliveryChannel: 'email' | 'slack' | 'both'
+	emailAddress?: string
+	slackChannelId?: string
+	contentPreferences: DigestContentPreferences
+	accountFilters?: DigestAccountFilters
+	updatedAt: string
+}
+
+/**
+ * Content preferences for daily digest
+ */
+export interface DigestContentPreferences {
+	includeNewLeads: boolean
+	includeCallSummaries: boolean
+	includeRiskAlerts: boolean
+	includeUpcomingMeetings: boolean
+	includeStaleOpportunities: boolean
+	includeActionItems: boolean
+	includeDealHealthScores: boolean
+	includeCompetitiveIntel: boolean
+	minRiskSeverity?: 'critical' | 'high' | 'medium' | 'low' // Only show risks at or above this level
+}
+
+/**
+ * Filters for which accounts to include in digest
+ */
+export interface DigestAccountFilters {
+	accountOwners?: string[] // Salesforce user IDs
+	accountSegments?: string[] // e.g., "Enterprise", "Mid-Market"
+	industries?: string[]
+	minDealSize?: number
+	stages?: string[] // Opportunity stages to monitor
 }
 
 // Orchestrator input/output
@@ -362,5 +531,35 @@ export interface BackfillReport {
 	accountKey: AccountKey
 	proposals: BackfillProposal[]
 	generatedAt: string
+}
+
+// Meeting Summary
+export interface MeetingSummary {
+	accountKey: AccountKey
+	callId: string
+	callTitle?: string
+	callDate?: string
+	objectives: string[]
+	blockers: string[]
+	nextSteps: string[]
+	stakeholders: Stakeholder[]
+	meddicHints: MEDDICHints
+	generatedAt: string
+}
+
+export interface Stakeholder {
+	name?: string
+	role?: string
+	engagementLevel: 'high' | 'medium' | 'low'
+	keyComments?: string[]
+}
+
+export interface MEDDICHints {
+	metrics: string[] // ROI, KPIs, success metrics mentioned
+	economicBuyer: string[] // Budget authority, final decision maker signals
+	decisionCriteria: string[] // Requirements, evaluation factors
+	decisionProcess: string[] // Approval steps, timeline, stakeholders involved
+	identifyPain: string[] // Problems, challenges, pain points
+	champion: string[] // Internal advocate, enthusiasm signals
 }
 

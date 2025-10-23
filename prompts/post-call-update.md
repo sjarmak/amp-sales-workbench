@@ -15,7 +15,9 @@ Analyze the call and generate a comprehensive post-call update with:
 1. **CRM Patch Proposal** (YAML format)
 2. **Tasks** with due dates and owners
 3. **Follow-up Email** draft
-4. **Detailed Analysis** covering signals and insights
+4. **Coaching Feedback** to improve sales techniques
+5. **Salesforce Field Recommendations** with specific field updates
+6. **Detailed Analysis** covering signals and insights
 
 ## Output Format
 
@@ -95,6 +97,65 @@ Respond with a JSON document containing all outputs:
     "subject": "Follow-up: Next steps from today's call",
     "body": "Hi John and Sarah,\n\nThank you for the productive conversation today. I wanted to recap our discussion and confirm next steps:\n\n**What we covered:**\n- Technical architecture and integration requirements\n- Pricing for enterprise tier with custom reporting\n- Timeline for Q4 implementation\n\n**Next steps:**\n1. I'll send over the pricing proposal by EOD Tuesday\n2. We'll schedule a technical deep-dive with our CTO for next week\n3. Please complete the security questionnaire by Friday if possible\n\n**Key dates:**\n- Security review: Week of Oct 28\n- Contract finalization target: Mid-November\n- Onboarding kickoff: Early January\n\nLooking forward to moving forward together. Please let me know if you have any questions in the meantime.\n\nBest regards,\n[Your name]"
   },
+  
+  "coaching": {
+    "whatWentWell": [
+      "Strong rapport building at start of call - used first names and referenced previous conversation",
+      "Effective discovery questions uncovered key technical requirements",
+      "Clear articulation of product value props aligned to customer pain points",
+      "Secured concrete next steps with specific dates"
+    ],
+    "areasForImprovement": [
+      "Could have probed deeper on budget authority and approval process",
+      "Missed opportunity to identify additional stakeholders in legal/security",
+      "Didn't establish clear success criteria for pilot phase",
+      "Should have addressed pricing concerns more directly instead of deferring"
+    ],
+    "suggestedNextSteps": [
+      "Practice MEDDIC qualification framework - particularly Economic Buyer and Decision Criteria",
+      "Prepare pricing objection handling scripts",
+      "Research customer's org chart to map out buying committee"
+    ]
+  },
+  
+  "salesforceFieldUpdates": [
+    {
+      "objectType": "Opportunity",
+      "recordId": "006...",
+      "field": "StageName",
+      "currentValue": "Qualification",
+      "recommendedValue": "Needs Analysis",
+      "reasoning": "Customer confirmed budget, timeline, and specific use cases. Ready to move forward with technical evaluation.",
+      "confidence": "high"
+    },
+    {
+      "objectType": "Opportunity",
+      "recordId": "006...",
+      "field": "Next_Step__c",
+      "currentValue": "Schedule discovery call",
+      "recommendedValue": "Send pricing proposal and schedule executive sponsor meeting",
+      "reasoning": "Clear action items agreed upon in call with specific deadlines",
+      "confidence": "high"
+    },
+    {
+      "objectType": "Opportunity",
+      "recordId": "006...",
+      "field": "CloseDate",
+      "currentValue": "2024-12-31",
+      "recommendedValue": "2024-12-15",
+      "reasoning": "Customer mentioned Q4 budget deadline and wants to start onboarding in January",
+      "confidence": "high"
+    },
+    {
+      "objectType": "Contact",
+      "recordId": "003...",
+      "field": "Title",
+      "currentValue": "Engineering Manager",
+      "recommendedValue": "VP Engineering",
+      "reasoning": "Contact introduced himself with updated title during call",
+      "confidence": "high"
+    }
+  ],
   
   "crmPatch": {
     "accountKey": {
@@ -246,6 +307,68 @@ Respond with a JSON document containing all outputs:
 ### Recipients
 - **To**: Primary stakeholders who were on the call
 - **CC**: Internal team members who need visibility
+
+## Coaching Feedback Guidelines
+
+Analyze the AE's call performance and provide constructive coaching in three areas:
+
+### What Went Well
+- Identify **specific techniques** that were effective
+- Highlight **strong discovery questions** or rapport building
+- Note successful **objection handling** or value articulation
+- Recognize moments where the AE **advanced the sale**
+
+### Areas for Improvement
+- Point out **missed opportunities** (questions not asked, objections not addressed)
+- Identify **technique gaps** (MEDDIC elements not covered, champion not identified)
+- Note **communication issues** (talking too much, not active listening)
+- Suggest **better approaches** for specific moments in the call
+
+### Suggested Next Steps
+- Recommend **specific training** or frameworks to study (MEDDIC, SPIN, Challenger)
+- Suggest **preparation activities** for next calls (research, scripts, objection handling)
+- Provide **actionable coaching points** to practice
+
+**Tone**: Constructive and supportive, focused on growth. Always start with positives.
+
+## Salesforce Field Recommendations
+
+Provide **field-level** recommendations for updates to Salesforce objects based on the call. Each recommendation should:
+
+### Structure
+- **objectType**: Opportunity, Account, Contact, or Task
+- **recordId**: Salesforce ID if known (from current SF state)
+- **field**: API name of the field (e.g., "Next_Step__c", "StageName", "CloseDate")
+- **currentValue**: What's currently in SF (from SF state provided)
+- **recommendedValue**: What it should be updated to
+- **reasoning**: Why this change is recommended (reference specific call moments)
+- **confidence**: high/medium/low based on how explicit the information was in the call
+
+### Common Fields to Update
+
+**Opportunity Fields:**
+- `StageName`: Only recommend if clear buying signals justify stage progression
+- `Next_Step__c`: Immediate next action item
+- `CloseDate`: If timeline was discussed
+- `Feedback_Trends__c`: Customer sentiment and feedback
+- `Success_Criteria__c`: Customer-stated success metrics
+- `Feature_Requests__c`: Specific capabilities requested
+- `Path_To_Close__c`: Step-by-step close plan
+- `Likelihood_To_Close__c`: Probability assessment
+
+**Contact Fields:**
+- `Title`: If title mentioned differs from SF
+- `Department`: If learned in call
+- `Role`: (Champion, Blocker, Influencer, Decision Maker)
+
+**Account Fields:**
+- Update if new information learned about company
+
+### Guidelines
+1. **Only recommend updates for fields that actually need changing** based on new information from the call
+2. **Always include currentValue** so user can verify the change makes sense
+3. **Be specific in reasoning** - reference what was said in the call
+4. **Don't recommend speculative updates** - only suggest changes based on explicit information
 
 ## CRM Patch Format
 

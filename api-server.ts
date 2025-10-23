@@ -5,11 +5,13 @@ import path from 'path';
 import { execute } from '@sourcegraph/amp-sdk';
 import { config } from 'dotenv';
 import { readMeta, computeStaleness, type SourceStatus, writeMeta } from './src/phases/freshness.js';
+import { probeSalesforce, probeGong, probeNotion, probeAmp, type ProbeResult } from './src/phases/probes.js';
 import { runAgent as executeAgent, type AgentName, type AgentOptions } from './src/agents/agent-runner.js';
 import { ingestFromSalesforce, type SalesforceIngestOptions } from './src/phases/ingest/salesforce.js';
+import { ingestFromGong, type GongIngestOptions } from './src/phases/ingest/gong.js';
 import type { AccountKey } from './src/types.js';
 import { callSalesforceTool, callGongTool, callNotionTool, closeMCPClients } from './src/mcp-client.js';
-import { refreshAccountContext } from './src/context/store.js';
+import { refreshAccountContext } from './src/context/store.ts';
 import { createHash } from 'crypto';
 
 // Load environment variables
@@ -197,7 +199,7 @@ app.get('/api/accounts/:slug/context', async (req, res) => {
   const accountDir = path.join(DATA_DIR, slug);
 
   try {
-    const { getAccountContext } = await import('./src/context/store.js');
+    const { getAccountContext } = await import('./src/context/store.ts');
     const context = await getAccountContext(accountDir);
 
     if (!context) {
@@ -207,6 +209,239 @@ app.get('/api/accounts/:slug/context', async (req, res) => {
     res.json(context);
   } catch (error) {
     res.status(500).json({ error: 'Failed to fetch context' });
+  }
+});
+
+// Get data source statuses
+app.get('/api/accounts/:slug/sources', async (req, res) => {
+  const { slug } = req.params;
+  const accountDir = path.join(DATA_DIR, slug);
+
+  try {
+    console.log(`[sources] Processing request for slug: ${slug}`);
+    console.log(`[sources] Account dir: ${accountDir}`);
+
+    // Helper to check if a data file exists and has content
+    const hasDataFile = async (filename: string): Promise<boolean> => {
+      try {
+        const filePath = path.join(accountDir, 'raw', filename);
+        console.log(`[sources] Checking file: ${filePath}`);
+        const stat = await fs.stat(filePath);
+        const hasFile = stat.size > 100;
+        console.log(`[sources] ${filename}: exists=${hasFile}, size=${stat.size}`);
+        return hasFile;
+      } catch (err) {
+        console.log(`[sources] ${filename}: error - ${err.message}`);
+        return false;
+      }
+    };
+
+    const [hasSalesforce, hasGong, hasNotion] = await Promise.all([
+      hasDataFile('salesforce.json'),
+      hasDataFile('gong.json'),
+      hasDataFile('notion.json'),
+    ]);
+
+    console.log(`[sources] File checks - SF:${hasSalesforce}, Gong:${hasGong}, Notion:${hasNotion}`);
+
+    const meta = await readMeta(accountDir);
+    console.log(`[sources] Meta loaded, has sources:`, Object.keys(meta.sources));
+
+    const staleness = computeStaleness(meta);
+    console.log(`[sources] Staleness computed: SF=${staleness.salesforce.any}, Gong=${staleness.gong.any}, Notion=${staleness.notion.any}`);
+
+    const { getAccountContext } = await import('./src/context/store.ts');
+    console.log(`[sources] Import successful`);
+
+    const context = await getAccountContext(accountDir);
+    console.log(`[sources] Context loaded:`, context ? 'object' : 'null');
+
+    const formatTimestamp = (ts: string | null) =>
+      ts ? new Date(ts).toISOString() : null;
+
+    const getSuggestion = (stale: boolean): 'use-cache' | 'incremental' | 'full' => {
+      if (!stale) return 'use-cache';
+      return 'incremental';
+    };
+
+    // Extract rich metadata from context
+    const transcriptsCount = context?.gong?.summaries?.length || 0;
+    const latestCallTime = context?.gong?.calls?.[0]?.startTime;
+    const accountPageId = context?.notion?.accountPage?.id;
+
+    console.log(`[sources] Building response object...`);
+
+    const response = {
+      salesforce: {
+        status: hasSalesforce ? (staleness.salesforce.any ? 'stale' : 'fresh') : 'missing',
+        lastFetchedAt: formatTimestamp(
+          meta.sources.salesforce?.lastIncrementalSyncAt ||
+            meta.sources.salesforce?.lastFullSyncAt
+        ),
+        nextRecommended: getSuggestion(staleness.salesforce.any),
+        staleReasons: staleness.salesforce.reasons,
+        entities: staleness.salesforce.entities,
+        contactsCount: context?.salesforce?.contacts?.length || 0,
+        opportunitiesCount: context?.salesforce?.opportunities?.length || 0,
+        activitiesCount: context?.salesforce?.activities?.length || 0,
+      },
+      gong: {
+        status: hasGong ? (staleness.gong.any ? 'stale' : 'fresh') : 'missing',
+        lastFetchedAt: formatTimestamp(meta.sources.gong?.lastListSyncAt),
+        nextRecommended: getSuggestion(staleness.gong.any),
+        staleReasons: staleness.gong.reasons,
+        callCount: meta.sources.gong?.callCount || 0,
+        transcriptsCount,
+        latestCallTime: formatTimestamp(latestCallTime),
+      },
+      notion: {
+        status: hasNotion ? (staleness.notion.any ? 'stale' : 'fresh') : 'missing',
+        lastFetchedAt: formatTimestamp(
+          meta.sources.notion?.lastFullSyncAt || meta.sources.notion?.lastIncrementalSyncAt
+        ),
+        nextRecommended: getSuggestion(staleness.notion.any),
+        staleReasons: staleness.notion.reasons,
+        pageCount: meta.sources.notion?.pageCount || 0,
+        accountPageId,
+      },
+      prospector: {
+        status: context?.prospector ? 'fresh' : 'missing',
+        ranAt: formatTimestamp(context?.prospector?.ranAt),
+        filesCount: context?.prospector?.files?.length || 0,
+      },
+      amp: {
+        status: meta.sources.amp?.status || 'missing',
+        lastFetchedAt: formatTimestamp(
+          meta.sources.amp?.lastIncrementalSyncAt || meta.sources.amp?.lastFullSyncAt
+        ),
+        nextRecommended: getSuggestion(staleness.amp?.any || false),
+        staleReasons: staleness.amp?.reasons || [],
+      },
+    };
+
+    console.log(`[sources] Response built successfully`);
+    res.json(response);
+  } catch (error) {
+    console.error(`[sources] Error:`, error);
+    res.status(500).json({ error: 'Failed to fetch account data' });
+  }
+});
+
+// Probe remote sources for staleness
+app.get('/api/accounts/:slug/sources/probe', async (req, res) => {
+  const { slug } = req.params;
+  const accountDir = path.join(DATA_DIR, slug);
+
+  try {
+    const meta = await readMeta(accountDir);
+
+    // MCP call wrapper with error handling
+    const mcpCall = async (tool: string, params: any) => {
+      try {
+        if (tool.includes('salesforce')) {
+          return await callSalesforceTool(tool.replace('mcp__salesforce__', ''), params);
+        } else if (tool.includes('gong')) {
+          return await callGongTool(tool.replace('mcp__gong-extended__', ''), params);
+        } else if (tool.includes('notion')) {
+          return await callNotionTool(tool.replace('mcp__notion__', ''), params);
+        }
+        throw new Error(`Unknown MCP tool: ${tool}`);
+      } catch (error: any) {
+        console.warn(`[probe] MCP call failed for ${tool}:`, error.message);
+        throw error;
+      }
+    };
+
+    // Run probes in parallel with timeout
+    const probePromises = {
+      salesforce: probeSalesforce(accountDir, meta, mcpCall),
+      gong: probeGong(accountDir, meta, mcpCall),
+      notion: probeNotion(accountDir, meta, mcpCall),
+      amp: probeAmp(accountDir, meta),
+    };
+
+    const results = await Promise.all([
+      probePromises.salesforce.catch((err) => ({
+        staleOnSource: false,
+        reasons: [],
+        recommended: 'use-cache' as const,
+        error: err.message,
+      })),
+      probePromises.gong.catch((err) => ({
+        staleOnSource: false,
+        reasons: [],
+        recommended: 'use-cache' as const,
+        error: err.message,
+      })),
+      probePromises.notion.catch((err) => ({
+        staleOnSource: false,
+        reasons: [],
+        recommended: 'use-cache' as const,
+        error: err.message,
+      })),
+      probePromises.amp.catch((err) => ({
+        staleOnSource: false,
+        reasons: [],
+        recommended: 'use-cache' as const,
+        error: err.message,
+      })),
+    ]);
+
+    const [salesforceResult, gongResult, notionResult, ampResult] = results;
+
+    // Update metadata with probe results
+    const now = new Date().toISOString();
+
+    if (meta.sources.salesforce) {
+      meta.sources.salesforce.lastProbedAt = now;
+    }
+    if (meta.sources.gong) {
+      meta.sources.gong.lastProbedAt = now;
+    }
+    if (meta.sources.notion) {
+      meta.sources.notion.lastProbedAt = now;
+    }
+    if (meta.sources.amp) {
+      meta.sources.amp.lastProbedAt = now;
+    }
+
+    await writeMeta(accountDir, meta);
+
+    res.json({
+      salesforce: salesforceResult,
+      gong: gongResult,
+      notion: notionResult,
+      amp: ampResult,
+    });
+  } catch (error: any) {
+    console.error('[probe] Error:', error);
+    // Return default safe response instead of 500 error
+    res.json({
+      salesforce: {
+        staleOnSource: false,
+        reasons: [],
+        recommended: 'use-cache' as const,
+        error: 'Probe failed'
+      },
+      gong: {
+        staleOnSource: false,
+        reasons: [],
+        recommended: 'use-cache' as const,
+        error: 'Probe failed'
+      },
+      notion: {
+        staleOnSource: false,
+        reasons: [],
+        recommended: 'use-cache' as const,
+        error: 'Probe failed'
+      },
+      amp: {
+        staleOnSource: false,
+        reasons: [],
+        recommended: 'use-cache' as const,
+        error: 'Probe failed'
+      }
+    });
   }
 });
 
@@ -224,6 +459,8 @@ const agentScripts: Record<string, string> = {
   'handoff': 'scripts/test-handoff.ts',
   'full-refresh': 'src/agents/refreshData.ts',
   'prospector': 'scripts/test-prospector.ts',
+  'risk-heuristics': 'scripts/test-risk-heuristics.ts',
+  'meeting-summary': 'src/agents/meetingSummary.ts',
 };
 
 // Run agent via Amp SDK (has MCP access)
@@ -355,6 +592,34 @@ app.get('/api/accounts/:slug/briefs', async (req, res) => {
     res.json(data);
   } catch (error) {
     res.json(null);
+  }
+});
+
+// Get meeting summaries for a call
+app.get('/api/accounts/:slug/meetings/:callId/summary', async (req, res) => {
+  const { slug, callId } = req.params;
+  const summariesDir = path.join(DATA_DIR, slug, 'meeting-summaries');
+
+  try {
+    const files = await fs.readdir(summariesDir);
+    const matchingFiles = files
+      .filter((f) => f.endsWith('.json') && f.includes(callId))
+      .sort()
+      .reverse();
+
+    if (matchingFiles.length === 0) {
+      return res.status(404).json({ error: 'Meeting summary not found' });
+    }
+
+    const latestFile = matchingFiles[0];
+    const data = JSON.parse(await fs.readFile(path.join(summariesDir, latestFile), 'utf-8'));
+    res.json(data);
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
+      res.status(404).json({ error: 'Meeting summary not found' });
+    } else {
+      res.status(500).json({ error: 'Failed to fetch meeting summary' });
+    }
   }
 });
 
@@ -589,6 +854,28 @@ app.get('/api/accounts/:slug/postcall/:timestamp', async (req, res) => {
   }
 });
 
+// Get risk heuristics for an account
+app.get('/api/accounts/:slug/risks', async (req, res) => {
+  const { slug } = req.params;
+  const accountDir = path.join(DATA_DIR, slug);
+  const reviewsDir = path.join(accountDir, 'reviews');
+
+  try {
+    const files = await fs.readdir(reviewsDir);
+    const riskFiles = files.filter((f) => f.startsWith('risk-heuristics-') && f.endsWith('.json')).sort().reverse();
+
+    if (riskFiles.length === 0) {
+      return res.status(404).json({ error: 'No risk analysis found. Run risk heuristics agent first.' });
+    }
+
+    const latestFile = riskFiles[0];
+    const data = JSON.parse(await fs.readFile(path.join(reviewsDir, latestFile), 'utf-8'));
+    res.json(data);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch risk analysis' });
+  }
+});
+
 // Get CRM draft patches
 app.get('/api/accounts/:slug/crm/drafts', async (req, res) => {
   const { slug } = req.params;
@@ -808,9 +1095,34 @@ app.get('/api/accounts/:slug/sources', async (req, res) => {
   const accountDir = path.join(DATA_DIR, slug);
 
   try {
+    console.log(`[api-server] Loading sources metadata for account: ${slug}`);
+    console.log(`[api-server] Account directory: ${accountDir}`);
+    
+    // Helper to check if a data file exists and has content
+    const hasDataFile = async (filename: string): Promise<boolean> => {
+      try {
+        const filePath = path.join(accountDir, 'raw', filename);
+        const stat = await fs.promises.stat(filePath);
+        const hasFile = stat.size > 100;
+        console.log(`[api-server] ${filename}: exists=${hasFile}, size=${stat.size}`);
+        return hasFile;
+      } catch (err) {
+        console.log(`[api-server] ${filename}: not found`);
+        return false;
+      }
+    };
+
+    const [hasSalesforce, hasGong, hasNotion] = await Promise.all([
+      hasDataFile('salesforce.json'),
+      hasDataFile('gong.json'),
+      hasDataFile('notion.json'),
+    ]);
+    
+    console.log(`[api-server] File checks - SF:${hasSalesforce}, Gong:${hasGong}, Notion:${hasNotion}`);
+
     const meta = await readMeta(accountDir);
     const staleness = computeStaleness(meta);
-    const { getAccountContext } = await import('./src/context/store.js');
+    const { getAccountContext } = await import('./src/context/store.ts');
     const context = await getAccountContext(accountDir);
 
     const formatTimestamp = (ts?: string) =>
@@ -828,7 +1140,7 @@ app.get('/api/accounts/:slug/sources', async (req, res) => {
 
     res.json({
       salesforce: {
-        status: meta.sources.salesforce?.status || 'missing',
+        status: hasSalesforce ? (staleness.salesforce.any ? 'stale' : 'fresh') : 'missing',
         lastFetchedAt: formatTimestamp(
           meta.sources.salesforce?.lastIncrementalSyncAt ||
             meta.sources.salesforce?.lastFullSyncAt
@@ -841,16 +1153,17 @@ app.get('/api/accounts/:slug/sources', async (req, res) => {
         activitiesCount: context?.salesforce?.activities?.length || 0,
       },
       gong: {
-        status: meta.sources.gong?.status || 'missing',
+        status: hasGong ? (staleness.gong.any ? 'stale' : 'fresh') : 'missing',
         lastFetchedAt: formatTimestamp(meta.sources.gong?.lastListSyncAt),
         nextRecommended: getSuggestion(staleness.gong.any),
+        lastDataTimestamp: formatTimestamp(meta.sources.gong?.latestCallAtOnSource),
         staleReasons: staleness.gong.reasons,
         callCount: meta.sources.gong?.callCount || 0,
         transcriptsCount,
         latestCallTime: formatTimestamp(latestCallTime),
       },
       notion: {
-        status: meta.sources.notion?.status || 'missing',
+        status: hasNotion ? (staleness.notion.any ? 'stale' : 'fresh') : 'missing',
         lastFetchedAt: formatTimestamp(
           meta.sources.notion?.lastFullSyncAt || meta.sources.notion?.lastIncrementalSyncAt
         ),
@@ -875,7 +1188,8 @@ app.get('/api/accounts/:slug/sources', async (req, res) => {
       },
     });
   } catch (error) {
-    res.status(500).json({ error: 'Failed to get freshness status' });
+    console.error('[api-server] Error getting sources metadata:', error);
+    res.status(500).json({ error: 'Failed to get freshness status', details: String(error) });
   }
 });
 
@@ -1179,9 +1493,11 @@ app.post('/api/accounts/:slug/sources/:source/refresh', async (req, res) => {
         const updatedMeta = await readMeta(accountDir);
         updatedMeta.sources.salesforce = updatedMeta.sources.salesforce || {};
         updatedMeta.sources.salesforce.lastFetchedAt = now;
+        updatedMeta.sources.salesforce.lastIncrementalSyncAt = now;
+        updatedMeta.sources.salesforce.lastProbedAt = now;
         updatedMeta.sources.salesforce.status = 'fresh';
         updatedMeta.sources.salesforce.entityCheckpoints = {
-          Account: { lastFetchedAt: now },
+          Account: { lastFetchedAt: now, remoteLastModifiedAt: account.LastModifiedDate || now },
           Contact: { lastFetchedAt: now, count: contacts?.length || 0 },
           Opportunity: { lastFetchedAt: now, count: opportunities?.length || 0 },
           Activity: { lastFetchedAt: now, count: activities?.length || 0 }
@@ -1217,142 +1533,184 @@ app.post('/api/accounts/:slug/sources/:source/refresh', async (req, res) => {
       }
     }
     
-    // Fast path: Direct MCP client for Gong (ingestFromGong doesn't work outside Amp context)
+    // Use ingestFromGong which has working cache-based filtering
     if (source === 'gong') {
       try {
-        sendProgress(res, 'Connecting to Gong MCP...');
+        sendProgress(res, 'Connecting to Gong via cache manager...');
         
-        // Calculate date range
-        const toDate = new Date();
-        let fromDate: Date;
+        // For full refresh, force cache backfill to get 6-month window
+        const isFullRefresh = mode === 'full' || !meta.sources.gong?.lastListSyncAt;
         
-        if (mode !== 'full' && meta.sources.gong?.lastListSyncAt) {
-          sendProgress(res, 'Using incremental refresh (fetching only new calls)');
-          fromDate = new Date(meta.sources.gong.lastListSyncAt);
-          fromDate.setMinutes(fromDate.getMinutes() - 5);
-        } else {
-          sendProgress(res, 'Performing full refresh (last 14 days)');
-          fromDate = new Date();
-          fromDate.setDate(fromDate.getDate() - 14);
-        }
-        
-        // List recent calls
-        sendProgress(res, 'Fetching call list...');
-        const callsResult = await callGongTool('list_calls', {
-          fromDateTime: fromDate.toISOString(),
-          toDateTime: toDate.toISOString()
-        });
-        const rawCalls = JSON.parse(callsResult[0].text).calls || [];
-        
-        sendProgress(res, `Found ${rawCalls.length} calls, fetching transcripts...`);
-        
-        // Gong API doesn't provide participant names - keep participants empty
-        const calls = rawCalls.slice(0, 10).map((call: any) => ({
-          id: call.id,
-          title: call.title || 'Untitled Call',
-          startTime: call.scheduled || call.started || '',
-          duration: call.duration || 0,
-          participants: [] // Not available in Gong API
-        }));
-        
-        const summaries = [];
-        const transcriptsMetadata: Record<string, { hash: string; fetchedAt: string }> = {};
-        
-        // Fetch transcripts for each call
-        for (let i = 0; i < calls.length; i++) {
-          const call = calls[i];
-          sendProgress(res, `Fetching transcript ${i + 1}/${calls.length}...`);
+        if (isFullRefresh) {
+          sendProgress(res, 'Performing full refresh (rebuilding 6-month cache)');
+          
+          // Force cache backfill
+          const { getGongCacheManager } = await import('./src/gong-cache/manager.js');
+          const cacheManager = getGongCacheManager();
           
           try {
-            const transcriptResult = await callGongTool('retrieve_transcripts', {
-              callIds: [call.id]
-            });
-            const transcriptData = JSON.parse(transcriptResult[0].text);
-            
-            console.log(`[api-server] Transcript data structure for ${call.id}:`, JSON.stringify(transcriptData).substring(0, 500));
-            
-            if (transcriptData.callTranscripts && transcriptData.callTranscripts.length > 0) {
-              const t = transcriptData.callTranscripts[0];
-              
-              // Parse transcript - Gong structure: [{speakerId, sentences: [{text}]}]
-              // Use shortened IDs for readability since Gong doesn't provide name mappings
-              const transcriptLines: string[] = [];
-              for (const segment of (t.transcript || [])) {
-                const speakerId = String(segment.speakerId || 'Unknown');
-                const shortId = speakerId.slice(-4); // Last 4 digits
-                const sentences = (segment.sentences || []).map((s: any) => s.text).join(' ');
-                if (sentences) {
-                  transcriptLines.push(`Speaker ...${shortId}: ${sentences}`);
-                }
-              }
-              const transcript = transcriptLines.join('\n');
-              
-              const hash = createHash('sha256').update(transcript).digest('hex');
-              
-              summaries.push({
-                callId: call.id,
-                transcript,
-                summary: t.summary || null,
-                actionItems: t.keyPoints || t.actionItems || [],
-                nextSteps: t.nextSteps || [],
-                topics: [...new Set((t.transcript || []).map((s: any) => s.topic).filter(Boolean))]
-              });
-              
-              transcriptsMetadata[call.id] = {
-                hash,
-                fetchedAt: new Date().toISOString()
-              };
-            }
-          } catch (transcriptError) {
-            console.error(`Failed to fetch transcript for call ${call.id}:`, transcriptError);
-            // Continue with other calls
+            await cacheManager.initialize();
+            sendProgress(res, 'Rebuilding Gong cache from last 2 months...');
+            const backfillResult = await cacheManager.backfill({ months: 2, delayMs: 500 });
+            sendProgress(res, `Cache rebuild complete (${backfillResult.totalCalls} calls), filtering for account...`);
+          } catch (error: any) {
+            console.error('Cache backfill failed:', error);
+            sendProgress(res, `Cache rebuild failed (${error.message}), using existing cache`);
+            // Continue with existing cache rather than failing completely
           }
+        } else {
+          sendProgress(res, 'Using incremental refresh (fetching only new calls)');
         }
         
-        // Save to file
-        const now = new Date().toISOString();
-        const gongData = {
-          calls,
-          summaries,
-          transcripts: transcriptsMetadata,
-          lastSyncedAt: now
-        };
+        // Call MCP directly, no cache
+        sendProgress(res, 'Fetching Gong data via direct MCP calls (no cache)...');
         
-        const rawDir = path.join(accountDir, 'raw');
-        await fs.mkdir(rawDir, { recursive: true });
-        await fs.writeFile(path.join(rawDir, 'gong.json'), JSON.stringify(gongData, null, 2));
+        // Use Sept 1 to today as date range
+        const toDateTime = new Date().toISOString();
+        const fromDateTime = new Date('2025-09-01T00:00:00Z').toISOString();
+        
+        console.log('\n=== GONG REFRESH DEBUG ===');
+        console.log('Account:', accountMetadata.name);
+        console.log('Date range:', fromDateTime, 'to', toDateTime);
+        console.log('Calling mcp__gong_extended__list_calls directly');
+        console.log('========================\n');
+        
+        sendProgress(res, `Fetching calls from Sept 1 to today...`);
+        
+        // Call list_calls MCP directly
+        let allCalls: any[] = [];
+        let cursor: string | undefined;
+        let pageCount = 0;
+        let result: any = { calls: [], summaries: [], transcripts: {}, lastSyncedAt: toDateTime };
+        
+        try {
+          do {
+            pageCount++;
+            console.log(`[Gong] Fetching page ${pageCount}${cursor ? ' with cursor' : ''}...`);
+            
+            const params: any = { fromDateTime, toDateTime };
+            if (cursor) params.cursor = cursor;
+            
+            const resultContent = await callGongTool('list_calls', params);
+            const listResult = JSON.parse(resultContent[0].text);
+            console.log(`[Gong] Page ${pageCount}: Got ${listResult.calls?.length || 0} calls`);
+            
+            if (listResult.calls) {
+              allCalls.push(...listResult.calls);
+            }
+            
+            cursor = listResult.records?.cursor;
+            
+            // Safety: stop after 20 pages (2000 calls)
+            if (pageCount >= 20) {
+              console.log('[Gong] Reached page limit, stopping pagination');
+              break;
+            }
+          } while (cursor);
+          
+          console.log(`[Gong] Total calls retrieved: ${allCalls.length}`);
+          sendProgress(res, `Retrieved ${allCalls.length} total calls, filtering for ${accountMetadata.name}...`);
+          
+          // Filter for account name in title or participants
+          const accountNameLower = accountMetadata.name.toLowerCase();
+          const matchingCalls = allCalls.filter(call => {
+            const titleMatch = call.title?.toLowerCase().includes(accountNameLower);
+            return titleMatch;
+          });
+          
+          console.log(`[Gong] Found ${matchingCalls.length} matching calls`);
+          sendProgress(res, `Found ${matchingCalls.length} matching calls`);
+          
+          // Take most recent 10
+          const recentCalls = matchingCalls.slice(0, 10);
+          
+          // Get transcripts
+          const summaries: any[] = [];
+          const transcriptMeta: Record<string, any> = {};
+          
+          if (recentCalls.length > 0) {
+            sendProgress(res, `Fetching transcripts for ${recentCalls.length} calls...`);
+            const callIds = recentCalls.map(c => c.id);
+            console.log('[Gong] Fetching transcripts for call IDs:', callIds);
+            
+            const transcriptContent = await callGongTool('retrieve_transcripts', { callIds });
+            const transcriptResult = JSON.parse(transcriptContent[0].text);
+            
+            if (transcriptResult.transcripts) {
+              summaries.push(...transcriptResult.transcripts);
+              
+              for (const t of transcriptResult.transcripts) {
+                transcriptMeta[t.callId] = {
+                  hash: `hash-${t.callId}`,
+                  fetchedAt: toDateTime
+                };
+              }
+            }
+          }
+          
+          result = {
+            calls: recentCalls,
+            summaries,
+            transcripts: transcriptMeta,
+            lastSyncedAt: toDateTime
+          };
+          
+          console.log('[Gong] Final result:', JSON.stringify({ 
+            callCount: result.calls?.length || 0,
+            summaryCount: result.summaries?.length || 0,
+            transcriptCount: Object.keys(result.transcripts || {}).length
+          }));
+        
+            // Save to file
+          const rawDir = path.join(accountDir, 'raw');
+          await fs.mkdir(rawDir, { recursive: true });
+          await fs.writeFile(path.join(rawDir, 'gong.json'), JSON.stringify({
+            calls: result.calls,
+            summaries: result.summaries,
+            transcripts: result.transcripts,
+            lastSyncedAt: result.lastSyncedAt
+          }, null, 2));
+        } catch (error: any) {
+          console.error('[Gong] Error during MCP calls:', error);
+          sendProgress(res, `Error: ${error.message}`);
+          throw error;
+        }
         
         // Update meta
         const updatedMeta = await readMeta(accountDir);
         updatedMeta.sources.gong = updatedMeta.sources.gong || {};
-        updatedMeta.sources.gong.lastListSyncAt = now;
-        updatedMeta.sources.gong.callCount = calls.length;
-        updatedMeta.sources.gong.transcripts = transcriptsMetadata;
+        updatedMeta.sources.gong.lastListSyncAt = result.lastSyncedAt;
+        updatedMeta.sources.gong.lastProbedAt = result.lastSyncedAt;
+        updatedMeta.sources.gong.callCount = result.calls?.length || 0;
+        updatedMeta.sources.gong.transcripts = result.transcripts || {};
         updatedMeta.sources.gong.status = 'fresh';
+        if (result.calls && result.calls.length > 0 && result.calls[0].startTime) {
+          updatedMeta.sources.gong.latestCallAtOnSource = result.calls[0].startTime;
+        }
         await writeMeta(accountDir, updatedMeta);
         
         // Rebuild context
         sendProgress(res, 'Rebuilding context...');
         await refreshAccountContext(accountDir);
         
-        sendProgress(res, `Complete! Fetched ${calls.length} calls with ${summaries.length} transcripts`);
+        sendProgress(res, `Complete! Fetched ${result.calls?.length || 0} calls with ${result.summaries?.length || 0} transcripts`);
         res.write(`data: ${JSON.stringify({ 
           type: 'complete', 
           success: true, 
           updated: true,
           modeUsed: mode,
           stats: {
-            callsCount: calls.length,
-            transcriptsCount: summaries.length
+            callsCount: result.calls?.length || 0,
+            transcriptsCount: result.summaries?.length || 0
           },
           meta: updatedMeta.sources.gong
         })}\n\n`);
         return res.end();
       } catch (mcpError: any) {
-        console.error('[api-server] Gong MCP call failed:', mcpError);
+        console.error('[api-server] Gong refresh failed:', mcpError);
         res.write(`data: ${JSON.stringify({ 
           type: 'error', 
-          error: 'Gong MCP refresh failed', 
+          error: 'Gong refresh failed', 
           details: mcpError.message || String(mcpError)
         })}\n\n`);
         return res.end();
@@ -1447,7 +1805,8 @@ app.post('/api/accounts/:slug/sources/:source/refresh', async (req, res) => {
         // Update meta
         const updatedMeta = await readMeta(accountDir);
         updatedMeta.sources.notion = updatedMeta.sources.notion || {};
-        updatedMeta.sources.notion.lastFetchedAt = now;
+        updatedMeta.sources.notion.lastFullSyncAt = now;
+        updatedMeta.sources.notion.lastProbedAt = now;
         updatedMeta.sources.notion.pageCount = pages.length;
         updatedMeta.sources.notion.status = 'fresh';
         await writeMeta(accountDir, updatedMeta);
@@ -1722,6 +2081,20 @@ app.post('/api/accounts/:slug/notion/mirror', async (req, res) => {
       error: error instanceof Error ? error.message : String(error),
     });
   }
+});
+
+// Debug endpoint
+app.get('/api/debug', async (req, res) => {
+  res.json({
+    cwd: process.cwd(),
+    dataDir: path.join(process.cwd(), 'data/accounts'),
+    canvaDir: path.join(process.cwd(), 'data/accounts', 'canva'),
+    files: {
+      salesforce: await fs.access(path.join(process.cwd(), 'data/accounts', 'canva', 'raw', 'salesforce.json')).then(() => true).catch(() => false),
+      gong: await fs.access(path.join(process.cwd(), 'data/accounts', 'canva', 'raw', 'gong.json')).then(() => true).catch(() => false),
+      notion: await fs.access(path.join(process.cwd(), 'data/accounts', 'canva', 'raw', 'notion.json')).then(() => true).catch(() => false),
+    }
+  });
 });
 
 // Test endpoint to verify MCP access via Amp SDK

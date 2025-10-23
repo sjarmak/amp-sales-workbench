@@ -55,6 +55,10 @@ export function DataSourcesTab({ accountSlug }: DataSourcesTabProps) {
           console.log(`[DataSourcesTab] ${source} data loaded:`, data ? Object.keys(data) : 'null/undefined')
         }
         setter(data)
+      } else if (res.status === 404) {
+        // 404 is expected when data hasn't been synced yet - don't log as error
+        console.log(`[DataSourcesTab] ${source} data not yet synced (404)`)
+        setter(null) // Will show "No data available"
       } else {
         console.error(`[DataSourcesTab] ${source} failed:`, res.status)
         setter({ error: 'Data not available' })
