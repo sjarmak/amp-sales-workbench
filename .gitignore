@@ -1,0 +1,56 @@
+node_modules/
+.env
+*.log
+.DS_Store
+dist/
+
+# ALL customer/sales data - NEVER commit to repo
+data/
+service-account.json
+notion-config.json
+*.bak
+
+# Analysis scripts with hardcoded customer data (Salesforce IDs, company names)
+scripts/analyze-account-stages.py
+scripts/analyze-buyer-persona.py
+scripts/analyze-closed-won-deep-dive.py
+scripts/analyze-entry-points.py
+scripts/analyze-mcp-deepsearch.py
+scripts/analyze-pain-product-affinity.py
+scripts/analyze-pipegen-attribution.py
+scripts/analyze-pipeline-strategy.py
+scripts/analyze-salesforce-notes-insights.py
+scripts/extract-eb-champion.py
+scripts/generate-combined-report.py
+scripts/generate-deep-report.py
+scripts/generate-salesforce-insights-docx.py
+
+# Beads issue data (contains customer references in descriptions)
+.beads/issues.jsonl
+.beads/metadata.json
+.beads/.local_version
+.beads/daemon.pid
+
+# Python
+venv/
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+.pytest_cache/
+
+# Sensitive files
+.sf-tokens.json
+config/gcp-service-account.json
+config/gong-search-overrides.json
+
+# Build / IDE
+.next/
+web/.next/
+.test-results/
+.debug-logs/
+.reports/
+
+# AI planning docs
+history/

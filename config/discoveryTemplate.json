@@ -1,0 +1,104 @@
+{
+  "_MOCK_DATA": true,
+  "_description": "MOCK: Discovery call question framework. Replace with actual discovery methodology from sales enablement. This should come from: (1) Existing Notion discovery docs, (2) Sales training materials, (3) MEDDPICC/BANT/SPICED framework docs.",
+  "_replaceWith": "Import from sales enablement Notion page or training deck",
+  
+  "framework": {
+    "name": "Discovery Question Framework",
+    "version": "1.0-mock",
+    "methodology": "MEDDPICC",
+    
+    "categories": [
+      {
+        "id": "situation",
+        "name": "Current Situation",
+        "purpose": "Understand the customer's current state",
+        "questions": [
+          "Can you walk me through your current development workflow?",
+          "How many developers are on your team?",
+          "What tools are you currently using for code search/navigation?",
+          "How do you handle onboarding new developers to the codebase?"
+        ]
+      },
+      {
+        "id": "pain",
+        "name": "Pain Points (Identify Pain)",
+        "purpose": "Uncover specific challenges and their impact",
+        "questions": [
+          "What's the biggest challenge your developers face when working across the codebase?",
+          "How much time do developers spend searching for code vs writing code?",
+          "What happens when a critical bug is discovered - how long does it take to trace it?",
+          "Have you ever had issues with developers duplicating work because they couldn't find existing code?"
+        ]
+      },
+      {
+        "id": "metrics",
+        "name": "Metrics (M)",
+        "purpose": "Quantify the business impact",
+        "questions": [
+          "What would success look like for improving developer productivity?",
+          "How do you currently measure developer velocity?",
+          "What's the cost of context-switching for your developers?",
+          "If you could reduce time-to-first-commit for new hires, what would that mean for the business?"
+        ]
+      },
+      {
+        "id": "economicBuyer",
+        "name": "Economic Buyer (E)",
+        "purpose": "Identify budget authority and decision process",
+        "questions": [
+          "Who would ultimately sign off on a purchase like this?",
+          "Is there a budget allocated for developer tooling this quarter/year?",
+          "How does your organization typically evaluate and purchase new dev tools?"
+        ]
+      },
+      {
+        "id": "decisionCriteria",
+        "name": "Decision Criteria (D)",
+        "purpose": "Understand evaluation requirements",
+        "questions": [
+          "What are the must-have features you'd need to see?",
+          "Are there any security or compliance requirements we should know about?",
+          "How important is self-hosted vs cloud deployment for your organization?"
+        ]
+      },
+      {
+        "id": "decisionProcess",
+        "name": "Decision Process (D)",
+        "purpose": "Map the buying journey",
+        "questions": [
+          "What does your typical evaluation process look like?",
+          "Who else would need to be involved in this decision?",
+          "What's your timeline for making a decision?"
+        ]
+      },
+      {
+        "id": "champion",
+        "name": "Champion (C)",
+        "purpose": "Identify and enable internal advocates",
+        "questions": [
+          "Who internally is most excited about solving this problem?",
+          "Who would be the day-to-day user and advocate for this tool?",
+          "Have you evaluated similar solutions before? What happened?"
+        ]
+      },
+      {
+        "id": "competition",
+        "name": "Competition (C)",
+        "purpose": "Understand competitive landscape",
+        "questions": [
+          "Are you looking at any other solutions to solve this problem?",
+          "What do you like/dislike about your current approach?",
+          "Is 'do nothing' an option, or is there pressure to solve this now?"
+        ]
+      }
+    ],
+    
+    "followUpPatterns": {
+      "shallow": ["Can you tell me more about that?", "What do you mean by that?"],
+      "impact": ["What's the impact of that on the team?", "How does that affect your timeline?"],
+      "quantify": ["How often does that happen?", "How much time does that cost?"],
+      "stakeholder": ["Who else is affected by this?", "Does your manager see this as a priority?"]
+    }
+  }
+}

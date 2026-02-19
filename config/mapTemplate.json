@@ -1,0 +1,81 @@
+{
+  "_MOCK_DATA": true,
+  "_description": "MOCK: Mutual Action Plan template. Replace with actual MAP template from your sales methodology. This should come from: (1) Google Docs MAP template, (2) Sales enablement Notion page, or (3) Salesforce MAP object fields.",
+  "_replaceWith": "Contact sales enablement team for official MAP template structure",
+  
+  "template": {
+    "name": "Mutual Action Plan",
+    "version": "1.0-mock",
+    "sections": [
+      {
+        "id": "objectives",
+        "title": "Business Objectives",
+        "description": "What the customer wants to achieve",
+        "fields": [
+          { "name": "primaryObjective", "type": "text", "required": true },
+          { "name": "successMetrics", "type": "list", "required": true },
+          { "name": "targetDate", "type": "date", "required": true }
+        ]
+      },
+      {
+        "id": "evaluation",
+        "title": "Evaluation Criteria",
+        "description": "How the customer will evaluate the solution",
+        "fields": [
+          { "name": "technicalRequirements", "type": "list", "required": true },
+          { "name": "businessRequirements", "type": "list", "required": true },
+          { "name": "mustHaveFeatures", "type": "list", "required": true },
+          { "name": "niceToHaveFeatures", "type": "list", "required": false }
+        ]
+      },
+      {
+        "id": "milestones",
+        "title": "Key Milestones",
+        "description": "Timeline and checkpoints",
+        "defaultMilestones": [
+          { "name": "Discovery Complete", "owner": "AE", "daysFromStart": 7 },
+          { "name": "Technical Demo", "owner": "SE", "daysFromStart": 14 },
+          { "name": "POC Kickoff", "owner": "SE", "daysFromStart": 21 },
+          { "name": "POC Review", "owner": "AE+SE", "daysFromStart": 42 },
+          { "name": "Business Case Review", "owner": "AE", "daysFromStart": 49 },
+          { "name": "Security Review", "owner": "Customer", "daysFromStart": 56 },
+          { "name": "Contract Negotiation", "owner": "AE", "daysFromStart": 63 },
+          { "name": "Close", "owner": "AE", "daysFromStart": 70 }
+        ]
+      },
+      {
+        "id": "stakeholders",
+        "title": "Stakeholder Map",
+        "description": "Key people involved in the decision",
+        "roles": [
+          { "role": "Economic Buyer", "required": true },
+          { "role": "Champion", "required": true },
+          { "role": "Technical Evaluator", "required": true },
+          { "role": "End Users", "required": false },
+          { "role": "Legal/Procurement", "required": false }
+        ]
+      },
+      {
+        "id": "technicalWin",
+        "title": "Technical Win Criteria",
+        "description": "What constitutes a successful POC/trial",
+        "fields": [
+          { "name": "successCriteria", "type": "list", "required": true },
+          { "name": "integrationRequirements", "type": "list", "required": false },
+          { "name": "securityRequirements", "type": "list", "required": false },
+          { "name": "performanceBaselines", "type": "list", "required": false }
+        ]
+      },
+      {
+        "id": "risks",
+        "title": "Risks & Mitigations",
+        "description": "Potential blockers and how to address them",
+        "defaultRisks": [
+          { "risk": "Budget not approved", "mitigation": "Engage economic buyer early" },
+          { "risk": "Champion leaves", "mitigation": "Build multiple relationships" },
+          { "risk": "Security review delays", "mitigation": "Start security process early" }
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,216 @@
+{
+  "project": "Sales Workbench",
+  "branchName": "closed-won-deep-dive",
+  "description": "Closed-Won Deep Dive Report - End-to-end analysis of all closed-won Code Search opportunities in FY25+FY26, tracing deals from top-of-funnel through close. Python analysis script (pure stdlib) producing structured JSON and self-contained HTML report.",
+  "userStories": [
+    {
+      "id": "US-001",
+      "title": "Create script scaffold with data loading and core filters",
+      "description": "As an analyst, I need a Python script that loads all six data sources and filters to closed-won Code Search opps in FY25+FY26.",
+      "acceptanceCriteria": [
+        "Create scripts/analyze-closed-won-deep-dive.py using pure stdlib Python (csv, json, re, collections, pathlib, statistics, datetime)",
+        "Load sfdc_opportunities.csv, sfdc_account_details.csv, sfdc_contact_roles.csv, sfdc_leads_qualified.csv from data/global/",
+        "Load salesforce_notes_product_subset.jsonl and gong_calls_portfolio.jsonl from data/global/",
+        "Copy the is_code_search_opp() product filtering pattern from scripts/analyze-pipeline-strategy.py",
+        "Copy helper functions: safe_float(), safe_int(), parse_bool(), fmt_currency(), pct() from analyze-pipeline-strategy.py",
+        "Filter to is_won == true AND close_date within FY25 (2024-02-01 to 2025-01-31) or FY26 (2025-02-01 to 2026-01-31)",
+        "Build lookup dicts: account_details by account_id, contact_roles grouped by opp_id, leads by email",
+        "Build lookup: notes grouped by account_id, gong calls grouped by account (join via account_id field if present)",
+        "Print summary: total closed-won opps, total iARR, unique accounts, FY25 vs FY26 counts and iARR",
+        "Script runs without errors on existing data"
+      ],
+      "priority": 1,
+      "passes": true,
+      "notes": "This is the foundation. All subsequent stories add analysis functions to this script. Reference analyze-pipeline-strategy.py for the product filter and helper patterns."
+    },
+    {
+      "id": "US-002",
+      "title": "Add lead source and discovery channel analysis",
+      "description": "As a marketing strategist, I want to know how closed-won customers entered the funnel so I can allocate campaign budget.",
+      "acceptanceCriteria": [
+        "Add function analyze_discovery(won_opps, leads_by_email, contacts_by_opp) that returns a dict",
+        "Tabulate lead_source distribution for closed-won opps (count and iARR per source)",
+        "Tabulate first_touchpoint distribution",
+        "Cross-reference contacts with leads CSV via email to get lead_person_source_category and lead_first_touchpoint",
+        "Compute PLG signal prevalence: % of closed-won accounts with product_first_login_private or pql_flg set in matched leads",
+        "Compute win rate by lead source using ALL Code Search opps (not just won): won_count / total_count per lead_source",
+        "Break down by deal size tier: $0-50K, $50K-200K, $200K+",
+        "Break down by FY25 vs FY26",
+        "Print formatted tables to terminal",
+        "Store results in analysis dict under 'discovery' key",
+        "Script runs without errors"
+      ],
+      "priority": 2,
+      "passes": true,
+      "notes": "Need all Code Search opps (not just won) to compute win rates. The lead join is via email from contact_roles -> leads."
+    },
+    {
+      "id": "US-003",
+      "title": "Add buyer persona and committee analysis",
+      "description": "As a sales strategist, I want to understand who the economic buyers and champions are by title and role.",
+      "acceptanceCriteria": [
+        "Add function analyze_personas(won_opps, contacts_by_opp, leads_by_email, accounts_by_id) that returns a dict",
+        "Count and rank opp_contact_role distribution across closed-won opps",
+        "Compute average buying committee size (unique contacts per opp) with median and P75",
+        "Join contact emails to leads CSV to get lead_title and lead_title_level",
+        "Show top 10 most common titles for Economic Buyer role",
+        "Show top 10 most common titles for Champion role",
+        "Show committee composition by deal size tier ($0-50K, $50K-200K, $200K+)",
+        "Show committee composition by opportunity_type (New Business, Expansion, Renewal)",
+        "Print formatted tables to terminal",
+        "Store results under 'personas' key",
+        "Script runs without errors"
+      ],
+      "priority": 3,
+      "passes": true,
+      "notes": "Join path: contact_roles has email -> match to leads which have lead_title and lead_title_level."
+    },
+    {
+      "id": "US-004",
+      "title": "Add sales cycle velocity analysis",
+      "description": "As a sales leader, I want to know how long deals take to close by segment so I can forecast and find acceleration opportunities.",
+      "acceptanceCriteria": [
+        "Add function analyze_velocity(won_opps, accounts_by_id) that returns a dict",
+        "Compute median, mean, P25, P75 for days_to_close across all closed-won opps",
+        "Break down by deal size tier, opportunity_type, lead_source, fiscal_year, industry (from account details)",
+        "Show stage-by-stage median dwell time using opp_days_stage2_to_stage3 through opp_days_stage6_to_won fields",
+        "Identify bottleneck stage (longest median dwell)",
+        "Calculate POC duration (poc_end_date minus poc_start_date) for opps that have both dates",
+        "Show technical_win_achieved rate and median cycle time for technical-win vs non-technical-win deals",
+        "Identify 'fast wins' (<30 days) vs 'enterprise slog' (>180 days) with count and median iARR for each",
+        "Print formatted tables to terminal",
+        "Store results under 'velocity' key",
+        "Script runs without errors"
+      ],
+      "priority": 4,
+      "passes": true,
+      "notes": "Use statistics.median, statistics.mean. Handle missing/empty stage dwell fields gracefully."
+    },
+    {
+      "id": "US-005",
+      "title": "Add technology stack extraction from notes and Gong",
+      "description": "As a campaign strategist, I want to know what SCMs, code hosts, and languages our closed-won customers use.",
+      "acceptanceCriteria": [
+        "Add function analyze_stack(won_opps, notes_by_account, gong_by_account) that returns a dict",
+        "Define regex patterns for SCMs: GitHub, GitLab, Bitbucket, Azure DevOps, Perforce, SVN, Gerrit, Helix Core, AWS CodeCommit",
+        "Define regex patterns for languages: Java, Python, Go, TypeScript, JavaScript, C++, C#, Rust, Ruby, Scala, Kotlin, Swift, PHP, R, Objective-C",
+        "For Go language: use word boundary pattern that excludes 'go to', 'go ahead', 'let us go', 'going to', 'go with', 'go for', 'go through' etc.",
+        "Mine note_text from salesforce_notes for closed-won account_ids",
+        "Mine spotlight_brief, spotlight_key_points, transcript_text from gong_calls for closed-won account_ids",
+        "Produce per-account stack profile with mention counts",
+        "Show frequency table: SCMs ranked by account count, languages ranked by account count",
+        "Show top 5 co-occurrence pairs (e.g. GitHub+Java: N accounts)",
+        "Print formatted tables to terminal",
+        "Store results under 'stack' key",
+        "Script runs without errors"
+      ],
+      "priority": 5,
+      "passes": true,
+      "notes": "Go disambiguation is critical. Use negative lookbehind/lookahead. Case-insensitive for most, but case-sensitive for Go and R."
+    },
+    {
+      "id": "US-006",
+      "title": "Add competitive landscape analysis for won deals",
+      "description": "As a competitive strategist, I want to understand who we displaced in closed-won deals and win rates by competitor.",
+      "acceptanceCriteria": [
+        "Add function analyze_competition(won_opps, all_cs_opps) that returns a dict",
+        "Copy normalize_competitor() and SKIP_VALUES logic from analyze-pipeline-strategy.py",
+        "For closed-won opps: count competitor mentions, rank by frequency",
+        "Compute win rate per competitor: won / (won + lost) for opps mentioning that competitor (need closed-lost opps too)",
+        "Show average iARR and median cycle time for wins against each competitor (top 10)",
+        "Cross-tab competitor with lead_source (count matrix)",
+        "Cross-tab competitor with use case flags (use_case_code_reuse_flg etc.)",
+        "Filter out skip values (TBD, N/A, True-Up, Expansion, etc.)",
+        "Handle negative iARR correctly in averages",
+        "Print formatted tables to terminal",
+        "Store results under 'competition' key",
+        "Script runs without errors"
+      ],
+      "priority": 6,
+      "passes": true,
+      "notes": "Need both closed-won AND closed-lost opps to compute win rates. all_cs_opps should include both."
+    },
+    {
+      "id": "US-007",
+      "title": "Add product mix, use cases, and deal segmentation",
+      "description": "As a product marketing manager, I want to understand product bundles, use case patterns, and deal archetypes in won deals.",
+      "acceptanceCriteria": [
+        "Add function analyze_products(won_opps) that returns a dict",
+        "Parse products_included field (semicolon or comma separated) to extract individual products per opp",
+        "Show product frequency: count of each Code Search product in won deals",
+        "Show top 10 product bundle combinations (sorted set of products per opp, ranked by count)",
+        "Show use case flag distribution: use_case_code_reuse_flg, use_case_code_health_flg, use_case_dev_onboarding_flg, use_case_incident_response_flg, use_case_security_flg, use_case_dev_productivity_flg, use_case_fixing_vulns_flg",
+        "Add function analyze_segments(won_opps, accounts_by_id, contacts_by_opp) that returns a dict",
+        "Segment by deal size tier, opportunity_type, industry, region/geo",
+        "For each segment show: count, median iARR, median cycle time, top lead source, top use case",
+        "Show FY25 vs FY26 trends per segment (count and total iARR)",
+        "Print formatted tables to terminal",
+        "Store results under 'products' and 'segments' keys",
+        "Script runs without errors"
+      ],
+      "priority": 7,
+      "passes": true,
+      "notes": "Products field may be semicolon-separated. Some opps have blank products_included -- use opp name as fallback."
+    },
+    {
+      "id": "US-008",
+      "title": "Add JSON output with all analysis results",
+      "description": "As a downstream consumer, I need the analysis results in structured JSON for dashboards and follow-on scripts.",
+      "acceptanceCriteria": [
+        "Collect all analysis dicts into a single output structure",
+        "Add metadata section: run_timestamp (ISO 8601), filter_criteria (product filter, date range, won filter), record_counts (total opps loaded, total CS opps, closed-won count, accounts, contacts, notes, gong calls)",
+        "Add executive_summary section: total_deals, total_iarr, median_cycle_days, top_lead_source, top_competitor_beaten, top_use_case, top_buyer_title",
+        "Ensure all numeric values are raw numbers (int/float), not formatted strings",
+        "Use snake_case for all JSON keys",
+        "Write to data/global/analysis_closed_won_deep_dive.json with json.dump indent=2",
+        "Print confirmation message with file path and size",
+        "Script runs without errors and produces valid JSON"
+      ],
+      "priority": 8,
+      "passes": true,
+      "notes": "Use default=str in json.dump for any datetime objects that might slip through."
+    },
+    {
+      "id": "US-009",
+      "title": "Add HTML report generation - structure and styling",
+      "description": "As a sales leader, I need a polished HTML report with executive summary, tables, and navigation.",
+      "acceptanceCriteria": [
+        "Add function generate_html_report(analysis_results) that returns HTML string",
+        "Self-contained HTML with all CSS inline in a <style> block (no external resources)",
+        "Professional color scheme: dark headers, alternating row colors, clear typography",
+        "Table of contents at top with anchor links to each section",
+        "Executive summary section with headline metrics in a card/grid layout",
+        "Each analysis section rendered as formatted HTML tables with headers",
+        "Tables support: aligned numbers (right), left-aligned text, highlighted top values",
+        "Print-friendly: @media print styles that remove navigation, set white background",
+        "Write to data/global/closed_won_deep_dive_report.html",
+        "Report opens cleanly in Chrome",
+        "Script runs without errors"
+      ],
+      "priority": 9,
+      "passes": true,
+      "notes": "Use string formatting/f-strings for HTML generation, no template libraries. Keep it clean and readable."
+    },
+    {
+      "id": "US-010",
+      "title": "Add inline SVG charts to HTML report",
+      "description": "As a sales leader, I want visual charts in the report for quick pattern recognition.",
+      "acceptanceCriteria": [
+        "Add function render_bar_chart(data, title, width=600, bar_height=24) that returns SVG string",
+        "Bar chart: horizontal bars with labels on left, values on right, proportional bar widths",
+        "Generate SVG bar chart for: lead source distribution (top 10 by count)",
+        "Generate SVG bar chart for: competitor win frequency (top 10)",
+        "Generate SVG bar chart for: stage dwell times (stages 2-6 to won)",
+        "Generate SVG bar chart for: product frequency (all Code Search products)",
+        "Generate SVG bar chart for: use case flag distribution",
+        "Charts use consistent color scheme matching the report theme",
+        "Charts render correctly in Chrome and in PDF export via print",
+        "Insert charts into appropriate report sections alongside the data tables",
+        "Script runs without errors and report renders all charts"
+      ],
+      "priority": 10,
+      "passes": true,
+      "notes": "SVG uses <rect> elements for bars, <text> for labels. Viewbox-based sizing for responsiveness. No JavaScript."
+    }
+  ]
+}

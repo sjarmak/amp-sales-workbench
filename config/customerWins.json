@@ -1,0 +1,82 @@
+{
+  "_MOCK_DATA": true,
+  "_description": "MOCK: Customer success stories for social proof in executive summaries and proposals. Replace with actual case studies. This should come from: (1) Marketing case studies, (2) Notion customer wins page, (3) Sales enablement win stories.",
+  "_replaceWith": "Import from marketing case studies or Notion customer wins database",
+  
+  "wins": [
+    {
+      "id": "mock-1",
+      "customer": "ACME Corp",
+      "industry": "Financial Services",
+      "size": "10,000+ developers",
+      "useCase": "Code search and security remediation",
+      "challenge": "Needed to patch Log4j vulnerability across 2000+ repositories within 48 hours",
+      "solution": "Used Sourcegraph Code Search + Batch Changes to identify all instances and create automated PRs",
+      "results": [
+        "Patched 100% of affected repos in 36 hours",
+        "Saved estimated 2000 developer hours",
+        "Reduced MTTR for security vulnerabilities by 85%"
+      ],
+      "quote": {
+        "text": "Sourcegraph was the difference between a multi-week fire drill and a calm, organized response.",
+        "author": "VP of Engineering",
+        "title": "VP Engineering"
+      },
+      "relevantFor": ["security", "large-scale", "financial-services"]
+    },
+    {
+      "id": "mock-2",
+      "customer": "TechStartup Inc",
+      "industry": "Technology",
+      "size": "500 developers",
+      "useCase": "Developer onboarding and productivity",
+      "challenge": "New developers took 3+ months to become productive in a complex microservices architecture",
+      "solution": "Deployed Sourcegraph for code navigation and Cody for codebase Q&A",
+      "results": [
+        "Reduced onboarding time from 3 months to 3 weeks",
+        "90% of developers use Sourcegraph daily",
+        "30% improvement in time-to-first-commit for new hires"
+      ],
+      "quote": {
+        "text": "Our developers can't imagine working without Sourcegraph now. It's like having a senior engineer always available.",
+        "author": "Engineering Director",
+        "title": "Director of Engineering"
+      },
+      "relevantFor": ["onboarding", "productivity", "microservices"]
+    },
+    {
+      "id": "mock-3",
+      "customer": "Healthcare Solutions Ltd",
+      "industry": "Healthcare",
+      "size": "2,000 developers",
+      "useCase": "Code reuse and compliance",
+      "challenge": "Duplicate code across teams led to inconsistent HIPAA compliance implementations",
+      "solution": "Sourcegraph enabled discovery of existing compliant code patterns for reuse",
+      "results": [
+        "Identified and consolidated 40% duplicate code",
+        "Standardized compliance patterns across all teams",
+        "Reduced compliance audit findings by 60%"
+      ],
+      "quote": {
+        "text": "We finally have visibility into our entire codebase. No more reinventing the wheel.",
+        "author": "CTO",
+        "title": "Chief Technology Officer"
+      },
+      "relevantFor": ["compliance", "healthcare", "code-reuse"]
+    }
+  ],
+  
+  "byIndustry": {
+    "financial-services": ["mock-1"],
+    "technology": ["mock-2"],
+    "healthcare": ["mock-3"]
+  },
+  
+  "byUseCase": {
+    "security": ["mock-1"],
+    "onboarding": ["mock-2"],
+    "productivity": ["mock-2"],
+    "compliance": ["mock-3"],
+    "code-reuse": ["mock-3"]
+  }
+}

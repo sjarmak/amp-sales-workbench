@@ -1,0 +1,145 @@
+## Codebase Patterns
+- Product filter: use `is_code_search_opp()` copied from analyze-pipeline-strategy.py -- checks CODE_SEARCH_PRODUCTS set, excludes AMP_CODY_PRODUCTS
+- Helper functions: `safe_float()`, `safe_int()`, `parse_bool()`, `fmt_currency()`, `pct()` are standard across all analysis scripts
+- JSONL loading: `load_jsonl()` reads line-by-line with `json.loads()`
+- Gong calls have NO account_id field -- must match via call title using `extract_company_from_gong_title()` + fuzzy account name matching
+- Fiscal years: FY25 = 2024-02-01 to 2025-01-31, FY26 = 2025-02-01 to 2026-01-31 (Sourcegraph fiscal year starts Feb 1)
+- Contact roles join to opps via `opp_id` field; leads join to contacts via `email` / `lead_email`
+- Notes join to accounts via `account_id` field directly
+- Deal size tiers used in project: $0-50K, $50K-200K, $200K+
+- Print formatting: `print_header()` for sections, `print_subheader()` for subsections, `print_table()` for aligned tabular output
+- `_fiscal_year` and `_iarr` are cached on won_opps dicts as computed fields (prefixed with underscore)
+- Contact role field (`opp_contact_role`) is 91% blank -- only ~9% of contacts have roles assigned. Filter out date-like garbage values with a VALID_ROLES allowlist
+- Lead title join is sparse: only 5 Economic Buyers and 10 Champions matched via email to leads with titles. The join path works but coverage is low
+- Committee sizes: median=1, but $200K+ deals have median=4 and mean=5.6 -- much larger buying committees for enterprise deals
+- `_days_to_close` is pre-computed on won_opps via `safe_float(o.get("days_to_close"))` in main()
+- Stage dwell fields: `opp_days_stage2_to_stage3` through `opp_days_stage6_to_won` -- only ~70-155 opps have data (10-22% coverage)
+- POC dates (`poc_start_date`, `poc_end_date`) are empty for all closed-won opps in this dataset
+- `technical_win_achieved` field: 25% of won opps have it set to "true" (string comparison, case-insensitive)
+- Renewals dominate cycle time (median 366 days), expansions are fast (median 14 days) -- always segment by opp_type for meaningful velocity stats
+- Use a `percentile()` helper for P25/P75 since `statistics` module doesn't have one in stdlib
+- Text mining coverage is sparse: only 67/316 won accounts have any notes/gong text, 31 with SCM mentions, 9 with language mentions
+- For Go language regex: use negative lookbehind for "let's/let us/lets" and negative lookahead for common verbs ("to", "ahead", "with", etc.) -- case-sensitive match
+- For R language regex: require context indicators ("R programming", "R language", "code in R") to avoid false positives from single letter
+- `_extract_text_blocks()` helper collects text from both notes (note_text) and gong (spotlight_brief, spotlight_key_points, transcript_text)
+- Co-occurrence pairs include SCM-SCM, Lang-Lang, and SCM-Lang combinations
+- `products_included` field is semicolon-separated (not comma); some opps with blank products use opp name as fallback
+- `_parse_products()` helper splits on ";" and falls back to opp name for blank products_included
+- For product bundles, filter to CODE_SEARCH_PRODUCTS set to get meaningful bundle combos (excludes add-ons like Platform Fee, Slack Support)
+- Geo and region fields are in `sfdc_account_details.csv`, not in opportunities -- join via `accounts_by_id`
+- `_segment_table()` is a reusable inner function that groups opps by any lambda, computes stats, prints table, returns dict
+- 81% of won opps have blank primary_use_case; only 13% have any use_case flag set
+- `render_bar_chart()` generates inline SVG with horizontal bars; params: data (label/value tuples), title, width, bar_height, color
+- `_svg_escape()` handles &, <, >, " for safe text embedding inside SVG `<text>` elements
+- SVG charts use viewBox-based sizing for responsiveness; `max-width:100%;height:auto` in inline style
+- Chart colors follow report theme: purple (#A112FF) for lead source, orange (#FF8800) for stage dwell, green (#00B265) for competition, cyan (#00CBEC) for products, red (#FF5543) for use cases
+
+---
+## 2026-02-11 - US-001
+- What was implemented: Script scaffold with all 6 data source loading, Code Search product filter, FY25/FY26 closed-won filter, and all lookup dicts
+- Files changed: scripts/analyze-closed-won-deep-dive.py (new), prd.json (US-001 passes: true), progress.txt (new)
+- **Learnings for future iterations:**
+  - Gong calls don't have account_id -- title-based matching yields 203/1168 calls matched (17%). Fuzzy substring matching helps but many calls have non-standard titles
+  - Total dataset: 716 closed-won CS opps, $11.5M iARR, 316 unique accounts across FY25+FY26
+  - FY25: 311 opps / $6.8M iARR; FY26: 405 opps / $4.7M iARR (more opps but lower iARR in FY26)
+  - 53/316 won accounts have SF notes coverage, 40/316 have Gong call matches
+  - `all_cs_opps` (7323 total, all time, all statuses) is available for win rate computations in later stories
+---
+## 2026-02-11 - US-003
+- Implemented `analyze_personas()` function with 7 sub-analyses
+- Contact role distribution (91% blank, Economic Buyer 3%, Champion 2%, Influencer 1%)
+- Buying committee size stats: mean=2.0, median=1, P75=2 (for opps with contacts)
+- Top titles for Economic Buyer and Champion via contact->lead email join (sparse: 5 EB, 10 Champ matched)
+- Title level distribution for Economic Buyer and Champion
+- Committee composition by deal size tier ($0-50K median=1, $50K-200K median=1, $200K+ median=4)
+- Committee composition by opportunity type (Renewal, Expansion, New Business, Paid POC, Organic Expansion)
+- Files changed: scripts/analyze-closed-won-deep-dive.py, prd.json, progress.txt
+- **Learnings for future iterations:**
+  - `opp_contact_role` CSV field has garbage date values mixed in (e.g. "2023-03-07 23:01") -- use a VALID_ROLES allowlist to filter
+  - Contact role data is very sparse (91% blank) -- role-based analysis will be thin
+  - Title join is also sparse: only ~5 of 36 Economic Buyers and ~10 of 29 Champions have matching leads with titles
+  - Enterprise deals ($200K+) have dramatically larger buying committees (median 4, mean 5.6) vs SMB (median 1)
+  - `won_opp_by_id` dict indexed by `opportunity_id` is useful for looking up opp details from contact loop
+---
+## 2026-02-11 - US-004
+- Implemented `analyze_velocity()` function with 6 sub-analyses
+- Overall cycle time stats: median 272 days, mean 239, P25=22, P75=368 (676/716 opps with valid data)
+- Breakdowns by deal size tier, opportunity type, lead source, fiscal year, and industry (from account details)
+- Stage dwell times: bottleneck is Stage 3->4 (median 30 days); only ~70-155 opps have stage data
+- POC duration: 0 opps have both start+end dates in this dataset
+- Technical win analysis: 25% of won opps have tech win; tech win deals close faster (median 45d vs 355d) with much higher iARR ($14.6M vs -$3.1M)
+- Fast wins (<30d): 194 opps, $6.4M iARR; Enterprise slog (>180d): 357 opps, $885K iARR
+- Files changed: scripts/analyze-closed-won-deep-dive.py, prd.json, progress.txt
+- **Learnings for future iterations:**
+  - POC dates are completely empty for closed-won opps -- the fields exist but no data populated
+  - Stage dwell fields have 10-22% coverage (70-155 opps) -- better than POC but still sparse
+  - Renewals have median 366 days cycle (annual renewal cycle), expansions 14 days -- ALWAYS segment by opp_type for meaningful analysis
+  - Technical win is a strong positive signal: 25% of deals but $14.6M of $11.5M total iARR (most value)
+  - Non-tech-win deals have negative total iARR (-$3.1M) due to downsells being classified here
+  - `percentile()` function added since stdlib `statistics` lacks it; uses linear interpolation
+  - Industry breakdown from account_details via `accounts_by_id.get(o.get("account_id"), {}).get("industry")` -- works well, 104/676 opps have blank industry
+---
+## 2026-02-11 - US-005
+- Implemented `analyze_stack()` function for technology stack extraction from SF notes and Gong calls
+- SCM patterns: GitHub, GitLab, Bitbucket, Azure DevOps, Perforce, SVN, Gerrit, Helix Core, AWS CodeCommit (case-insensitive regex)
+- Language patterns: 13 case-insensitive (Java, Python, TypeScript, etc.) + Go (case-sensitive with false-positive guards) + R (context-required)
+- `_extract_text_blocks()` helper mines note_text from SF notes and spotlight_brief/spotlight_key_points/transcript_text from Gong
+- Per-account stack profiles with mention counts, frequency tables ranked by account count
+- Co-occurrence pairs: SCM-SCM, Lang-Lang, SCM-Lang combinations, top 5 shown
+- Files changed: scripts/analyze-closed-won-deep-dive.py, prd.json, progress.txt
+- **Learnings for future iterations:**
+  - Text coverage is sparse: only 67/316 won accounts have notes or gong text available for mining
+  - GitHub dominates SCM mentions (22 accounts, 33% of text accounts), GitLab second (11 accounts)
+  - Language mentions are very sparse (9 accounts total) -- Java leads with 6
+  - Go disambiguation works: negative lookbehind for "let's/let us" + negative lookahead for "to/ahead/with/for/through" prevents most false positives
+  - R is extremely rare in sales call/note text -- requiring context indicators ("R programming", "language") is necessary to avoid false positives
+  - Co-occurrence: GitHub+GitLab (5 accounts) is the top pair, indicating multi-SCM environments
+---
+## 2026-02-11 - US-007
+- Implemented `analyze_products()` function with 4 sub-analyses:
+  - Product frequency with count and iARR per product (all products, not just CS family)
+  - Top 10 product bundle combinations (Code Search family products only for meaningful bundles)
+  - Use case flag distribution with count and iARR per flag
+  - Primary use case distribution
+- Implemented `analyze_segments()` function with 5 segmentation views:
+  - By deal size tier ($0-50K, $50K-200K, $200K+)
+  - By opportunity type (Renewal, Expansion, New Business, Paid POC, Organic Expansion)
+  - By industry (from account details, 43 industries)
+  - By geo (Americas, EMEA, APAC from account details)
+  - FY25 vs FY26 trends by deal size tier and opportunity type
+- Added `_parse_products()` helper for semicolon-split with opp name fallback
+- Added `_segment_table()` reusable inner function for generic grouping + stats
+- Files changed: scripts/analyze-closed-won-deep-dive.py, prd.json, progress.txt
+- **Learnings for future iterations:**
+  - `products_included` is always semicolon-separated (716 with semicolons, 0 with commas only)
+  - Blank `products_included` opps fall back to opp name -- many are descriptive strings like "Company - Renewal..."
+  - Only 13% of won opps have any use case flag set; 81% have blank primary_use_case
+  - Code Reuse dominates use cases (66 opps, $6.8M); Dev Onboarding second (18 opps, $4.3M)
+  - Top CS product: Code Search - Enterprise (222 opps, 31%), then Enterprise Search (155, 22%)
+  - Renewals have negative iARR (-$7.1M total) due to downsells -- skews $0-50K tier totals negative
+  - Geo/region are in account_details not opps -- join via accounts_by_id works; 99 opps have blank geo (no account match)
+  - Americas dominates: 458 opps, $12.2M iARR; EMEA has 108 opps, $1.2M
+---
+## 2026-02-11 - US-010
+- Implemented `render_bar_chart()` function generating inline SVG horizontal bar charts
+- Implemented `_svg_escape()` helper for safe text embedding in SVG elements
+- Generated 5 SVG bar charts inserted into appropriate HTML report sections:
+  1. Lead source distribution (top 10 by count) -- Discovery section, purple (#A112FF)
+  2. Competitor win frequency (top 10) -- Competition section, green (#00B265)
+  3. Stage dwell times (median days per transition) -- Velocity section, orange (#FF8800)
+  4. Product frequency (all Code Search products) -- Products section, cyan (#00CBEC)
+  5. Use case flag distribution -- Products section, red (#FF5543)
+- Charts use viewBox-based sizing for responsive rendering in browser and PDF print
+- Added SVG CSS: `page-break-inside: avoid` for print, `display: block` for layout
+- Added print-specific `max-width: 100%` for SVGs in @media print block
+- HTML report grew from 45.5 KB to 95.4 KB with the 5 embedded SVG charts
+- Files changed: scripts/analyze-closed-won-deep-dive.py, prd.json, progress.txt, ralph/progress.txt
+- **Learnings for future iterations:**
+  - SVG bars use `<rect>` with `rx="3"` for rounded corners and `opacity="0.85"` for softer appearance
+  - Label truncation at 24 chars prevents overflow in narrow label column (180px width)
+  - `max_val` guard (set to 1 when 0) prevents division-by-zero in bar width calculation
+  - Charts are inserted BEFORE their corresponding data tables for visual-first reading flow
+  - The competition chart goes above the two-col div to span full width rather than cramming into one column
+  - Stage dwell chart filters out zero-median entries to avoid empty bars for stages with no data
+  - Each chart uses a distinct color from the Sourcegraph theme for visual differentiation across sections
+---

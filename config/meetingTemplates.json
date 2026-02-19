@@ -1,0 +1,289 @@
+{
+  "_MOCK_DATA": true,
+  "_description": "MOCK: Meeting type detection keywords and template customizations. Replace with actual sales methodology definitions from sales enablement. This should come from: (1) Sales playbook documentation, (2) Meeting type classification rules, (3) Stage-specific talking points.",
+  "_replaceWith": "Import from sales playbook or methodology training materials",
+
+  "version": "1.0",
+
+  "meetingTypes": {
+    "first_call": {
+      "name": "First Call / Intro",
+      "description": "Initial introduction meeting with a prospect",
+      "keywords": [
+        "intro", "introduction", "first call", "first meeting", "initial",
+        "meet and greet", "discovery call", "exploratory", "learn more",
+        "getting to know", "kickoff call", "intro call"
+      ],
+      "signals": {
+        "noGongHistory": true,
+        "opportunityStage": ["Prospecting", "Qualification", "Discovery"]
+      },
+      "briefCustomizations": {
+        "prioritySections": ["whosWho", "keyQuestions", "demoFocusAreas"],
+        "demphasizeSections": ["recentActivity"],
+        "additionalContext": "This is a FIRST CALL. Focus on discovery, rapport building, and initial qualification. Avoid assuming prior context.",
+        "keyFocus": [
+          "Research company background and recent news",
+          "Understand attendee roles and decision-making power",
+          "Prepare broad discovery questions (pain points, current solutions)",
+          "Have a flexible agenda - follow their lead",
+          "Identify potential champions early"
+        ],
+        "meddicEmphasis": ["identifyPain", "champion", "economicBuyer"],
+        "toneGuidance": "Curious and consultative. Ask more than tell."
+      }
+    },
+
+    "discovery": {
+      "name": "Discovery",
+      "description": "Deep-dive discovery to understand requirements and pain points",
+      "keywords": [
+        "discovery", "deep dive", "requirements", "needs assessment",
+        "use case", "workflow", "technical discovery", "understand",
+        "scoping", "assessment"
+      ],
+      "signals": {
+        "opportunityStage": ["Qualification", "Discovery", "Needs Analysis"]
+      },
+      "briefCustomizations": {
+        "prioritySections": ["keyQuestions", "recentActivity", "competitiveLandscape"],
+        "demphasizeSections": [],
+        "additionalContext": "This is a DISCOVERY call. Focus on uncovering detailed requirements, pain points, and decision criteria.",
+        "keyFocus": [
+          "Prepare targeted questions based on previous call insights",
+          "Map technical requirements to product capabilities",
+          "Identify evaluation criteria and success metrics",
+          "Understand decision process and timeline",
+          "Probe for competitive alternatives being considered"
+        ],
+        "meddicEmphasis": ["metrics", "decisionCriteria", "decisionProcess", "identifyPain"],
+        "toneGuidance": "Inquisitive and thorough. Document everything."
+      }
+    },
+
+    "demo": {
+      "name": "Demo / Presentation",
+      "description": "Product demonstration or technical presentation",
+      "keywords": [
+        "demo", "demonstration", "product demo", "technical demo",
+        "show", "presentation", "walkthrough", "overview",
+        "see the product", "live demo", "hands-on"
+      ],
+      "signals": {
+        "opportunityStage": ["Demo", "Proposal", "Evaluation"]
+      },
+      "briefCustomizations": {
+        "prioritySections": ["demoFocusAreas", "whosWho", "competitiveLandscape"],
+        "demphasizeSections": [],
+        "additionalContext": "This is a DEMO call. Focus on showcasing relevant features tied to their specific pain points and use cases.",
+        "keyFocus": [
+          "Customize demo to their stated pain points",
+          "Prepare specific examples relevant to their industry/use case",
+          "Anticipate technical questions and objections",
+          "Have competitive differentiators ready",
+          "Plan interactive moments to engage attendees"
+        ],
+        "meddicEmphasis": ["decisionCriteria", "identifyPain"],
+        "toneGuidance": "Confident and engaging. Show, don't just tell."
+      }
+    },
+
+    "poc_kickoff": {
+      "name": "POC Kickoff",
+      "description": "Proof of Concept or trial kickoff meeting",
+      "keywords": [
+        "poc kickoff", "trial kickoff", "pilot kickoff", "poc",
+        "proof of concept", "trial", "pilot", "evaluation kickoff",
+        "start poc", "begin trial", "poc planning"
+      ],
+      "signals": {
+        "opportunityStage": ["POC", "Evaluation", "Trial"]
+      },
+      "briefCustomizations": {
+        "prioritySections": ["keyQuestions", "whosWho", "customIdeas"],
+        "demphasizeSections": ["demoFocusAreas"],
+        "additionalContext": "This is a POC KICKOFF. Focus on defining clear success criteria, timeline, and stakeholder alignment.",
+        "keyFocus": [
+          "Define specific, measurable success criteria",
+          "Align on POC timeline and milestones",
+          "Identify technical stakeholders and their roles",
+          "Establish communication cadence",
+          "Set expectations for support and engagement",
+          "Discuss what happens after POC (decision process)"
+        ],
+        "meddicEmphasis": ["metrics", "decisionProcess", "champion"],
+        "toneGuidance": "Organized and collaborative. Set clear expectations."
+      }
+    },
+
+    "poc_review": {
+      "name": "POC Review / Check-in",
+      "description": "Mid-POC review or final POC evaluation meeting",
+      "keywords": [
+        "poc review", "poc check-in", "trial review", "pilot review",
+        "poc status", "evaluation review", "poc results", "poc update",
+        "trial results", "how's the poc", "poc progress"
+      ],
+      "signals": {
+        "opportunityStage": ["POC", "Evaluation", "Trial", "Negotiation"]
+      },
+      "briefCustomizations": {
+        "prioritySections": ["recentActivity", "keyQuestions", "competitiveLandscape"],
+        "demphasizeSections": ["demoFocusAreas"],
+        "additionalContext": "This is a POC REVIEW. Focus on measuring against success criteria and addressing blockers.",
+        "keyFocus": [
+          "Review progress against defined success criteria",
+          "Identify and address any blockers or concerns",
+          "Gather feedback from all stakeholders",
+          "Discuss next steps if criteria are met",
+          "Probe for competitive pressure or timeline changes",
+          "Confirm decision process and approvers"
+        ],
+        "meddicEmphasis": ["metrics", "economicBuyer", "champion", "decisionProcess"],
+        "toneGuidance": "Supportive and action-oriented. Drive toward decision."
+      }
+    },
+
+    "negotiation": {
+      "name": "Negotiation / Commercial",
+      "description": "Pricing, contract, or commercial discussion",
+      "keywords": [
+        "negotiation", "pricing", "commercial", "contract",
+        "proposal review", "quote", "terms", "pricing discussion",
+        "commercial terms", "deal review", "pricing call"
+      ],
+      "signals": {
+        "opportunityStage": ["Negotiation", "Proposal", "Contracting"]
+      },
+      "briefCustomizations": {
+        "prioritySections": ["whosWho", "recentActivity", "keyQuestions"],
+        "demphasizeSections": ["demoFocusAreas", "customIdeas"],
+        "additionalContext": "This is a NEGOTIATION call. Focus on understanding their constraints and finding win-win solutions.",
+        "keyFocus": [
+          "Know your pricing flexibility and approval requirements",
+          "Understand their budget constraints and fiscal calendar",
+          "Identify procurement process and timeline",
+          "Prepare for common objections (price, terms, competition)",
+          "Have value justification ready (ROI, TCO)",
+          "Know what you can trade (terms, support, implementation)"
+        ],
+        "meddicEmphasis": ["economicBuyer", "decisionProcess"],
+        "toneGuidance": "Professional and flexible. Seek mutual value."
+      }
+    },
+
+    "executive_briefing": {
+      "name": "Executive Briefing",
+      "description": "Meeting with C-level or VP-level executives",
+      "keywords": [
+        "executive", "exec briefing", "c-level", "cxo", "vp meeting",
+        "leadership", "executive sponsor", "board", "steering committee",
+        "senior leadership"
+      ],
+      "signals": {
+        "attendeeLevel": ["C-Level", "VP", "Director"]
+      },
+      "briefCustomizations": {
+        "prioritySections": ["whosWho", "keyQuestions", "competitiveLandscape"],
+        "demphasizeSections": ["customIdeas"],
+        "additionalContext": "This is an EXECUTIVE meeting. Focus on strategic value, business outcomes, and ROI. Avoid technical deep-dives unless asked.",
+        "keyFocus": [
+          "Lead with business outcomes, not features",
+          "Have ROI/TCO data ready",
+          "Understand their strategic priorities",
+          "Be prepared to discuss partnership and long-term vision",
+          "Know competitive positioning at the strategic level",
+          "Be concise - executives have limited time"
+        ],
+        "meddicEmphasis": ["metrics", "economicBuyer", "champion"],
+        "toneGuidance": "Confident and strategic. Be concise and outcome-focused."
+      }
+    },
+
+    "technical_review": {
+      "name": "Technical Review / Architecture",
+      "description": "Technical deep-dive or architecture discussion",
+      "keywords": [
+        "technical", "architecture", "integration", "security review",
+        "technical deep dive", "api", "implementation", "engineering",
+        "technical validation", "security", "compliance"
+      ],
+      "signals": {
+        "attendeeLevel": ["Engineer", "Architect", "Technical"]
+      },
+      "briefCustomizations": {
+        "prioritySections": ["demoFocusAreas", "keyQuestions", "whosWho"],
+        "demphasizeSections": ["competitiveLandscape"],
+        "additionalContext": "This is a TECHNICAL call. Focus on architecture, integrations, security, and implementation details.",
+        "keyFocus": [
+          "Review their technical environment and requirements",
+          "Prepare for integration and API questions",
+          "Have security and compliance documentation ready",
+          "Understand their deployment preferences",
+          "Be ready to discuss scalability and performance",
+          "Identify technical blockers early"
+        ],
+        "meddicEmphasis": ["decisionCriteria"],
+        "toneGuidance": "Technical and precise. Speak their language."
+      }
+    },
+
+    "follow_up": {
+      "name": "Follow-up / Check-in",
+      "description": "General follow-up or status check meeting",
+      "keywords": [
+        "follow up", "follow-up", "check in", "check-in", "sync",
+        "catch up", "status", "update", "touch base", "reconnect"
+      ],
+      "signals": {
+        "hasGongHistory": true
+      },
+      "briefCustomizations": {
+        "prioritySections": ["recentActivity", "keyQuestions", "predictedAgenda"],
+        "demphasizeSections": [],
+        "additionalContext": "This is a FOLLOW-UP call. Review previous commitments and push for momentum.",
+        "keyFocus": [
+          "Review action items from previous calls",
+          "Check on any blockers or concerns",
+          "Identify changes in stakeholders or priorities",
+          "Push for next concrete milestone",
+          "Address any stalled momentum"
+        ],
+        "meddicEmphasis": ["champion", "decisionProcess"],
+        "toneGuidance": "Supportive but assertive. Drive progress."
+      }
+    },
+
+    "unknown": {
+      "name": "General Meeting",
+      "description": "Meeting type could not be determined",
+      "keywords": [],
+      "signals": {},
+      "briefCustomizations": {
+        "prioritySections": ["whosWho", "recentActivity", "keyQuestions"],
+        "demphasizeSections": [],
+        "additionalContext": "Meeting type could not be determined. Prepare a balanced brief covering all areas.",
+        "keyFocus": [
+          "Review all available context",
+          "Be prepared for any direction",
+          "Have discovery questions ready",
+          "Know product capabilities broadly"
+        ],
+        "meddicEmphasis": ["identifyPain", "champion", "decisionProcess"],
+        "toneGuidance": "Flexible and attentive. Follow their lead."
+      }
+    }
+  },
+
+  "detectionRules": {
+    "priority": [
+      "Keywords in meeting title take highest priority",
+      "Keywords in meeting agenda/description second",
+      "Opportunity stage as fallback signal",
+      "Gong call history for first call vs follow-up detection",
+      "Attendee titles for executive/technical detection"
+    ],
+    "keywordMatchThreshold": 1,
+    "caseSensitive": false
+  }
+}

@@ -1,0 +1,120 @@
+{
+  "_MOCK_DATA": true,
+  "_description": "MOCK: Customer Engagement Plan (CEP) template for technical validation. Replace with actual CEP from sales enablement. This should come from: (1) Google Docs CEP template, (2) Salesforce CEP object, (3) Sales methodology training.",
+  "_replaceWith": "Import from sales enablement CEP template",
+  
+  "template": {
+    "name": "Customer Engagement Plan",
+    "version": "1.0-mock",
+    "purpose": "Structure the technical evaluation and trial process",
+    
+    "phases": [
+      {
+        "id": "discovery",
+        "name": "Discovery",
+        "duration": "1-2 weeks",
+        "objectives": [
+          "Understand current state and pain points",
+          "Identify key stakeholders and decision makers",
+          "Define success criteria for evaluation"
+        ],
+        "deliverables": [
+          "Discovery notes",
+          "Stakeholder map",
+          "Initial success criteria"
+        ],
+        "exitCriteria": [
+          "Pain points documented",
+          "Technical requirements understood",
+          "Champion identified"
+        ]
+      },
+      {
+        "id": "demo",
+        "name": "Technical Demo",
+        "duration": "1 week",
+        "objectives": [
+          "Demonstrate core capabilities",
+          "Address technical questions",
+          "Build technical champion confidence"
+        ],
+        "deliverables": [
+          "Custom demo script",
+          "Demo recording",
+          "Technical Q&A follow-up"
+        ],
+        "exitCriteria": [
+          "Technical team agrees to POC",
+          "POC scope defined",
+          "Resources committed"
+        ]
+      },
+      {
+        "id": "poc",
+        "name": "POC/Trial",
+        "duration": "2-4 weeks",
+        "objectives": [
+          "Prove technical fit in customer environment",
+          "Validate success criteria",
+          "Build user adoption"
+        ],
+        "deliverables": [
+          "POC plan document",
+          "Weekly check-in notes",
+          "Success criteria scorecard"
+        ],
+        "exitCriteria": [
+          "Success criteria met",
+          "Users actively engaged",
+          "Technical win confirmed"
+        ]
+      },
+      {
+        "id": "businessCase",
+        "name": "Business Case",
+        "duration": "1-2 weeks",
+        "objectives": [
+          "Quantify value and ROI",
+          "Build executive presentation",
+          "Enable champion to sell internally"
+        ],
+        "deliverables": [
+          "ROI analysis",
+          "Executive summary",
+          "Business case presentation"
+        ],
+        "exitCriteria": [
+          "Business case approved",
+          "Budget confirmed",
+          "Procurement engaged"
+        ]
+      },
+      {
+        "id": "close",
+        "name": "Negotiation & Close",
+        "duration": "2-4 weeks",
+        "objectives": [
+          "Finalize contract terms",
+          "Address security/legal requirements",
+          "Close the deal"
+        ],
+        "deliverables": [
+          "Security questionnaire responses",
+          "Contract redlines",
+          "Signed agreement"
+        ],
+        "exitCriteria": [
+          "Contract signed",
+          "Handoff to CSM initiated"
+        ]
+      }
+    ],
+    
+    "roles": {
+      "ae": "Account Executive - owns relationship and deal progression",
+      "se": "Solutions Engineer - owns technical validation and POC",
+      "csm": "Customer Success Manager - owns post-sale engagement",
+      "champion": "Customer champion - internal advocate"
+    }
+  }
+}

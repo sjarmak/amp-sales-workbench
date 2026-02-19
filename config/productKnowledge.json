@@ -1,0 +1,82 @@
+{
+  "_MOCK_DATA": true,
+  "_description": "MOCK: Product features and value propositions. Replace with actual product documentation. This should come from: (1) Notion product pages, (2) Marketing feature pages, (3) Sales enablement decks.",
+  "_replaceWith": "Import from product marketing Notion workspace or ampcode.com/docs",
+  
+  "product": {
+    "name": "Sourcegraph",
+    "tagline": "Code intelligence platform",
+    "version": "5.x",
+    
+    "coreCapabilities": [
+      {
+        "name": "Code Search",
+        "description": "Search across all repositories instantly",
+        "valueProps": [
+          "Find any code, in any repo, in seconds",
+          "Regex, structural, and semantic search",
+          "Search across all branches and history"
+        ],
+        "painPoints": [
+          "Developers waste time grep-ing through repos",
+          "Can't find code that exists somewhere in the org",
+          "New developers don't know where to look"
+        ],
+        "competitiveAdvantage": "Scales to millions of repos, not just thousands"
+      },
+      {
+        "name": "Code Intelligence",
+        "description": "IDE-like navigation in the browser",
+        "valueProps": [
+          "Go-to-definition across repos",
+          "Find all references globally",
+          "Understand code dependencies"
+        ],
+        "painPoints": [
+          "Jumping between repos breaks context",
+          "Hard to trace dependencies across services"
+        ],
+        "competitiveAdvantage": "Works across all languages and repos simultaneously"
+      },
+      {
+        "name": "Deep Search",
+        "description": "AI-powered semantic code search and understanding",
+        "valueProps": [
+          "Natural language queries across entire codebase",
+          "Cross-repository code understanding",
+          "Contextual explanations and insights"
+        ],
+        "painPoints": [
+          "Hard to find code by concept rather than keywords",
+          "Need to understand unfamiliar codebases quickly"
+        ],
+        "competitiveAdvantage": "Enterprise-scale semantic search with full codebase context"
+      },
+      {
+        "name": "Batch Changes",
+        "description": "Large-scale code modifications",
+        "valueProps": [
+          "Make changes across thousands of repos",
+          "Track PRs across the entire org",
+          "Automate migrations and deprecations"
+        ],
+        "painPoints": [
+          "Security vulnerabilities take months to patch",
+          "Library upgrades are manual and error-prone"
+        ],
+        "competitiveAdvantage": "Only solution for cross-repo automated changes"
+      }
+    ],
+    
+    "deployment": {
+      "options": ["Self-hosted", "Cloud (managed)", "Dedicated cloud"],
+      "security": ["SOC 2 Type II", "GDPR compliant", "SSO/SAML", "Role-based access"]
+    },
+    
+    "integrations": {
+      "codeHosts": ["GitHub", "GitLab", "Bitbucket", "Azure DevOps", "Gerrit", "Perforce"],
+      "ides": ["VS Code", "JetBrains", "Neovim", "Emacs"],
+      "sso": ["Okta", "Azure AD", "OneLogin", "PingIdentity"]
+    }
+  }
+}

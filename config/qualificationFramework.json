@@ -1,0 +1,207 @@
+{
+  "_MOCK_DATA": true,
+  "_description": "MOCK: MEDDPICC qualification framework with scoring criteria. Replace with actual sales methodology definitions from sales enablement. This should come from: (1) Sales training materials, (2) Methodology documentation, (3) Salesforce qualification field definitions.",
+  "_replaceWith": "Import from sales methodology training or Salesforce opportunity field definitions",
+  
+  "framework": {
+    "name": "MEDDPICC",
+    "version": "1.0-mock",
+    
+    "criteria": [
+      {
+        "id": "metrics",
+        "name": "Metrics",
+        "letter": "M",
+        "description": "Quantifiable measures of success",
+        "scoringGuide": {
+          "1": "No metrics discussed",
+          "2": "Vague metrics mentioned (e.g., 'improve productivity')",
+          "3": "Specific metrics identified but not quantified",
+          "4": "Metrics quantified with current baseline",
+          "5": "Clear before/after targets with measurement plan"
+        },
+        "questions": [
+          "What would success look like in measurable terms?",
+          "How do you measure developer productivity today?",
+          "What's the cost of the current pain point?"
+        ],
+        "signals": {
+          "positive": ["Specific numbers mentioned", "ROI calculation discussed", "KPIs defined"],
+          "negative": ["Can't quantify impact", "No baseline metrics", "Metrics 'TBD'"]
+        }
+      },
+      {
+        "id": "economicBuyer",
+        "name": "Economic Buyer",
+        "letter": "E",
+        "description": "Person with budget authority",
+        "scoringGuide": {
+          "1": "Unknown",
+          "2": "Identified but no access",
+          "3": "Identified and scheduled to meet",
+          "4": "Met and engaged",
+          "5": "Actively sponsoring the deal"
+        },
+        "questions": [
+          "Who has the authority to approve this budget?",
+          "Have they been involved in similar purchases?",
+          "What's their timeline for making decisions?"
+        ],
+        "signals": {
+          "positive": ["Direct access to EB", "EB asks about pricing", "EB in demo"],
+          "negative": ["Champion gates access", "EB unknown after 4 weeks", "Budget not allocated"]
+        }
+      },
+      {
+        "id": "decisionCriteria",
+        "name": "Decision Criteria",
+        "letter": "D",
+        "description": "How they'll evaluate the solution",
+        "scoringGuide": {
+          "1": "Unknown",
+          "2": "Generic criteria",
+          "3": "Specific technical requirements",
+          "4": "Weighted criteria with must-haves",
+          "5": "We've helped shape the criteria"
+        },
+        "questions": [
+          "What are the must-have requirements?",
+          "How will you evaluate competing solutions?",
+          "What would disqualify a vendor?"
+        ],
+        "signals": {
+          "positive": ["Criteria aligned to our strengths", "Written evaluation matrix", "We're the benchmark"],
+          "negative": ["Criteria favor competitor", "No formal evaluation", "Moving target requirements"]
+        }
+      },
+      {
+        "id": "decisionProcess",
+        "name": "Decision Process",
+        "letter": "D",
+        "description": "Steps to reach a decision",
+        "scoringGuide": {
+          "1": "Unknown",
+          "2": "General idea of process",
+          "3": "Steps identified but timing unclear",
+          "4": "Clear timeline with milestones",
+          "5": "Mutual action plan agreed and tracked"
+        },
+        "questions": [
+          "What's your evaluation process?",
+          "Who needs to approve?",
+          "What's the timeline?"
+        ],
+        "signals": {
+          "positive": ["Paper process started", "Legal engaged", "MAP in place"],
+          "negative": ["Process unclear after 4 weeks", "Delays without explanation", "New approvers appearing"]
+        }
+      },
+      {
+        "id": "paperProcess",
+        "name": "Paper Process",
+        "letter": "P",
+        "description": "Legal, procurement, security requirements",
+        "scoringGuide": {
+          "1": "Not discussed",
+          "2": "Known to exist but not started",
+          "3": "Process understood, timeline known",
+          "4": "In progress with our documents",
+          "5": "Complete or near complete"
+        },
+        "questions": [
+          "What's your procurement process?",
+          "Do you require a security review?",
+          "What legal terms are typically challenging?"
+        ],
+        "signals": {
+          "positive": ["Security questionnaire submitted", "Procurement engaged", "Redlines received"],
+          "negative": ["Security review 'surprise'", "New requirements appearing", "Legal ghosting"]
+        }
+      },
+      {
+        "id": "identifyPain",
+        "name": "Identify Pain",
+        "letter": "I",
+        "description": "Specific, urgent pain points",
+        "scoringGuide": {
+          "1": "No clear pain",
+          "2": "Generic pain (e.g., 'need to improve')",
+          "3": "Specific pain identified",
+          "4": "Pain quantified with business impact",
+          "5": "Pain is urgent with consequences for inaction"
+        },
+        "questions": [
+          "What's the biggest challenge you're facing?",
+          "What happens if you don't solve this?",
+          "Why is this a priority now?"
+        ],
+        "signals": {
+          "positive": ["Clear event driving urgency", "Pain felt by leadership", "Failed alternatives"],
+          "negative": ["Nice to have not need to have", "No timeline pressure", "Status quo acceptable"]
+        }
+      },
+      {
+        "id": "champion",
+        "name": "Champion",
+        "letter": "C",
+        "description": "Internal advocate with power and influence",
+        "scoringGuide": {
+          "1": "No champion identified",
+          "2": "Friendly contact but low power",
+          "3": "Champion identified with some influence",
+          "4": "Active champion selling internally",
+          "5": "Champion with access to EB and political capital"
+        },
+        "questions": [
+          "Who's most excited about solving this?",
+          "What's their role in the decision?",
+          "Have they championed purchases before?"
+        ],
+        "signals": {
+          "positive": ["Provides internal context", "Makes intros", "Attends all calls"],
+          "negative": ["Junior role", "New to company", "No past influence"]
+        }
+      },
+      {
+        "id": "competition",
+        "name": "Competition",
+        "letter": "C",
+        "description": "Alternatives being considered",
+        "scoringGuide": {
+          "1": "Unknown",
+          "2": "Know they're looking but not who",
+          "3": "Competitors identified",
+          "4": "Understand competitive positioning",
+          "5": "We're clearly differentiated and preferred"
+        },
+        "questions": [
+          "What alternatives are you considering?",
+          "Have you used any of these before?",
+          "What do you like/dislike about them?"
+        ],
+        "signals": {
+          "positive": ["We're the front-runner", "Competitor weaknesses known", "Head-to-head POC won"],
+          "negative": ["Incumbent advantage", "Competitor has champion", "We're the stalking horse"]
+        }
+      }
+    ],
+    
+    "scoring": {
+      "thresholds": {
+        "qualified": 24,
+        "committed": 32,
+        "at_risk_below": 16
+      },
+      "weights": {
+        "metrics": 1,
+        "economicBuyer": 1.5,
+        "decisionCriteria": 1,
+        "decisionProcess": 1,
+        "paperProcess": 0.5,
+        "identifyPain": 1.5,
+        "champion": 1.5,
+        "competition": 1
+      }
+    }
+  }
+}

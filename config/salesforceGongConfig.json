@@ -1,0 +1,49 @@
+{
+  "_MOCK_DATA": true,
+  "_description": "MOCK: Configuration for linking Gong calls to Salesforce records. Replace patterns and field names with your actual Salesforce schema. This should come from: (1) Salesforce admin showing Gong integration fields, (2) Gong SF package documentation.",
+  "_replaceWith": "Update with actual Salesforce field names from your Gong integration",
+  
+  "config": {
+    "version": "1.0-mock",
+    
+    "taskMatching": {
+      "subjectPatterns": [
+        "Gong",
+        "Call Recording",
+        "[Gong]"
+      ],
+      "descriptionPatterns": [
+        "gong.io/call",
+        "app.gong.io"
+      ]
+    },
+    
+    "customFields": {
+      "task": {
+        "gongCallId": "Gong_Call_Id__c",
+        "gongRecordingUrl": "Gong_Recording_URL__c"
+      },
+      "opportunity": {
+        "lastGongCallDate": "Last_Gong_Call_Date__c",
+        "gongCallCount": "Gong_Call_Count__c"
+      },
+      "account": {
+        "lastGongCallDate": "Last_Gong_Call_Date__c",
+        "totalGongCalls": "Total_Gong_Calls__c"
+      }
+    },
+    
+    "fuzzyMatching": {
+      "enabled": true,
+      "timeWindowMinutes": 30,
+      "titleSimilarityThreshold": 0.7
+    },
+    
+    "linkingBehavior": {
+      "createActivityIfMissing": false,
+      "updateExistingActivity": true,
+      "linkToOpportunity": true,
+      "linkToContact": true
+    }
+  }
+}

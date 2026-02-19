@@ -1,0 +1,168 @@
+{
+  "_MOCK_DATA": true,
+  "_description": "MOCK: Aggregated sales playbook from closed-won analyses. This file is auto-updated by the closedWon agent. Replace seed entries with actual learnings. Entries are added/updated when running closed-won analysis on won deals.",
+  "_replaceWith": "Auto-populated from closed-won analyses and manual playbook contributions",
+
+  "entries": [
+    {
+      "id": "seed-discovery-001",
+      "title": "Technical Deep Dive Discovery",
+      "category": "discovery",
+      "description": "Lead with technical credibility by understanding their current stack, pain points, and developer workflows before pitching solutions.",
+      "whenToUse": "Enterprise deals with technical buyers, DevOps-heavy organizations, platform engineering teams",
+      "steps": [
+        "Research their tech stack via job postings, GitHub, and blog posts",
+        "Prepare 3-5 specific questions about their development workflow",
+        "Ask about their biggest developer productivity challenges",
+        "Understand their current code search and navigation tools",
+        "Map their responses to specific product capabilities"
+      ],
+      "talkingPoints": [
+        "What's your current approach to finding code across repositories?",
+        "How do new developers get up to speed on your codebase?",
+        "When a security vulnerability is found, how do you track affected code?"
+      ],
+      "resources": [
+        "config/productKnowledge.json",
+        "prompts/discovery-questions.md"
+      ],
+      "successIndicators": [
+        "Prospect shares specific pain points unprompted",
+        "Technical stakeholders lean forward and engage",
+        "Prospect asks 'how would you handle X?'",
+        "Meeting runs over scheduled time due to engagement"
+      ],
+      "sourceOpportunities": [],
+      "industry": ["Technology", "Financial Services"],
+      "segment": ["Enterprise", "Mid-Market"],
+      "createdAt": "2025-01-01T00:00:00.000Z",
+      "updatedAt": "2025-01-01T00:00:00.000Z",
+      "effectiveness": {
+        "timesUsed": 0,
+        "winRate": null
+      }
+    },
+    {
+      "id": "seed-demo-001",
+      "title": "Live Code Search Demo",
+      "category": "demo",
+      "description": "Demo using the prospect's actual public repositories to show immediate value and relevance.",
+      "whenToUse": "Technical validation calls, POC kickoffs, when prospect has public OSS presence",
+      "steps": [
+        "Before the call, add their public repos to a demo instance",
+        "Prepare 2-3 searches relevant to their domain/stack",
+        "Start by searching for a common pattern in their code",
+        "Show cross-repo navigation with their actual code",
+        "Let them drive the demo with their own searches"
+      ],
+      "talkingPoints": [
+        "Let me show you this in your actual codebase...",
+        "Here's how you'd find all uses of this pattern across your repos",
+        "What would you want to search for right now?"
+      ],
+      "resources": [],
+      "successIndicators": [
+        "Prospect says 'wow' or 'that's exactly what I need'",
+        "Prospect takes over keyboard/shares screen",
+        "Prospect immediately identifies use cases",
+        "Request to add more repos or private repos"
+      ],
+      "sourceOpportunities": [],
+      "industry": [],
+      "segment": [],
+      "createdAt": "2025-01-01T00:00:00.000Z",
+      "updatedAt": "2025-01-01T00:00:00.000Z",
+      "effectiveness": {
+        "timesUsed": 0,
+        "winRate": null
+      }
+    },
+    {
+      "id": "seed-champion-001",
+      "title": "Champion Enablement Package",
+      "category": "champion-building",
+      "description": "Equip your champion with materials to sell internally, including ROI calculators, executive summaries, and objection handlers.",
+      "whenToUse": "After identifying a strong champion, before they need to present to leadership",
+      "steps": [
+        "Create customized executive summary with their specific metrics",
+        "Build ROI calculator with their developer count and hourly rates",
+        "Prepare objection handling guide for common internal pushback",
+        "Offer to do a dry-run of their internal presentation",
+        "Provide competitive comparison if needed"
+      ],
+      "talkingPoints": [
+        "I want to make sure you have everything you need to present this internally",
+        "What objections do you anticipate from [stakeholder]?",
+        "Would it help if I prepared a one-pager for your leadership?"
+      ],
+      "resources": [
+        "config/customerWins.json"
+      ],
+      "successIndicators": [
+        "Champion proactively asks for materials",
+        "Champion shares draft of their internal presentation",
+        "Champion reports positive internal conversations",
+        "Champion introduces you to other stakeholders"
+      ],
+      "sourceOpportunities": [],
+      "industry": [],
+      "segment": ["Enterprise"],
+      "createdAt": "2025-01-01T00:00:00.000Z",
+      "updatedAt": "2025-01-01T00:00:00.000Z",
+      "effectiveness": {
+        "timesUsed": 0,
+        "winRate": null
+      }
+    },
+    {
+      "id": "seed-objection-001",
+      "title": "Security Concern Handler",
+      "category": "objection-handling",
+      "description": "Address enterprise security concerns by leading with compliance certifications and deployment options.",
+      "whenToUse": "When security team is involved, regulated industries, when 'security review' is mentioned",
+      "steps": [
+        "Acknowledge security as a priority",
+        "Lead with SOC 2 Type II certification",
+        "Explain self-hosted deployment option",
+        "Offer to schedule security deep-dive call",
+        "Provide security whitepaper and questionnaire responses"
+      ],
+      "talkingPoints": [
+        "Security is a top priority for us as well - we're SOC 2 Type II certified",
+        "Many of our enterprise customers run Sourcegraph self-hosted for complete control",
+        "We have pre-filled responses for common security questionnaires"
+      ],
+      "resources": [],
+      "successIndicators": [
+        "Security team approves without extended review",
+        "Prospect accepts self-hosted option",
+        "Security concern no longer blocks deal progress"
+      ],
+      "sourceOpportunities": [],
+      "industry": ["Financial Services", "Healthcare"],
+      "segment": ["Enterprise"],
+      "createdAt": "2025-01-01T00:00:00.000Z",
+      "updatedAt": "2025-01-01T00:00:00.000Z",
+      "effectiveness": {
+        "timesUsed": 0,
+        "winRate": null
+      }
+    }
+  ],
+
+  "byCategory": {
+    "discovery": ["seed-discovery-001"],
+    "demo": ["seed-demo-001"],
+    "champion-building": ["seed-champion-001"],
+    "objection-handling": ["seed-objection-001"],
+    "negotiation": [],
+    "competitive": [],
+    "closing": []
+  },
+
+  "byIndustry": {
+    "Technology": ["seed-discovery-001"],
+    "Financial Services": ["seed-discovery-001", "seed-objection-001"],
+    "Healthcare": ["seed-objection-001"]
+  }
+}

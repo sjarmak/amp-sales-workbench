@@ -1,0 +1,613 @@
+'use client'
+
+import { useState, useEffect } from 'react'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs'
+import { Badge } from './ui/badge'
+import { Button } from './ui/button'
+import { Database, PhoneCall, FileText, Loader2, ChevronDown, ChevronUp, ExternalLink, Newspaper, Edit2, RefreshCw } from 'lucide-react'
+import { GongSearchTermsEditor } from './GongSearchTermsEditor'
+
+const API_URL = 'http://localhost:3001/api'
+
+interface DataSourcesTabProps {
+  accountSlug: string | undefined
+}
+
+export function DataSourcesTab({ accountSlug }: DataSourcesTabProps) {
+  const [salesforceData, setSalesforceData] = useState<any>(null)
+  const [gongData, setGongData] = useState<any>(null)
+  const [notionData, setNotionData] = useState<any>(null)
+  const [sourcegraphData, setSourcegraphData] = useState<any>(null)
+  const [loading, setLoading] = useState<Record<string, boolean>>({})
+  const [expandedTranscripts, setExpandedTranscripts] = useState<Set<string>>(new Set())
+  const [expandedNotionPages, setExpandedNotionPages] = useState<Set<string>>(new Set())
+  const [gongSearchTerms, setGongSearchTerms] = useState<any>(null)
+  const [showSearchTermsEditor, setShowSearchTermsEditor] = useState(false)
+  const [refreshingGong, setRefreshingGong] = useState(false)
+
+  useEffect(() => {
+    if (accountSlug) {
+      loadAllSources()
+      loadGongSearchTerms()
+    }
+  }, [accountSlug])
+
+  const loadAllSources = () => {
+    loadSource('salesforce', setSalesforceData)
+    loadSource('gong', setGongData)
+    loadSource('notion', setNotionData)
+    loadSource('sourcegraph', setSourcegraphData)
+  }
+
+  const loadSource = async (source: string, setter: (data: any) => void) => {
+    if (!accountSlug) return
+    
+    setLoading(prev => ({ ...prev, [source]: true }))
+    try {
+      console.log(`[DataSourcesTab] Loading ${source} for account: ${accountSlug}`)
+      const res = await fetch(`${API_URL}/accounts/${accountSlug}/sources/${source}`)
+      console.log(`[DataSourcesTab] ${source} response status:`, res.status)
+      if (res.ok) {
+        const data = await res.json()
+        if (source === 'gong') {
+          console.log(`[DataSourcesTab] ${source} data:`, { 
+            callsCount: data?.callsCount, 
+            summariesCount: data?.summaries?.length,
+            firstCall: data?.calls?.[0]
+          })
+        } else {
+          console.log(`[DataSourcesTab] ${source} data loaded:`, data ? Object.keys(data) : 'null/undefined')
+        }
+        setter(data)
+      } else if (res.status === 404) {
+        // 404 is expected when data hasn't been synced yet - don't log as error
+        console.log(`[DataSourcesTab] ${source} data not yet synced (404)`)
+        setter(null) // Will show "No data available"
+      } else {
+        console.error(`[DataSourcesTab] ${source} failed:`, res.status)
+        setter({ error: 'Data not available' })
+      }
+    } catch (error) {
+      console.error(`[DataSourcesTab] ${source} error:`, error)
+      setter({ error: String(error) })
+    } finally {
+      setLoading(prev => ({ ...prev, [source]: false }))
+    }
+  }
+
+  const loadGongSearchTerms = async () => {
+    if (!accountSlug) return
+    try {
+      const res = await fetch(`${API_URL}/accounts/${accountSlug}/gong-search-terms`)
+      if (res.ok) {
+        const data = await res.json()
+        setGongSearchTerms(data)
+      }
+    } catch (error) {
+      console.error('Failed to load Gong search terms:', error)
+    }
+  }
+
+  const handleSearchTermsUpdated = async () => {
+    // Reload search terms
+    await loadGongSearchTerms()
+    
+    // Trigger Gong data refresh
+    setRefreshingGong(true)
+    try {
+      const res = await fetch(`${API_URL}/accounts/${accountSlug}/sources/gong/refresh`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mode: 'full' }),
+      })
+      
+      if (res.ok) {
+        // Reload Gong data
+        await loadSource('gong', setGongData)
+      }
+    } catch (error) {
+      console.error('Failed to refresh Gong data:', error)
+    } finally {
+      setRefreshingGong(false)
+    }
+  }
+
+  const renderSalesforceData = () => {
+    if (loading.salesforce) return <div className="flex items-center gap-2"><Loader2 className="h-4 w-4 animate-spin" /> Loading...</div>
+    if (!salesforceData) return <div className="text-muted-foreground">No data available</div>
+    if (salesforceData.error) return <div className="text-destructive">{salesforceData.error}</div>
+
+    return (
+      <div className="space-y-4">
+        {salesforceData.account && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Account</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2 text-sm">
+              <div><span className="font-medium">Name:</span> {salesforceData.account.name}</div>
+              <div><span className="font-medium">ID:</span> {salesforceData.account.id}</div>
+              {salesforceData.account.industry && (
+                <div><span className="font-medium">Industry:</span> {salesforceData.account.industry}</div>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Contacts ({salesforceData.contactsCount || 0})</CardTitle>
+          </CardHeader>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Opportunities ({salesforceData.opportunitiesCount || 0})</CardTitle>
+          </CardHeader>
+          {salesforceData.opportunities && salesforceData.opportunities.length > 0 && (
+            <CardContent>
+              <div className="space-y-3">
+                {salesforceData.opportunities.map((opp: any, idx: number) => (
+                  <div key={idx} className="border-l-2 border-primary pl-3 space-y-1">
+                    <div className="font-medium">{opp.name}</div>
+                    <div className="text-sm text-muted-foreground">Stage: {opp.stage}</div>
+                    {opp.amount && <div className="text-sm text-muted-foreground">Amount: ${opp.amount.toLocaleString()}</div>}
+                    {opp.closeDate && <div className="text-sm text-muted-foreground">Close Date: {opp.closeDate}</div>}
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          )}
+        </Card>
+      </div>
+    )
+  }
+
+  const toggleTranscript = (callId: string) => {
+    setExpandedTranscripts(prev => {
+      const next = new Set(prev)
+      if (next.has(callId)) {
+        next.delete(callId)
+      } else {
+        next.add(callId)
+      }
+      return next
+    })
+  }
+
+  const renderGongData = () => {
+    if (loading.gong) return <div className="flex items-center gap-2"><Loader2 className="h-4 w-4 animate-spin" /> Loading...</div>
+    if (!gongData) return <div className="text-muted-foreground">No data available</div>
+    if (gongData.error) return <div className="text-destructive">{gongData.error}</div>
+
+    return (
+      <div className="space-y-4">
+        {/* Search Terms Configuration Card */}
+        {gongSearchTerms && (
+          <Card>
+            <CardHeader>
+              <div className="flex items-start justify-between">
+                <div>
+                  <CardTitle className="text-base">Search Configuration</CardTitle>
+                  <CardDescription>Terms used to find calls for this account</CardDescription>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowSearchTermsEditor(true)}
+                >
+                  <Edit2 className="h-4 w-4" />
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                <div>
+                  <span className="text-sm font-medium">Search Terms:</span>
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    {gongSearchTerms.searchTerms?.map((term: string) => (
+                      <Badge key={term} variant={gongSearchTerms.isDefault ? "secondary" : "default"}>
+                        {term}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+                {gongSearchTerms.reason && (
+                  <div className="text-sm text-muted-foreground">
+                    {gongSearchTerms.reason}
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Calls ({gongData.callsCount || 0})</CardTitle>
+            <CardDescription>Recent calls with transcripts</CardDescription>
+          </CardHeader>
+          {gongData.calls && gongData.calls.length > 0 && (
+            <CardContent>
+              <div className="space-y-4">
+                {gongData.calls.map((call: any, idx: number) => {
+                  const summary = gongData.summaries?.find((s: any) => s.callId === call.id)
+                  const isExpanded = expandedTranscripts.has(call.id)
+                  
+                  return (
+                    <Card key={idx} className="border-l-2 border-primary">
+                      <CardContent className="pt-4 space-y-3">
+                        {/* Title and Call Link */}
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="font-medium text-base">{call.title}</div>
+                          {call.url && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-6 px-2"
+                              onClick={() => window.open(call.url, '_blank')}
+                            >
+                              <ExternalLink className="h-3 w-3" />
+                            </Button>
+                          )}
+                        </div>
+
+                        {/* Date and Duration */}
+                        <div className="text-sm text-muted-foreground">
+                          {new Date(call.started).toLocaleDateString()} • {Math.floor(call.duration / 60)} min
+                        </div>
+
+                        {/* Participants */}
+                        {call.participants && call.participants.length > 0 && (
+                          <div className="text-sm text-muted-foreground">
+                            <span className="font-medium">Participants:</span> {call.participants.slice(0, 3).join(', ')}
+                            {call.participants.length > 3 && ` +${call.participants.length - 3} more`}
+                          </div>
+                        )}
+                        
+                        {/* Show data if transcript OR any metadata exists */}
+                        {(summary?.transcript || summary?.topics?.length > 0 || summary?.summary || summary?.actionItems?.length > 0 || summary?.nextSteps?.length > 0) && (
+                          <div className="space-y-3 pt-2 border-t">
+                            {/* Topics */}
+                            {summary?.topics && summary.topics.length > 0 && (
+                              <div>
+                                <span className="text-sm font-medium">Topics:</span>
+                                <div className="flex flex-wrap gap-1 mt-1">
+                                  {summary.topics.map((topic: string, i: number) => (
+                                    <Badge key={i} variant="secondary" className="text-xs">{topic}</Badge>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Summary */}
+                            {summary?.summary && (
+                              <div className="text-sm">
+                                <span className="font-medium">Summary:</span>
+                                <p className="mt-1 text-muted-foreground">{summary.summary}</p>
+                              </div>
+                            )}
+
+                            {/* Action Items */}
+                            {summary?.actionItems && summary.actionItems.length > 0 && (
+                              <div className="text-sm">
+                                <span className="font-medium">Action Items:</span>
+                                <ul className="list-disc list-inside mt-1 space-y-0.5">
+                                  {summary.actionItems.map((item: string, i: number) => (
+                                    <li key={i} className="text-muted-foreground">{item}</li>
+                                  ))}
+                                </ul>
+                              </div>
+                            )}
+
+                            {/* Next Steps */}
+                            {summary?.nextSteps && summary.nextSteps.length > 0 && (
+                              <div className="text-sm">
+                                <span className="font-medium">Next Steps:</span>
+                                <ul className="list-disc list-inside mt-1 space-y-0.5">
+                                  {summary.nextSteps.map((step: string, i: number) => (
+                                    <li key={i} className="text-muted-foreground">{step}</li>
+                                  ))}
+                                </ul>
+                              </div>
+                            )}
+
+                            {/* Expandable Transcript */}
+                            {summary?.transcript && (
+                              <div className="pt-2 border-t">
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-8 px-2 -ml-2"
+                                  onClick={() => toggleTranscript(call.id)}
+                                >
+                                  {isExpanded ? (
+                                    <><ChevronUp className="h-4 w-4 mr-1" /> Hide Transcript</>
+                                  ) : (
+                                    <><ChevronDown className="h-4 w-4 mr-1" /> View Transcript</>
+                                  )}
+                                </Button>
+                                
+                                {isExpanded && (
+                                  <div className="mt-2 p-3 bg-muted rounded-md max-h-96 overflow-y-auto">
+                                    <pre className="text-xs whitespace-pre-wrap font-mono text-muted-foreground">
+                                      {summary.transcript}
+                                    </pre>
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+                  )
+                })}
+              </div>
+            </CardContent>
+          )}
+        </Card>
+      </div>
+    )
+  }
+
+  const renderNotionData = () => {
+    if (loading.notion) return <div className="flex items-center gap-2"><Loader2 className="h-4 w-4 animate-spin" /> Loading...</div>
+    if (!notionData) return <div className="text-muted-foreground">No data available</div>
+    if (notionData.error) return <div className="text-destructive">{notionData.error}</div>
+
+    return (
+      <div className="space-y-4">
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Pages ({notionData.pagesCount || 0})</CardTitle>
+            <CardDescription>Knowledge pages from Notion</CardDescription>
+          </CardHeader>
+          {notionData.pages && notionData.pages.length > 0 && (
+            <CardContent>
+              <div className="space-y-6">
+                {notionData.pages.map((page: any, idx: number) => {
+                  const isExpanded = expandedNotionPages.has(page.id);
+                  const toggleExpanded = () => {
+                    const newSet = new Set(expandedNotionPages);
+                    if (isExpanded) {
+                      newSet.delete(page.id);
+                    } else {
+                      newSet.add(page.id);
+                    }
+                    setExpandedNotionPages(newSet);
+                  };
+                  
+                  return (
+                  <div key={idx} className="border-l-2 border-primary pl-4 space-y-3">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={toggleExpanded}
+                          className="text-primary hover:text-primary/80 transition-colors"
+                        >
+                          {isExpanded ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
+                        </button>
+                        <div className="font-semibold text-lg">{page.title}</div>
+                      </div>
+                      <div className="flex items-center gap-3 mt-1 ml-7">
+                        {page.lastEdited && (
+                          <div className="text-sm text-muted-foreground">
+                            Last edited: {new Date(page.lastEdited).toLocaleDateString()}
+                          </div>
+                        )}
+                        {page.url && (
+                          <a 
+                            href={page.url} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="text-sm text-primary hover:underline inline-flex items-center gap-1"
+                          >
+                            Open in Notion <ExternalLink className="h-3 w-3" />
+                          </a>
+                        )}
+                      </div>
+                    </div>
+                    
+                    {isExpanded && page.contentBlocks && page.contentBlocks.length > 0 && (
+                      <div className="space-y-2 text-sm max-h-[600px] overflow-y-auto pr-2">
+                        <div className="text-xs text-muted-foreground mb-2">
+                          {page.contentBlocks.length} blocks of content
+                        </div>
+                        {page.contentBlocks.map((block: any, blockIdx: number) => {
+                          const indent = block.depth || 0;
+                          const marginLeft = `${indent * 1.5}rem`;
+                          
+                          if (block.type === 'heading_1') {
+                            return <h2 key={blockIdx} className="text-lg font-bold mt-6 mb-2 border-b pb-1" style={{ marginLeft }}>{block.text}</h2>
+                          }
+                          if (block.type === 'heading_2') {
+                            return <h3 key={blockIdx} className="text-base font-semibold mt-4 mb-1" style={{ marginLeft }}>{block.text}</h3>
+                          }
+                          if (block.type === 'heading_3') {
+                            return <h4 key={blockIdx} className="text-sm font-semibold mt-3 mb-1" style={{ marginLeft }}>{block.text}</h4>
+                          }
+                          if (block.type === 'bulleted_list_item') {
+                            return (
+                              <li key={blockIdx} className="list-disc text-muted-foreground leading-relaxed" style={{ marginLeft: `${indent * 1.5 + 1}rem` }}>
+                                {block.text}
+                              </li>
+                            )
+                          }
+                          if (block.type === 'numbered_list_item') {
+                            return (
+                              <li key={blockIdx} className="list-decimal text-muted-foreground leading-relaxed" style={{ marginLeft: `${indent * 1.5 + 1}rem` }}>
+                                {block.text}
+                              </li>
+                            )
+                          }
+                          if (block.type === 'quote') {
+                            return <blockquote key={blockIdx} className="border-l-4 border-primary pl-4 italic text-muted-foreground my-2" style={{ marginLeft }}>{block.text}</blockquote>
+                          }
+                          if (block.type === 'callout') {
+                            return <div key={blockIdx} className="bg-muted p-3 rounded-md text-sm my-2" style={{ marginLeft }}>{block.text}</div>
+                          }
+                          return <p key={blockIdx} className="text-muted-foreground leading-relaxed" style={{ marginLeft }}>{block.text}</p>
+                        })}
+                      </div>
+                    )}
+                  </div>
+                  );
+                })}
+              </div>
+            </CardContent>
+          )}
+        </Card>
+      </div>
+    )
+  }
+
+  const renderSourcegraphData = () => {
+    if (loading.sourcegraph) return <div className="flex items-center gap-2"><Loader2 className="h-4 w-4 animate-spin" /> Loading...</div>
+    if (!sourcegraphData) return <div className="text-muted-foreground">No data available</div>
+    if (sourcegraphData.error) return <div className="text-destructive">{sourcegraphData.error}</div>
+
+    return (
+      <div className="space-y-4">
+        <div className="grid grid-cols-3 gap-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Pages</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold">{sourcegraphData.pagesCount || 0}</div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Sections</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold">
+                {sourcegraphData.summary?.stats?.totalHeadings || 0}
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Features</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold">{sourcegraphData.featuresCount || 0}</div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {sourcegraphData.summary && sourcegraphData.summary.sections && (
+          <>
+            {sourcegraphData.summary.sections.docs?.length > 0 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-base">Docs</CardTitle>
+                  <CardDescription>Product documentation from sourcegraph.com/docs</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="prose prose-sm max-w-none max-h-96 overflow-y-auto text-muted-foreground">
+                    <p className="text-xs">
+                      {sourcegraphData.summary.sections.docs[0]?.content
+                        .substring(0, 800)
+                        .replace(/\[.*?\]\(.*?\)/g, '')
+                        .replace(/#{1,6}\s+/g, '')
+                        .split('\n')
+                        .filter((line: string) => line.trim().length > 0)
+                        .slice(0, 15)
+                        .map((line: string, i: number) => (
+                          <span key={i}>{line.trim()}<br /></span>
+                        ))}
+                      <span className="text-primary">... see full content in raw data</span>
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {sourcegraphData.summary.sections.blog?.length > 0 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-base">Blog ({sourcegraphData.summary.sections.blog.length} sections)</CardTitle>
+                  <CardDescription>Latest posts from sourcegraph.com/blog</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3 max-h-96 overflow-y-auto">
+                    {sourcegraphData.summary.sections.blog
+                      .slice(0, 20)
+                      .map((section: any, i: number) => (
+                        <div key={i} className="border-l-2 border-green-600 pl-3 py-2">
+                          <div className="font-semibold text-sm mb-1">{section.heading}</div>
+                          <div className="text-xs text-muted-foreground">
+                            {section.content.substring(0, 200).replace(/\[.*?\]\(.*?\)/g, '').replace(/\n+/g, ' ').trim()}
+                            {section.content.length > 200 && '...'}
+                          </div>
+                        </div>
+                      ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+          </>
+        )}
+      </div>
+    )
+  }
+
+  if (!accountSlug) {
+    return (
+      <Card>
+        <CardContent className="py-8 text-center text-muted-foreground">
+          Select an account to view data sources
+        </CardContent>
+      </Card>
+    )
+  }
+
+  return (
+    <Tabs defaultValue="salesforce" className="w-full">
+      <TabsList>
+        <TabsTrigger value="salesforce" className="flex items-center gap-2">
+          <Database className="h-4 w-4" />
+          Salesforce
+        </TabsTrigger>
+        <TabsTrigger value="gong" className="flex items-center gap-2">
+          <PhoneCall className="h-4 w-4" />
+          Gong
+        </TabsTrigger>
+        <TabsTrigger value="notion" className="flex items-center gap-2">
+          <FileText className="h-4 w-4" />
+          Notion
+        </TabsTrigger>
+        <TabsTrigger value="sourcegraph" className="flex items-center gap-2">
+          <Newspaper className="h-4 w-4" />
+          Sourcegraph Docs
+        </TabsTrigger>
+      </TabsList>
+
+      <TabsContent value="salesforce" className="mt-4">
+        {renderSalesforceData()}
+      </TabsContent>
+
+      <TabsContent value="gong" className="mt-4">
+        {renderGongData()}
+        <GongSearchTermsEditor
+          accountSlug={accountSlug}
+          open={showSearchTermsEditor}
+          onOpenChange={setShowSearchTermsEditor}
+          onUpdated={handleSearchTermsUpdated}
+        />
+      </TabsContent>
+
+      <TabsContent value="notion" className="mt-4">
+        {renderNotionData()}
+      </TabsContent>
+
+      <TabsContent value="sourcegraph" className="mt-4">
+        {renderSourcegraphData()}
+      </TabsContent>
+    </Tabs>
+  )
+}
